@@ -1,7 +1,7 @@
 #vim: ts=8:st=8:noexpandtab
 
 #BUILT_SOURCES = protobuf
-CLEANFILES = *.pb.h *.pb.cc *.gcda *.gcno
+CLEANFILES = *.pb.h *.pb.cc *.gcda *.gcno *.gcov
 
 noinst_LIBRARIES = libvsfs-common.a
 libvsfs_common_a_SOURCES = \
