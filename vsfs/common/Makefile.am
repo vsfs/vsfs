@@ -1,0 +1,25 @@
+#vim: ts=8:st=8:noexpandtab
+
+#BUILT_SOURCES = protobuf
+CLEANFILES = *.pb.h *.pb.cc *.gcda *.gcno
+
+noinst_LIBRARIES = libvsfs-common.a
+libvsfs_common_a_SOURCES = \
+			 complex_query.h complex_query.cpp
+
+protobuf: log.pb.h
+
+log.pb.h: log.proto
+	protoc --cpp_out=. $<
+
+TESTS = \
+	complex_query_test
+
+check_PROGRAMS = $(TESTS)
+
+LDADD = libvsfs-common.a \
+	@top_srcdir@/lib/vobla/vobla/libvobla.a \
+	-lgtest_main -lgtest
+
+complex_query_test_SOURCES = complex_query.h complex_query.cpp \
+			     complex_query_test.cpp

@@ -1,0 +1,4 @@
+[submodule "lib/vobla"]
+	path = lib/vobla
+	url = git://github.com/vsfs/vobla.git
+	ignore = dirty

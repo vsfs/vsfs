@@ -11,3 +11,10 @@
 *.lai
 *.la
 *.a
+
+*.swp
+
+Makefile
+Makefile.in
+.libs
+.deps

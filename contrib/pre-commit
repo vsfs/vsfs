@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Git Precommit Script for Research project.
+# Lei Xu <eddyxu@gmail.com>
+
+# Enforce C++ Style Checking (Google C++ Style).
+# Note: you must have cpplint.py installed in your $PATH
+CPPFILES=`git diff --cached --name-only | grep -E '^.+\.(h|hpp|cpp|cc)$'`
+if [ ! -z "$CPPFILES" ]; then
+	echo "$CPPFILES" | xargs -n 128 ./contrib/cpplint.py
+	[ $? -gt 0 ] && exit 1
+fi
+
+exit 0
