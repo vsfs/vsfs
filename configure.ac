@@ -30,6 +30,17 @@ if test "$ac_cv_cxx_compile_cxx11" = no ; then
 	AC_MSG_ERROR("It requires C++ 11 to build.!")
 fi
 
+AC_ARG_ENABLE([gcov],
+		      [AS_HELP_STRING([--enable-gcov],
+				  [enable coverage test (default: no).])],
+			  [gcov_enabled=${enableval}], [gcov_enabled=no])
+if test "x${gcov_enabled}" = xyes; then
+  CFLAGS = "$CFLAGS -fprofile-arcs -ftest-coverage --coverage"
+  CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage --coverage"
+  LDFLAGS="$LDFLAGS -fprofile-arcs"
+  LIBS="$LIBS -lgcov"
+fi
+
 # Checks for library functions.
 
 CFLAGS="-Wall -Wextra -Werror -pedantic -Wunused-value $CFLAGS"
@@ -43,6 +54,8 @@ AM_LDFLAGS="$AM_LDFLAGS -L\$(top_srcdir)/lib/gmock-1.6.0/gtest/lib"
 AC_SUBST(CXXFLAGS)
 AC_SUBST(AM_LDFLAGS)
 AC_SUBST(AM_CXXFLAGS)
+AC_SUBST(LDFLAGS, "$LDFLAGS")
+AC_SUBST(LIBS, "$LIBS")
 
 AC_CONFIG_FILES([Makefile
 				 vsfs/common/Makefile
