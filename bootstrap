@@ -23,7 +23,7 @@ cd lib/vobla
 ./bootstrap && ./configure && make
 
 cd ../
-if [ ! -f gmock-1.6.0.zip ]; then
+if [ ! -f gmock.zip ]; then
 	wget -O gmock.zip https://googlemock.googlecode.com/files/gmock-1.6.0.zip
 	unzip gmock.zip
 	cd gmock-*
