@@ -21,7 +21,6 @@
 #ifndef VSFS_COMMON_COMPLEX_QUERY_H_
 #define VSFS_COMMON_COMPLEX_QUERY_H_
 
-#include <cstdint>
 #include <string>
 #include <vector>
 #include <unordered_map>
