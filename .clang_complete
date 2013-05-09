@@ -1,0 +1,3 @@
+-I.
+-Ilib/vobla
+-std=c++11
