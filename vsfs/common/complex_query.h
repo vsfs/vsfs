@@ -21,7 +21,6 @@
 #ifndef VSFS_COMMON_COMPLEX_QUERY_H_
 #define VSFS_COMMON_COMPLEX_QUERY_H_
 
-#include <cstdint>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -84,6 +83,13 @@ class ComplexQuery {
   string debug_string() const;
 
  private:
+  struct StringRange {
+    string lower;
+    bool lower_closed;
+    string upper;
+    bool upper_closed;
+  };
+
   vobla::Status parse_segment(const string& seg);
   vobla::Status parse_condition(const string& buf);
   vobla::Status parse_expression(const string& exp);

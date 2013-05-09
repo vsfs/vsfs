@@ -1,5 +1,5 @@
-SUBDIRS = common
-#BUILT_SOURCES = rpc
+SUBDIRS = common index
+BUILT_SOURCES = rpc
 
 rpc:
 	make -C rpc
