@@ -24,6 +24,7 @@ AC_SUBST(PROTOC, "protoc")
 AC_CHECK_LIB([glog], [openlog], [], [AC_MSG_ERROR(google-glog was not found.)])
 
 # Checks for header files.
+AX_BOOST_BASE([1.48])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
