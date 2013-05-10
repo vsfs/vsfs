@@ -9,12 +9,18 @@
  */
 
 // TODO(eddyxu): change the namespace to vsfs::rpc
-namespace cpp vsfs
+namespace cpp vsfs.rpc
+namespace py vsfs.rpc
 
 typedef i64 RpcFileId
 typedef list<string> RpcFileList
 typedef list<string> RpcKeywordList
 typedef string RpcRawData
+
+exception RpcInvalidOp {
+  1: i32 what,
+  2: string why,
+}
 
 // Rpcepresents a File object in VSFS namespace.
 // See common/file_info.h for more details.
@@ -29,15 +35,6 @@ struct RpcFileInfo {
   8: i64 ctime,
   9: i64 mtime,
   10: i64 atime,
-}
-
-// See 'common/context.h' for more details.
-struct RpcContext {
-  1: string hostname,
-  2: i32 pid,
-  3: i32 ppid,
-  4: i32 uid,
-  5: i32 gid,
 }
 
 // IP address of a node.
@@ -62,13 +59,6 @@ struct RpcNodeInfo {
 /// in the RPC-related code, such as IndexServerHandler.
 typedef RpcNodeInfo NodeInfo
 
-// Query type on named index.
-enum NamedQueryType {
-  CONTENT_QUERY,  // Content / Keyword query.
-  RANGE_QUERY,  // Query on single range.
-  MULTI_RANGE_QUERY,  // Query on a multi-dimentional tree.
-}
-
 struct RpcRangeQuery {
   1: required string index_path,
   2: required string name,
@@ -86,10 +76,6 @@ struct RpcComplexQuery {
   3: required RpcRangeQueryList range_queries,
 }
 
-exception RpcInvalidOp {
-  1: i32 what,
-  2: string why,
-}
 
 // Operation on a named index
 struct RpcIndexName {

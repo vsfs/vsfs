@@ -34,6 +34,7 @@
 #include <vector>
 #include "vobla/macros.h"
 #include "vobla/map_util.h"
+#include "vobla/range.h"
 #include "vobla/status.h"
 #include "vobla/traits.h"
 #include "vsfs/common/thread.h"
@@ -69,7 +70,7 @@ class RangeIndexInterface {
   /// Factory method.
   static RangeIndexInterface* create_range_index(int key_type);
 
-  RangeIndexInterface() {}
+  RangeIndexInterface() = default;
 
   virtual ~RangeIndexInterface() {}
 
@@ -122,6 +123,9 @@ class RangeIndexInterface {
   void search(K lower, K upper, FileIdVector *results) {
     search(&lower, &upper, sizeof(lower), results);
   }
+
+  template <typename K>
+  void search(const vobla::Range<K>& range, FileIdVector *results);
 
   // virtual Status search(const RpcRangeQuery &query, FileIdVector *results) = 0; // NOLINT
 
