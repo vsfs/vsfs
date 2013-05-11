@@ -29,6 +29,10 @@ using std::mutex;
 using std::thread;
 using std::vector;
 
+namespace vsfs {
+
 typedef std::lock_guard<std::mutex> MutexGuard;
+
+}  // namespace vsfs
 
 #endif  // VSFS_COMMON_THREAD_H_
