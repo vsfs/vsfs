@@ -8,11 +8,12 @@ noinst_LIBRARIES = libvsfs-rpc.a
 BUILT_SOURCES = vsfs_constants.h
 
 libvsfs_rpc_a_SOURCES = \
-			IndexServer.h IndexServer.cpp \
-			MasterDaemon.h MasterDaemon.cpp \
-			MetaServer.h MetaServer.cpp \
-			vsfs_constants.h vsfs_constants.cpp \
-			vsfs_types.h vsfs_types.cpp
+  IndexServer.h IndexServer.cpp \
+  MasterDaemon.h MasterDaemon.cpp \
+  MetaServer.h MetaServer.cpp \
+  rpc_client.h \
+  vsfs_constants.h vsfs_constants.cpp \
+  vsfs_types.h vsfs_types.cpp
 
 vsfs_constants.h: vsfs.thrift
 	thrift --gen cpp $<
