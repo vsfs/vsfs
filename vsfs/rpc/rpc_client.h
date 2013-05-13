@@ -60,17 +60,14 @@ class RpcClient {
 
   /**
    * \brief Directly construct a RpcClient with a handler.
-   *
    * \param client The client instance.
-   * \param shared if set true, then all RpcClient shared same `client`, and it
-   * will be deleted when RpcClient destructs.
    * \note It should only be used for dependancy injection.
    */
   explicit RpcClient(const shared_ptr<HandleType>& client) {
     client_ = client;
   }
 
-  virtual ~RpcClient() {
+  ~RpcClient() {
     if (is_open()) {
       close();
     }
@@ -92,7 +89,7 @@ class RpcClient {
     if (transport_) {
       return transport_->isOpen();
     }
-    return true;
+    return false;
   }
 
   HandleType* handler() const {
