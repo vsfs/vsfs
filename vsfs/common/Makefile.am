@@ -26,3 +26,5 @@ LDADD = libvsfs-common.a \
 complex_query_test_SOURCES = complex_query.h complex_query.cpp \
 			     complex_query_test.cpp
 posix_path_test_SOURCES = posix_path.h posix_path.cpp posix_path_test.cpp
+
+.PHONY: protobuf
