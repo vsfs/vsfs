@@ -43,7 +43,7 @@ using std::string;
  * ~~~~~~~~~{.cpp}
  * RpcClient<FooServiceClient> foo_client("192.168.0.1", 8080);
  * foo_client.open();
- * foo_client
+ * foo_client->FooBar();
  * ~~~~~~~~~
  */
 template <typename Client, typename Transport = TBufferedTransport>
@@ -61,12 +61,13 @@ class RpcClient {
   /**
    * \brief Directly construct a RpcClient with a handler.
    * \param client The client instance.
-   * \note It should only be used for dependancy injection.
+   * \note It should only be used for dependency injection.
    */
   explicit RpcClient(const shared_ptr<HandleType>& client) {
     client_ = client;
   }
 
+  /// Destructs a RpcClient and reclaims the resources.
   ~RpcClient() {
     if (is_open()) {
       close();
@@ -85,9 +86,13 @@ class RpcClient {
     }
   }
 
+  /// Returns true if the connection has already been established.
   bool is_open() const {
     if (transport_) {
       return transport_->isOpen();
+    } else if (client_) {
+      // This RpcClient is used for dependency injection.
+      return true;
     }
     return false;
   }
