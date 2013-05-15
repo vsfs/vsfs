@@ -105,7 +105,7 @@ class RpcClient {
     return handler();
   }
 
-  const HandleType* operator->() {
+  const HandleType* operator->() const {
     return handler();
   }
 

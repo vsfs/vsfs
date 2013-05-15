@@ -64,7 +64,7 @@ fi
 # Checks for library functions.
 
 #CXXFLAGS="-Wall -Wextra -Werror -pedantic -Wunused-value $CXXFLAGS"
-CXXFLAGS="-Wall -Wextra -pedantic -Wunused-value $CXXFLAGS"
+CXXFLAGS="-Wall -Wextra -static -pedantic -Wunused-value $CXXFLAGS"
 AM_CXXFLAGS="-I\$(top_srcdir)/lib/vobla -I\$(top_srcdir)/lib/gmock-1.6.0/src"
 AM_CXXFLAGS="$AM_CXXFLAGS -I\$(top_srcdir)/lib/gmock-1.6.0/gtest/src"
 AM_LDFLAGS="-L\$(top_srcdir)/lib/gmock-1.6.0/lib"

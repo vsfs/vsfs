@@ -35,6 +35,7 @@ ltmain.sh
 libtool
 missing
 stamp-h1
+m4/*.m4
 vsfs-*.tar.*
 
 lib/gmock-*
