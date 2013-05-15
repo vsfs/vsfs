@@ -2,6 +2,11 @@ AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = vsfs
+DIST_SUBDIRS = lib/vobla $(SUBDIRS)
+
+EXTRA_DIST = \
+  LICENSE \
+  README.md
 
 coverage:
 	lcov -c -d . -o raw_coverage.info
@@ -10,4 +15,10 @@ coverage:
 	genhtml coverage.info -o coverage
 #$(RM) raw_coverage.info coverage.info
 
-.PHONY: coverage
+release:
+	rpmbuild -ba contrib/vsfs.spec
+
+check: vsfs
+	make -C vsfs check  # Skip lib/*
+
+.PHONY: check coverage release
