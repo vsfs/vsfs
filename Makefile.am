@@ -18,7 +18,4 @@ coverage:
 release:
 	rpmbuild -ba contrib/vsfs.spec
 
-check: vsfs
-	make -C vsfs check  # Skip lib/*
-
 .PHONY: check coverage release
