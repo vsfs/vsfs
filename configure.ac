@@ -9,6 +9,17 @@ AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([vsfs/common/complex_query.h])
 AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_SUBDIRS([lib/vobla])
+
+RPM_RELEASE=0
+AC_SUBST(RPM_RELEASE)
+if test -d ".git" ; then
+	AC_CHECK_PROG(GIT_CHECK, git, yes)
+	if test x"$GIT_CHECK" = x"yes"; then
+		RPM_RELEASE=`if expr index $(git describe --always) '-' > /dev/null ; then git describe --always | cut -d- -f2- | tr '-' '.' ; else echo "0"; fi`
+	fi
+fi
+AC_MSG_NOTICE([RPM_RELEASE='$RPM_RELEASE'])
 
 # Checks for programs.
 AC_PROG_CXX
@@ -22,6 +33,7 @@ AC_SUBST(PROTOC, "protoc")
 
 # Checks for libraries.
 AC_CHECK_LIB([glog], [openlog], [], [AC_MSG_ERROR(google-glog was not found.)])
+AC_CHECK_LIB([gflags],[getenv],[],[AC_MSG_ERROR([google-gflags was not found.])])
 
 # Checks for header files.
 AX_BOOST_BASE([1.48])
@@ -67,18 +79,19 @@ fi
 CXXFLAGS="-Wall -Wextra -static -pedantic -Wunused-value $CXXFLAGS"
 AM_CXXFLAGS="-I\$(top_srcdir)/lib/vobla -I\$(top_srcdir)/lib/gmock-1.6.0/src"
 AM_CXXFLAGS="$AM_CXXFLAGS -I\$(top_srcdir)/lib/gmock-1.6.0/gtest/src"
-AM_LDFLAGS="-L\$(top_srcdir)/lib/gmock-1.6.0/lib"
+AM_LDFLAGS="-L\$(top_srcdir)/lib/gmock-1.6.0/lib -L\$(top_srcdir)/lib/vobla/vobla"
 AM_LDFLAGS="$AM_LDFLAGS -L\$(top_srcdir)/lib/gmock-1.6.0/gtest/lib"
 
 AC_SUBST(CXXFLAGS)
 AC_SUBST(AM_LDFLAGS)
 AC_SUBST(AM_CXXFLAGS)
-AC_SUBST(LDFLAGS, "$LDFLAGS -L\$(top_srcdir)/lib/vobla/vobla")
 AC_SUBST(LIBS, "$LIBS -lvobla")
 
 AC_CONFIG_FILES([Makefile
+				 contrib/vsfs.spec
 				 vsfs/common/Makefile
 				 vsfs/index/Makefile
 				 vsfs/rpc/Makefile
-		         vsfs/Makefile])
+		         vsfs/Makefile
+				 ])
 AC_OUTPUT

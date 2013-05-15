@@ -37,5 +37,6 @@ missing
 stamp-h1
 m4/*.m4
 vsfs-*.tar.*
+vsfs.spec
 
 lib/gmock-*

@@ -1,4 +1,4 @@
-SUBDIRS = common index
+SUBDIRS = rpc common index
 BUILT_SOURCES = rpc
 
 rpc:

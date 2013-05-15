@@ -19,3 +19,6 @@ vsfs_constants.h: vsfs.thrift
 	thrift --gen cpp $<
 	mv gen-cpp/* .
 	rm -rf gen-cpp
+
+EXTRA_DIST = \
+  vsfs.thrift

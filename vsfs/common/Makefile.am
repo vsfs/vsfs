@@ -6,7 +6,8 @@ CLEANFILES = *.pb.h *.pb.cc *.gcda *.gcno *.gcov
 noinst_LIBRARIES = libvsfs-common.a
 libvsfs_common_a_SOURCES = \
 			   complex_query.h complex_query.cpp \
-			   posix_path.h posix_path.cpp
+			   posix_path.h posix_path.cpp \
+			   thread.h
 
 protobuf: log.pb.h
 
