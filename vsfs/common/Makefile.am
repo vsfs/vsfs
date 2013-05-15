@@ -20,7 +20,7 @@ TESTS = \
 check_PROGRAMS = $(TESTS)
 
 LDADD = libvsfs-common.a \
-	@top_srcdir@/lib/vobla/vobla/libvobla.a \
+	@top_srcdir@/lib/vobla/vobla/libvobla.la \
 	-lgtest_main -lgtest
 
 complex_query_test_SOURCES = complex_query.h complex_query.cpp \
