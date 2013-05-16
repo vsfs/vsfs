@@ -48,24 +48,22 @@ TEST_F(ComplexQueryTest, TestParseRoot) {
   EXPECT_TRUE(q.parse(p).ok());
   EXPECT_EQ("/a", q.root());
 
-  /*
   auto rq = q.range_query("mtime");
   EXPECT_TRUE(rq != NULL);
   EXPECT_TRUE(rq->lower.empty());
-  EXPECT_EQ(true, rq->upper_open);
+  EXPECT_FALSE(rq->upper_closed);
   EXPECT_EQ(lexical_cast<string>(24*60*60), rq->upper);
 
   rq = q.range_query("size");
   EXPECT_TRUE(rq != NULL);
   EXPECT_TRUE(rq->upper.empty());
-  EXPECT_TRUE(rq->lower_open == false);
+  EXPECT_TRUE(rq->lower_closed);
   EXPECT_EQ("100", rq->lower);
 
   string p1("/home/a/b/c/?size>1g");
   ComplexQuery q1;
   EXPECT_TRUE(q1.parse(p1).ok());
   EXPECT_EQ("/home/a/b/c", q1.root());
-  */
 }
 
 TEST_F(ComplexQueryTest, TestRelativeTimeInRangeQuery) {
@@ -90,15 +88,13 @@ TEST_F(ComplexQueryTest, TestNamedRangeQuery) {
   string p("/home/john/?energy>=12.5");
   ComplexQuery q;
   EXPECT_TRUE(q.parse(p).ok());
-  /*
   auto range = q.range_query("energy");
   EXPECT_TRUE(range != NULL);
-  EXPECT_FALSE(range->lower_open);
+  EXPECT_TRUE(range->lower_closed);
   EXPECT_EQ("12.5", range->lower);
   EXPECT_TRUE(range->upper.empty());
 
   EXPECT_TRUE(q.range_query("x-axis") == NULL);
-  */
 }
 
 TEST_F(ComplexQueryTest, TestQueryWithSpaces) {
@@ -106,13 +102,11 @@ TEST_F(ComplexQueryTest, TestQueryWithSpaces) {
   ComplexQuery query;
   EXPECT_TRUE(query.parse(path).ok());
 
-  /*
   auto range = query.range_query("energy");
   EXPECT_TRUE(range != NULL);
-  EXPECT_FALSE(range->lower_open);
+  EXPECT_TRUE(range->lower_closed);
   EXPECT_EQ("12.5", range->lower);
   EXPECT_TRUE(range->upper.empty());
-  */
 }
 
 }  // namespace vsfs

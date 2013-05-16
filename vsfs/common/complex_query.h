@@ -21,14 +21,16 @@
 #ifndef VSFS_COMMON_COMPLEX_QUERY_H_
 #define VSFS_COMMON_COMPLEX_QUERY_H_
 
+#include <boost/lexical_cast.hpp>
 #include <string>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 #include "vobla/range.h"
 
+using boost::lexical_cast;
 using std::string;
-using std::vector;
 using std::unordered_map;
+using std::vector;
 
 namespace vobla {
 class Clock;
@@ -40,6 +42,31 @@ class Status;
  * \brief Versatile Searchable File System.
  */
 namespace vsfs {
+
+/**
+ * \brief Represents range queries in string.
+ * \TODO(eddyxu): move to internal space?
+ */
+class StringRange {
+ public:
+  StringRange() = default;
+
+  /// Constructs a StringRange from Range class.
+  template<typename Range>
+  explicit StringRange(const Range& range) {
+    lower = lexical_cast<string>(range.lower());
+    lower_closed = range.is_lower_closed();
+    upper = lexical_cast<string>(range.upper());
+    upper_closed = range.is_upper_closed();
+  }
+
+  ~StringRange() = default;
+
+  string lower;
+  bool lower_closed;
+  string upper;
+  bool upper_closed;
+};
 
 /**
  * \class ComplexQuery
@@ -78,24 +105,22 @@ class ComplexQuery {
   /**
    * \brief Gets the index of all range queries.
    */
-  void get_index_names_of_range_queries(vector<string> *names) const;
+  void get_names_of_range_queries(vector<string> *names) const;
+
+  StringRange* range_query(const string &name);
 
   string debug_string() const;
 
  private:
-  struct StringRange {
-    string lower;
-    bool lower_closed;
-    string upper;
-    bool upper_closed;
-  };
-
   vobla::Status parse_segment(const string& seg);
   vobla::Status parse_condition(const string& buf);
   vobla::Status parse_expression(const string& exp);
 
   /// The top directoy this query starts.
   string root_;
+
+  typedef unordered_map<string, StringRange> RangeQueryMap;
+  RangeQueryMap range_query_map_;
 };
 
 }  // namespace vsfs

@@ -36,6 +36,7 @@ using std::stringstream;
 using std::vector;
 using vobla::Status;
 using vobla::Clock;
+using vobla::find_or_null;
 
 namespace vsfs {
 
@@ -164,35 +165,33 @@ Status ComplexQuery::parse_expression(const string& exp) {
     return status;
   }
 
-  /*
   switch (op) {
     case LE:
-      named_range_query_map_[field].upper = value;
-      named_range_query_map_[field].upper_open = false;
+      range_query_map_[field].upper = value;
+      range_query_map_[field].upper_closed = true;
       break;
     case LT:
-      named_range_query_map_[field].upper = value;
-      named_range_query_map_[field].upper_open = true;
+      range_query_map_[field].upper = value;
+      range_query_map_[field].upper_closed = false;
       break;
     case GE:
-      named_range_query_map_[field].lower = value;
-      named_range_query_map_[field].lower_open = false;
+      range_query_map_[field].lower = value;
+      range_query_map_[field].lower_closed = true;
       break;
     case GT:
-      named_range_query_map_[field].lower = value;
-      named_range_query_map_[field].lower_open = true;
+      range_query_map_[field].lower = value;
+      range_query_map_[field].lower_closed = false;
       break;
     case EQ:
-      named_range_query_map_[field].upper = value;
-      named_range_query_map_[field].upper_open = true;
-      named_range_query_map_[field].lower = value;
-      named_range_query_map_[field].lower_open = true;
+      range_query_map_[field].upper = value;
+      range_query_map_[field].upper_closed = true;
+      range_query_map_[field].lower = value;
+      range_query_map_[field].lower_closed = true;
       break;
     default:
       LOG(ERROR) << "Unknown op code: " << opstr;
       return Status(-1, "Unknown op code.");
   }
-  */
   return Status::OK;
 }
 
@@ -282,15 +281,19 @@ string ComplexQuery::debug_string() const {
   ret += root_ + "):";
 
   /*
-  for (const auto& named_range_query : named_range_query_map_) {
-    ret += " " + named_range_query.first + ": ";
-    ret += (named_range_query.second.lower_open) ? "(" : "[";
-    ret += named_range_query.second.lower + ", ";
-    ret += named_range_query.second.upper;
-    ret += (named_range_query.second.upper_open) ? ")" : "]";
+  for (const auto& range_query : range_query_map_) {
+    ret += " " + range_query.first + ": ";
+    ret += (range_query.second.lower_open) ? "(" : "[";
+    ret += range_query.second.lower + ", ";
+    ret += range_query.second.upper;
+    ret += (range_query.second.upper_open) ? ")" : "]";
   }
   */
   return ret;
+}
+
+StringRange* ComplexQuery::range_query(const string &name) {
+  return find_or_null(range_query_map_, name);
 }
 
 }  // namespace vsfs
