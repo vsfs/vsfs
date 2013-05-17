@@ -1,6 +1,9 @@
 vsfs
 ====
 
+[![Build Status](https://travis-ci.org/vsfs/vsfs.png?branch=master)](https://travis-ci.org/vsfs/vsfs)
+[![Coverage Status](https://coveralls.io/repos/vsfs/vsfs/badge.png?branch=master)](https://coveralls.io/r/vsfs/vsfs?branch=master)
+
 The Official VSFS repo!
 
 # Dependancies
