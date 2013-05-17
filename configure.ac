@@ -9,7 +9,6 @@ AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([vsfs/common/complex_query.h])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_SUBDIRS([lib/vobla])
 
 RPM_RELEASE=0
 AC_SUBST(RPM_RELEASE)
@@ -34,9 +33,15 @@ AC_SUBST(PROTOC, "protoc")
 # Checks for libraries.
 AC_CHECK_LIB([glog], [openlog], [], [AC_MSG_ERROR(google-glog was not found.)])
 AC_CHECK_LIB([gflags],[getenv],[],[AC_MSG_ERROR([google-gflags was not found.])])
+# check is snappy-devel is installed, needed by leveldb
+AC_CHECK_LIB([snappy], [snappy_compress], [], [AC_MSG_ERROR([libsnappy not found])])
+# use system leveldb
+AC_CHECK_LIB([leveldb], [leveldb_open], [], [AC_MSG_ERROR([libleveldb not found])], [-lsnappy -lpthread])
 
 # Checks for header files.
 AX_BOOST_BASE([1.48])
+AX_BOOST_FILESYSTEM([1.48])
+AX_BOOST_SYSTEM([1.48])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
@@ -77,8 +82,8 @@ fi
 
 #CXXFLAGS="-Wall -Wextra -Werror -pedantic -Wunused-value $CXXFLAGS"
 CXXFLAGS="-Wall -Wextra -static -pedantic -Wunused-value $CXXFLAGS"
-AM_CXXFLAGS="-I\$(top_srcdir)/lib/vobla -I\$(top_srcdir)/lib/gmock-1.6.0/src"
-AM_CXXFLAGS="$AM_CXXFLAGS -I\$(top_srcdir)/lib/gmock-1.6.0/gtest/src"
+AM_CXXFLAGS="-I\$(top_srcdir)/lib/vobla -isystem \$(top_srcdir)/lib/gmock-1.6.0/include"
+AM_CXXFLAGS="$AM_CXXFLAGS -isystem \$(top_srcdir)/lib/gmock-1.6.0/gtest/include"
 AM_LDFLAGS="-L\$(top_srcdir)/lib/gmock-1.6.0/lib -L\$(top_srcdir)/lib/vobla/vobla"
 AM_LDFLAGS="$AM_LDFLAGS -L\$(top_srcdir)/lib/gmock-1.6.0/gtest/lib"
 

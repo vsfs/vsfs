@@ -1,0 +1,48 @@
+language: cpp
+compiler:
+  - gcc
+env:
+  - CXX_VERSION=4.8
+  - CXX_VERSION=4.7
+before_install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update
+  - sudo apt-get install -y g++-${CXX_VERSION} libboost1.48-dev libleveldb-dev libsnappy-dev protobuf-compiler libprotobuf-dev libevent-dev libboost-filesystem1.48-dev libboost-system1.48-dev
+
+  - export CXX="g++-${CXX_VERSION}"
+  - sudo pip install cpp-coveralls --use-mirrors
+  - cd lib
+  - wget https://gflags.googlecode.com/files/libgflags-dev_2.0-1_amd64.deb
+  - wget https://gflags.googlecode.com/files/libgflags0_2.0-1_amd64.deb
+  - sudo dpkg -i libgflags*.deb
+# Install autoconf-archive
+  - wget http://hive.ist.unomaha.edu/gnu/autoconf-archive/autoconf-archive-2013.04.06.tar.bz2
+  - tar -xjf autoconf-archive*.tar.bz2
+  - cd autoconf-archive*
+  - ./configure && make && sudo make install
+  - cd -
+# Install glog
+  - wget https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz -O glog.tar.gz
+  - tar -xzf glog.tar.gz
+  - cd glog*
+  - ./configure && make && sudo make install
+  - cd -
+# Install thrift
+  - wget http://apache.osuosl.org/thrift/0.9.0/thrift-0.9.0.tar.gz
+  - tar -xzf thrift-*.tar.gz
+  - cd thrift*
+  - ./configure --without-python --without-ruby --without-java && make && sudo make install
+  - sudo cp lib/cpp/*.pc /usr/lib/pkgconfig
+  - cd ../..
+before_script:
+  - ./bootstrap
+script:
+  - export LD_LIBRARY_PATH=/usr/local/lib
+  - CFLAGS='-g -O0' CXXFLAGS='-g -O0' ./configure --enable-gcov && make && make check
+after_success:
+  - cp vobla/.libs/libvobla_la-*.gc* vobla
+  - if [[ $CXX == 'g++-4.7' ]]; then coveralls --gcov gcov-4.7 -e lib -e thrift -e glog-0.3.3; fi
+notifications:
+#  email:
+#    - xulei82@gmail.com
+#    - zil.huang@gmail.com
