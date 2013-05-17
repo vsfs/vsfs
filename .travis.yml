@@ -32,7 +32,7 @@ script:
   - CFLAGS='-g -O0' CXXFLAGS='-g -O0' ./configure --enable-gcov && make && make check
 after_success:
   - cp vobla/.libs/libvobla_la-*.gc* vobla
-  - if [[ $CXX == 'g++-4.7' ]]; then coveralls --gcov gcov-4.7 -e test -e glog-0.3.3 -e vobla/.libs; fi
+  - if [[ $CXX == 'g++-4.7' ]]; then coveralls --gcov gcov-4.7 -e lib -e thrift -e glog-0.3.3; fi
 notifications:
 #  email:
 #    - xulei82@gmail.com
