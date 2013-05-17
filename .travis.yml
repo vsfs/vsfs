@@ -1,0 +1,39 @@
+language: cpp
+compiler:
+  - gcc
+env:
+  - CXX_VERSION=4.8
+  - CXX_VERSION=4.7
+before_install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update
+  - sudo apt-get install -y g++-${CXX_VERSION} libboost1.48-dev libleveldb-dev protobuf-compiler libprotobuf-dev autoconf-archive libevent-dev
+  - export CXX="g++-${CXX_VERSION}"
+  - sudo pip install cpp-coveralls --use-mirrors
+  - cd lib
+  - wget https://gflags.googlecode.com/files/libgflags-dev_2.0-1_amd64.deb
+  - wget https://gflags.googlecode.com/files/libgflags0_2.0-1_amd64.deb
+  - sudo dpkg -i libgflags*.deb
+  - wget https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz -O glog.tar.gz
+  - tar -xzf glog.tar.gz
+  - cd glog*
+  - ./configure && make && sudo make install
+  - cd -
+  - wget http://apache.osuosl.org/thrift/0.9.0/thrift-0.9.0.tar.gz
+  - tar -xzf thrift-*.tar.gz
+  - cd thrift*
+  - ./configure --without-python --without-ruby --without-java && make && sudo make install
+  - sudo cp lib/cpp/*.pc /usr/lib/pkgconfig
+  - cd ../..
+before_script:
+  - ./bootstrap
+script:
+  - export LD_LIBRARY_PATH=/usr/local/lib
+  - CFLAGS='-g -O0' CXXFLAGS='-g -O0' ./configure --enable-gcov && make && make check
+after_success:
+  - cp vobla/.libs/libvobla_la-*.gc* vobla
+  - if [[ $CXX == 'g++-4.7' ]]; then coveralls --gcov gcov-4.7 -e test -e glog-0.3.3 -e vobla/.libs; fi
+notifications:
+#  email:
+#    - xulei82@gmail.com
+#    - zil.huang@gmail.com

@@ -77,8 +77,8 @@ fi
 
 #CXXFLAGS="-Wall -Wextra -Werror -pedantic -Wunused-value $CXXFLAGS"
 CXXFLAGS="-Wall -Wextra -static -pedantic -Wunused-value $CXXFLAGS"
-AM_CXXFLAGS="-I\$(top_srcdir)/lib/vobla -I\$(top_srcdir)/lib/gmock-1.6.0/src"
-AM_CXXFLAGS="$AM_CXXFLAGS -I\$(top_srcdir)/lib/gmock-1.6.0/gtest/src"
+AM_CXXFLAGS="-I\$(top_srcdir)/lib/vobla -isystem \$(top_srcdir)/lib/gmock-1.6.0/include"
+AM_CXXFLAGS="$AM_CXXFLAGS -isystem \$(top_srcdir)/lib/gmock-1.6.0/gtest/include"
 AM_LDFLAGS="-L\$(top_srcdir)/lib/gmock-1.6.0/lib -L\$(top_srcdir)/lib/vobla/vobla"
 AM_LDFLAGS="$AM_LDFLAGS -L\$(top_srcdir)/lib/gmock-1.6.0/gtest/lib"
 
