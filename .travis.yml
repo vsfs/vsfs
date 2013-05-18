@@ -6,8 +6,9 @@ env:
   - CXX_VERSION=4.7
 before_install:
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo add-apt-repository -y ppa:apokluda/boost1.53
   - sudo apt-get update
-  - sudo apt-get install -y g++-${CXX_VERSION} libboost1.48-dev libleveldb-dev libsnappy-dev protobuf-compiler libprotobuf-dev libevent-dev libboost-filesystem1.48-dev libboost-system1.48-dev
+  - sudo apt-get install -y g++-${CXX_VERSION} libleveldb-dev libsnappy-dev protobuf-compiler libprotobuf-dev libevent-dev boost1.53
   - export CXX="g++-${CXX_VERSION}"
   - sudo pip install cpp-coveralls --use-mirrors
   - cd lib
