@@ -12,7 +12,12 @@ case `uname` in
 esac
 
 autoheader
-aclocal -I m4 --install
+if [ -d /usr/local/share/aclocal ]; then
+	aclocal -I m4 -I /usr/local/share/aclocal --install
+else
+	aclocal -I m4 --install
+fi
+
 autoconf
 
 automake --foreign --add-missing --force-missing --copy
