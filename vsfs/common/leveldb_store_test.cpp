@@ -83,7 +83,7 @@ TEST_F(LevelDBStoreTest, OpenAnExistedDb) {
   }
 
   int i = 0;
-  for (auto key_and_value : db) {
+  for (const auto& key_and_value : db) {
     EXPECT_EQ(key_and_value.first, key_and_value.second);
     EXPECT_EQ(lexical_cast<string>(i), key_and_value.first);
     i++;
