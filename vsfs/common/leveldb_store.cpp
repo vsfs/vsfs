@@ -113,4 +113,5 @@ LevelDBStore::iterator LevelDBStore::begin() {
 LevelDBStore::iterator LevelDBStore::end() {
   return LevelDBStoreIterator();
 }
+
 }  // namespace vsfs

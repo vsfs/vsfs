@@ -44,7 +44,6 @@ namespace vsfs {
  *  - put()
  *  - get()
  *  - remove()
- *
  */
 class LevelDBStore /* : public KeyValueStore or PersistentStore */ {
   typedef std::pair<string, string> KeyValuePair;
