@@ -8,9 +8,8 @@ before_install:
 # g++ 4.7/4.8
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 # thrift 0.9.0
-#  - sudo add-apt-repository -y ppa:wnoronha/thrift
-  - sudo add-apt-repository -y ppa:gasol-wu/precise
-#  - sudo add-apt-repository -y ppa:wnoronha/thrift
+#  - sudo add-apt-repository -y ppa:gasol-wu/precise
+  - sudo add-apt-repository -y ppa:wnoronha/thrift
   - sudo add-apt-repository -y ppa:fcitx-team/nightly
   - sudo add-apt-repository -y ppa:dns/gnu
   - sudo add-apt-repository -y ppa:apokluda/boost1.53
@@ -24,7 +23,7 @@ before_script:
   - ./bootstrap
 script:
   - export LD_LIBRARY_PATH=/usr/local/lib
-  - CFLAGS='-g -O0' CXXFLAGS='-g -O0' ./configure --enable-gcov && make && make check
+  - CFLAGS='-g -O0' CXXFLAGS='-g -O0' ./configure --enable-gcov --disable-shared && make && make check
 after_success:
   - cp vobla/.libs/libvobla_la-*.gc* vobla
   - if [[ $CXX == 'g++-4.7' ]]; then coveralls --gcov gcov-4.7 -e lib -e thrift -e glog-0.3.3; fi
