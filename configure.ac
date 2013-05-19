@@ -39,9 +39,9 @@ AC_CHECK_LIB([snappy], [snappy_compress], [], [AC_MSG_ERROR([libsnappy not found
 AC_CHECK_LIB([leveldb], [leveldb_open], [], [AC_MSG_ERROR([libleveldb not found])], [-lsnappy -lpthread])
 
 # Checks for header files.
-AX_BOOST_BASE([1.48])
-AX_BOOST_FILESYSTEM([1.48])
-AX_BOOST_SYSTEM([1.48])
+AX_BOOST_BASE([1.53])
+AX_BOOST_FILESYSTEM([1.53])
+AX_BOOST_SYSTEM([1.53])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_CHECK_HEADER_STDBOOL
