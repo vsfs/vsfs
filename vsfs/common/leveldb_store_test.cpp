@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
 #include <gtest/gtest.h>
 #include <glog/logging.h>
@@ -22,8 +21,8 @@
 #include <string>
 #include "vsfs/common/leveldb_store.h"
 
-using boost::lexical_cast;
 using std::string;
+using std::to_string;
 namespace fs = boost::filesystem;
 
 namespace vsfs {
@@ -67,8 +66,8 @@ TEST_F(LevelDBStoreTest, OpenAnExistedDb) {
     LevelDBStore db(testdir_ + "/db2");
     db.create();
     for (int i = 0; i < 10; ++i) {
-      EXPECT_TRUE(db.put(lexical_cast<string>(i),
-                         lexical_cast<string>(i)).ok());
+      EXPECT_TRUE(db.put(to_string(i),
+                         to_string(i)).ok());
     }
   }
 
@@ -77,7 +76,7 @@ TEST_F(LevelDBStoreTest, OpenAnExistedDb) {
   EXPECT_TRUE(db.open().ok());
   for (int i = 0; i < 10; i++) {
     string k, v;
-    k = lexical_cast<string>(i);
+    k = to_string(i);
     EXPECT_TRUE(db.get(k, &v).ok());
     EXPECT_EQ(k, v);
   }
@@ -85,7 +84,7 @@ TEST_F(LevelDBStoreTest, OpenAnExistedDb) {
   int i = 0;
   for (const auto& key_and_value : db) {
     EXPECT_EQ(key_and_value.first, key_and_value.second);
-    EXPECT_EQ(lexical_cast<string>(i), key_and_value.first);
+    EXPECT_EQ(to_string(i), key_and_value.first);
     i++;
   }
 }

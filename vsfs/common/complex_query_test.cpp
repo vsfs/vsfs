@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <boost/lexical_cast.hpp>
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
@@ -23,8 +22,8 @@
 #include "vobla/status.h"
 #include "vsfs/common/complex_query.h"
 
-using boost::lexical_cast;
 using std::string;
+using std::to_string;
 using std::unique_ptr;
 using vobla::FakeClock;
 using vobla::Status;
@@ -52,7 +51,7 @@ TEST_F(ComplexQueryTest, TestParseRoot) {
   EXPECT_TRUE(rq != NULL);
   EXPECT_TRUE(rq->lower.empty());
   EXPECT_FALSE(rq->upper_closed);
-  EXPECT_EQ(lexical_cast<string>(24*60*60), rq->upper);
+  EXPECT_EQ(to_string(24*60*60), rq->upper);
 
   rq = q.range_query("size");
   EXPECT_TRUE(rq != NULL);
