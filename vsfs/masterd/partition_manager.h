@@ -1,9 +1,17 @@
-/**
- * \file index_partition_manager.h
+/*
+ * Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
  *
- * \brief Manages each index as several smaller partitions.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #ifndef VSFS_MASTERD_PARTITION_MANAGER_H_
@@ -17,7 +25,6 @@
 #include "vobla/consistent_hash_map.h"
 #include "vobla/macros.h"
 #include "vobla/status.h"
-#include "vsfs/common/key_value_store.h"
 
 using std::mutex;
 using std::string;
@@ -27,11 +34,13 @@ using std::vector;
 using vobla::ConsistentHashMap;
 using vobla::Status;
 
-namespace vobla {
-class LevelDBStore;
-}
-
 namespace vsfs {
+class KeyValueStore;
+
+/**
+ * \namespace masterd
+ * \brief Master Node of VSFS
+ */
 namespace masterd {
 
 /**
