@@ -6,6 +6,7 @@ CLEANFILES = *.pb.h *.pb.cc *.gcda *.gcno *.gcov
 noinst_LIBRARIES = libvsfs-common.a
 libvsfs_common_a_SOURCES = \
 			   complex_query.h complex_query.cpp \
+			   key_value_store.h \
 			   leveldb_store.h leveldb_store.cpp \
 			   posix_path.h posix_path.cpp \
 			   thread.h
