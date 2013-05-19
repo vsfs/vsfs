@@ -33,9 +33,10 @@ using boost::lexical_cast;
 using boost::algorithm::trim_copy;
 using std::string;
 using std::stringstream;
+using std::to_string;
 using std::vector;
-using vobla::Status;
 using vobla::Clock;
+using vobla::Status;
 using vobla::find_or_null;
 
 namespace vsfs {
@@ -126,12 +127,12 @@ Status parse_value(const string& field, const string &value,
     if (has_symbol) {
       int symbol = (value[0] == '+') ? 1 : -1;
       uint64_t now = static_cast<uint64_t>(global_clock->now());
-      *new_value = lexical_cast<string>(
+      *new_value = to_string(
           now + symbol * (num_value * lexical_cast<uint64_t>(num.substr(1))));
       return Status::OK;
     }
   }
-  *new_value = lexical_cast<string>(num_value * lexical_cast<uint64_t>(num));
+  *new_value = to_string(num_value * lexical_cast<uint64_t>(num));
   return Status::OK;
 }
 
