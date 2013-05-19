@@ -22,6 +22,9 @@ Makefile.in
 *.gcno
 *.gcda
 
+*.pb.h
+*.pb.cc
+
 config.*
 aclocal.m4
 configure
