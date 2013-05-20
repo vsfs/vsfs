@@ -46,6 +46,10 @@ namespace masterd {
 /**
  * \class PartitionManager "vsfs/masterd/partition_manager.h"
  * \brief The manager of index partitions.
+ *
+ * It works as a write-through cache of partition location information in the
+ * RAM, the content in RAM is consistent with the persistent K-V store (a.k.a
+ * storing in LevelDB).
  */
 class PartitionManager {
  public:
@@ -56,6 +60,10 @@ class PartitionManager {
 
   typedef ConsistentHashMap<HashValueType, string> PartitionMap;
 
+  /**
+   * \brief Constructs a PartitionManager with the file path to the local
+   * store.
+   */
   explicit PartitionManager(const string &file_path);
 
   /**
@@ -68,7 +76,21 @@ class PartitionManager {
 
   virtual ~PartitionManager() = default;
 
-  Status insert(const string &full_index_path);
+  /**
+   * \brief Loads the content of partition map from DB.
+   */
+  Status load();
+
+  /**
+   * \brief Save the partition map to disk.
+   */
+  Status save();
+
+  /**
+   * \brief Add a new Index and initializes an empty partition for it.
+   * \param full_index_path
+   */
+  Status add_index(const string &full_index_path);
 
   void remove(const string &full_index_path);
 
@@ -97,16 +119,6 @@ class PartitionManager {
    */
   Status copy_partition_map(const string &full_index_path,
                             PartitionMap *partition_map);
-
-  /**
-   * \brief Save the partition map to disk.
-   */
-  Status save();
-
-  /**
-   * \brief Loads the content of partition map from disk.
-   */
-  Status load();
 
  private:
   string partition_map_to_string(const PartitionMap& pm);

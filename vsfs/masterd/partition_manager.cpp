@@ -23,6 +23,7 @@
 #include "vobla/map_util.h"
 #include "vobla/status.h"
 #include "vsfs/common/key_value_store.h"
+#include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/masterd/masterd.pb.h"
 #include "vsfs/masterd/partition_manager.h"
@@ -43,11 +44,12 @@ PartitionManager::PartitionManager(const string &path)
 PartitionManager::PartitionManager(KeyValueStore* store) : store_(store) {
 }
 
-Status PartitionManager::insert(const string &path) {
+Status PartitionManager::add_index(const string &path) {
+  CHECK_NOTNULL(store_.get());
   MutexGuard lock(mutex_);
   if (contain_key(partition_map_by_index_path_, path)) {
-    LOG(ERROR) << "The index is already existed:" << path;
-    return Status(-EEXIST, "The index is already existed.");
+    LOG(WARNING) << "The index is already existed:" << path;
+    return Status::OK;
   }
   partition_map_by_index_path_[path].reset(new Partition);
   PartitionMap::key_type initial_key = 0;  // TODO(lxu): a random number?
