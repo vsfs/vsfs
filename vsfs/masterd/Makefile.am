@@ -26,7 +26,7 @@ TESTS = \
 
 check_PROGRAMS = $(TESTS)
 LDADD = libvsfs-masterd.a $(masterd_LDADD) \
-	-lgtest -lgtest_main \
+	-lgtest -lgtest_main -lgmock \
 	$(libthrift_LIBS) $(PROTOBUF_LIBS)
 partition_manager_test_SOURCES = partition_manager_test.cpp
 

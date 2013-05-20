@@ -22,6 +22,7 @@
 #include <vector>
 #include "vobla/file.h"
 #include "vsfs/common/key_value_store.h"
+#include "vsfs/common/mock_key_value_store.h"
 #include "vsfs/masterd/partition_manager.h"
 
 namespace fs = boost::filesystem;
@@ -37,6 +38,7 @@ class PartitionManagerTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     tmpdir_.reset(new vobla::TemporaryDirectory);
+    mock_store_.reset(new MockKeyValueStore);
     testdir_ = tmpdir_->path();
   }
 
@@ -44,11 +46,12 @@ class PartitionManagerTest : public ::testing::Test {
   }
 
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
+  unique_ptr<MockKeyValueStore> mock_store_;
   string testdir_;
 };
 
 TEST_F(PartitionManagerTest, TestInsertIndex) {
-  PartitionManager manager("");
+  PartitionManager manager(mock_store_.release());
   string index_path = "/home/john/.vsfs/energy";
   EXPECT_TRUE(manager.add_index(index_path).ok());
   EXPECT_EQ(index_path + ".0", manager.get_partition_path(index_path, 0));
