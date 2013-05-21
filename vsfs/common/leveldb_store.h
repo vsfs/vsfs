@@ -24,6 +24,7 @@
 #include <utility>
 #include "vobla/macros.h"
 #include "vobla/status.h"
+#include "vsfs/common/key_value_store.h"
 
 using std::unique_ptr;
 using std::string;
@@ -45,7 +46,7 @@ namespace vsfs {
  *  - get()
  *  - remove()
  */
-class LevelDBStore /* : public KeyValueStore or PersistentStore */ {
+class LevelDBStore  : public KeyValueStore {
   typedef std::pair<string, string> KeyValuePair;
 
  public:
