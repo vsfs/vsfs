@@ -12,5 +12,8 @@ The Official VSFS repo!
  - boost >= 1.53
  - thrift 0.9.0
  - protobuf 2.5
- - LevelDB
+ - LevelDB and snappy
+ - glog
+ - gflags
+ - libssl-dev
  - gmock 1.6.0 for testing.
