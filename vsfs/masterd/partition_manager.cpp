@@ -38,10 +38,20 @@ namespace vsfs {
 namespace masterd {
 
 PartitionManager::PartitionManager(const string &path)
-    : file_path_(path) {
+    : file_path_(path), store_(new LevelDBStore(path)) {
 }
 
 PartitionManager::PartitionManager(KeyValueStore* store) : store_(store) {
+}
+
+Status PartitionManager::init() {
+  Status status = store_->open();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to initialize PartitionManager: "
+               << status.message();
+    return status;
+  }
+  return Status::OK;
 }
 
 Status PartitionManager::add_index(const string &path) {
@@ -162,74 +172,6 @@ string PartitionManager::partition_map_to_string(const PartitionMap& pm) {
   return std::move(proto_string);
 }
 
-// This function saves the partition_map_by_index_path_ into a berkeley DB,
-// where the key is the index path, and the value is the serialized C.H ring.
-// For each value, it starts from
-//   - num_nodes
-// Then it follows with the pair of (HashValueType, string).
-//
-// TODO(lxu):
-//  - Looking for the solution to store it in Protobuf.
-//  - Add a 'dirty' flag to 'Partition' to only flush dirty partitions.
-Status PartitionManager::save() {
-  Status status;
-  /*
-  const string tmp_db_path = file_path_ + ".tmp";
-  {
-    fs::remove(tmp_db_path);
-    BDbIndex partition_db(tmp_db_path, BDbIndex::HASH);
-    status = partition_db.open();
-    if (!status.ok()) {
-      VLOG(1) << "Failed to open db.";
-      return status;
-    }
-    MutexGuard lock(mutex_);
-    for (const auto& path_and_partition_map : partition_map_by_index_path_) {
-      const auto& index_path = path_and_partition_map.first;
-      const PartitionMap& map = path_and_partition_map.second->partitions_;
-      stringstream ss(stringstream::out);
-      boost::archive::binary_oarchive oa(ss);
-      size_t num_nodes = map.num_nodes();
-      oa << num_nodes;
-      PartitionMap::const_iterator it = map.begin();
-      for (size_t i = 0; i < num_nodes; ++i, ++it) {
-        oa << it->first;
-        oa << it->second;
-      }
-      string buf = ss.str();
-      int ret = partition_db.put(index_path.data(), index_path.size() + 1,
-                                 buf.data(), buf.size());
-      if (ret) {
-        VLOG(1) << "Failed to put " << index_path
-                << " into partition map file.";
-        return Status(ret, partition_db.error_message(ret));
-      }
-    }
-    partition_db.close();
-  }
-
-  boost::system::error_code ec;
-  if (fs::exists(file_path_)) {
-    // Moves the old partition map to a backup file.
-    const string backup_db = file_path_ + ".bak";
-    fs::rename(file_path_, backup_db, ec);
-    if (ec.value()) {
-      return Status(ec.value(), ec.message());
-    }
-  }
-  VLOG(1) << "Move " << tmp_db_path << " to " << file_path_;
-  fs::rename(tmp_db_path, file_path_, ec);
-  if (ec.value()) {
-    return Status(ec.value(), ec.message());
-  }
-  */
-
-  return Status::OK;
-}
-
-Status PartitionManager::load() {
-  return Status::OK;
-}
 
 }   // namespace masterd
 }   // namespace vsfs

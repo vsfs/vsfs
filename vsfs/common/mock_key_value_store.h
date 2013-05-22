@@ -29,6 +29,7 @@ namespace vsfs {
 
 class MockKeyValueStore : public KeyValueStore {
  public:
+  MOCK_METHOD0(open, Status());
   MOCK_METHOD2(get, Status(const string&, string*));
   MOCK_METHOD2(put, Status(const string&, const string&));
   MOCK_METHOD1(remove, Status(const string&));

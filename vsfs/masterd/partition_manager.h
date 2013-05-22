@@ -48,8 +48,8 @@ namespace masterd {
  * \brief The manager of index partitions.
  *
  * It works as a write-through cache of partition location information in the
- * RAM, the content in RAM is consistent with the persistent K-V store (a.k.a
- * storing in LevelDB).
+ * RAM, the content in RAM is consistent with the persistent K-V store (i.e.,
+ * a LevelDB).
  */
 class PartitionManager {
  public:
@@ -77,14 +77,10 @@ class PartitionManager {
   virtual ~PartitionManager() = default;
 
   /**
-   * \brief Loads the content of partition map from DB.
+   * \brief Initialize the PartitionManager and loads the content from the
+   * backend DB.
    */
-  Status load();
-
-  /**
-   * \brief Save the partition map to disk.
-   */
-  Status save();
+  Status init();
 
   /**
    * \brief Add a new Index and initializes an empty partition for it.

@@ -37,6 +37,12 @@ namespace vsfs {
  */
 class KeyValueStore {
  public:
+  /**
+   * \brief Opens an KeyValueStore. The default behavior of `open()` is
+   * creating the key value store if it does not existed.
+   */
+  virtual Status open() = 0;
+
   virtual Status get(const string& key, string* value) = 0;
 
   virtual Status put(const string& key, const string &value) = 0;
