@@ -95,6 +95,7 @@ Status PartitionManager::init() {
                  << " : " << status.message();
       return status;
     }
+    partition_map_by_index_path_[key].reset(new Partition);
     partition_map_by_index_path_[key]->partitions_.swap(new_partition_map);
   }
   return Status::OK;
@@ -111,18 +112,25 @@ Status PartitionManager::add_index(const string &path) {
   PartitionMap::key_type initial_key = 0;  // TODO(lxu): a random number?
   string node = path + "." + to_string(initial_key);
   partition_map_by_index_path_[path]->partitions_.insert(initial_key, node);
+
+  return write_partition_map(path);
+}
+
+Status PartitionManager::remove_index(const string &path) {
+  MutexGuard lock(mutex_);
+  // TODO(lxu): it is needed to build a "unused consitent hash map list", and
+  // move the removed PartitionMap to that list first to avoid the case
+  // that erasing an in-used PartitionMap (i.e. refcount_ > 0).
+  Status status = store_->remove(path);
+  if (!status.ok()) {
+    LOG(WARNING) << "Failed to remove the index from DB...abort!..."
+                 << status.message();
+    return status;
+  }
+  partition_map_by_index_path_.erase(path);
   return Status::OK;
 }
 
-void PartitionManager::remove(const string &path) {
-  MutexGuard lock(mutex_);
-  // TODO(lxu): it is need to build a "unused consitent hash map list", and
-  // move the removed PartitionMap to that list first to avoid the case
-  // that erasing an in-used PartitionMap (i.e. refcount_ > 0).
-  partition_map_by_index_path_.erase(path);
-}
-
-/*
 Status PartitionManager::add_partition(const string &path,
                                        HashValueType sep) {
   Partition *partitions = nullptr;
@@ -146,12 +154,18 @@ Status PartitionManager::add_partition(const string &path,
   string node = path + "." + to_string(sep);
   partitions->partitions_.insert(sep, node);
   partitions->refcount_--;
-  return Status::OK;
+
+  Status status = write_partition_map(path);
+  if (!status.ok()) {
+    // TODO(eddyxu): add recovery.
+    LOG(ERROR) << "Failed to write partition map to DB when add partition for "
+               << "(" << path << ", " << sep << "): " << status.message();
+  }
+  return status;
 }
-*/
 
 string PartitionManager::get_partition_path(const string &path,
-                                                 HashValueType hash) {
+                                            HashValueType hash) {
   Partition *partitions = nullptr;
   {
     MutexGuard lock(mutex_);
@@ -204,6 +218,15 @@ Status PartitionManager::copy_partition_map(
   return Status::OK;
 }
 
+Status PartitionManager::write_partition_map(const string& path) {
+  string buffer = partition_map_to_string(
+      partition_map_by_index_path_[path]->partitions_);
+  if (buffer.empty()) {
+    LOG(WARNING) << "Failed to serialize PartitionMap for " << path;
+    return Status(-1, "Failed to serialize PartitionMap");
+  }
+  return store_->put(path, buffer);
+}
 
 }   // namespace masterd
 }   // namespace vsfs

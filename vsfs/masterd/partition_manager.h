@@ -55,6 +55,8 @@ class PartitionManager {
  public:
   /**
    * \note Note that here the hash value is not the full SHA1 or MD5 value,
+   *
+   * \TODO(eddyxu): move hash value to a centralized file.
    */
   typedef uint64_t HashValueType;
 
@@ -85,13 +87,26 @@ class PartitionManager {
   /**
    * \brief Add a new Index and initializes an empty partition for it.
    * \param full_index_path
+   * \pre init() has been called.
+   *
+   * \TODO(eddyxu) explain what is full_index_path.
    */
   Status add_index(const string &full_index_path);
 
-  void remove(const string &full_index_path);
+  /**
+   * \brief Remove one index and all its partitions.
+   * \param full_index_path the path of the full index path.
+   * \pre init() has been called.
+   */
+  Status remove_index(const string &full_index_path);
 
-  Status insert(const string &full_index_path,
-                HashValueType sep);
+  /**
+   * \brief Adds a index partition at the hash value `sep`.
+   * \param full_index_path the full path of index.
+   * \param sep the hash value to separate this partition from.
+   */
+  Status add_partition(const string &full_index_path,
+                       HashValueType sep);
 
   Status remove(const string &full_index_path,
                 HashValueType sep);
@@ -117,7 +132,13 @@ class PartitionManager {
                             PartitionMap *partition_map);
 
  private:
-  string partition_map_to_string(const PartitionMap& pm);
+  /**
+   * \brief Writes the partition map to the backend storage (i.e. LevelDB),
+   * and returns the status.
+   *
+   * \note The caller must hold the lock.
+   */
+  Status write_partition_map(const string& full_index_path);
 
   struct Partition {
     mutex mutex_;
