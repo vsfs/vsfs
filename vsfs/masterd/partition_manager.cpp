@@ -46,6 +46,7 @@ PartitionManager::PartitionManager(LevelDBStore* store) : store_(store) {
 
 namespace {
 
+/// Deserialize a buffer to the PartitionMap.
 Status string_to_partition_map(const string& buffer,
                                PartitionManager::PartitionMap *pm) {
   IndexPartition idx_partition;
@@ -57,6 +58,22 @@ Status string_to_partition_map(const string& buffer,
     pm->insert(partition.hash_sep(), partition.path());
   }
   return Status::OK;
+}
+
+/// Serialize PartitionMap to a string buffer. If anything goes wrong, returns
+/// an empty string.
+string partition_map_to_string(const PartitionManager::PartitionMap& pm) {
+  string proto_string;
+  IndexPartition idx_partition;
+  for (const auto& sep_and_path : pm) {
+    auto partition = idx_partition.add_partition();
+    partition->set_hash_sep(sep_and_path.first);
+    partition->set_path(sep_and_path.second);
+  }
+  if (!idx_partition.SerializeToString(&proto_string)) {
+    return "";
+  }
+  return std::move(proto_string);
 }
 
 }  // namespace
@@ -187,19 +204,6 @@ Status PartitionManager::copy_partition_map(
   return Status::OK;
 }
 
-string PartitionManager::partition_map_to_string(const PartitionMap& pm) {
-  string proto_string;
-  IndexPartition idx_partition;
-  for (const auto& sep_and_path : pm) {
-    auto partition = idx_partition.add_partition();
-    partition->set_hash_sep(sep_and_path.first);
-    partition->set_path(sep_and_path.second);
-  }
-  if (!idx_partition.SerializeToString(&proto_string)) {
-    return "";
-  }
-  return std::move(proto_string);
-}
 
 }   // namespace masterd
 }   // namespace vsfs

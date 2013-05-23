@@ -50,6 +50,14 @@ class PartitionManagerTest : public ::testing::Test {
   string testdir_;
 };
 
+TEST_F(PartitionManagerTest, TestInitialize) {
+  string dbpath = testdir_ + "/test.db";
+  PartitionManager manager(dbpath);
+  EXPECT_FALSE(fs::exists(dbpath));
+  EXPECT_TRUE(manager.init().ok());
+  EXPECT_TRUE(fs::exists(dbpath));
+}
+
 TEST_F(PartitionManagerTest, TestInsertIndex) {
   PartitionManager manager(testdir_ + "/test1.db");
   string index_path = "/home/john/.vsfs/energy";
