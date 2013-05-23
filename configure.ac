@@ -40,8 +40,6 @@ AC_CHECK_LIB([leveldb], [leveldb_open], [], [AC_MSG_ERROR([libleveldb was not fo
 PKG_CHECK_MODULES([libthrift], [thrift])
 PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 
-
-
 # Checks for header files.
 AX_BOOST_BASE([1.53])
 AX_BOOST_FILESYSTEM([1.53])
