@@ -8,25 +8,18 @@ before_install:
 # g++ 4.7/4.8
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
 # thrift 0.9.0
-#  - sudo add-apt-repository -y ppa:gasol-wu/precise
-#  - sudo add-apt-repository -y ppa:wnoronha/thrift
   - sudo add-apt-repository -y ppa:fcitx-team/nightly
   - sudo add-apt-repository -y ppa:dns/gnu
   - sudo add-apt-repository -y ppa:apokluda/boost1.53
   - sudo apt-get update
-  - sudo apt-get install -y g++-${CXX_VERSION} autoconf-archive libleveldb-dev libsnappy-dev libevent-dev
+  - sudo apt-get install -y g++-${CXX_VERSION} autoconf-archive libleveldb-dev libsnappy-dev libevent-dev python-support
   - sudo apt-get install -y libboost1.53-dev libboost-filesystem1.53-dev libboost-system1.53-dev
   - sudo apt-get install -y libgflags-dev libgoogle-glog-dev protobuf-compiler libprotobuf-dev
   - export CXX="g++-${CXX_VERSION}"
   - sudo pip install cpp-coveralls --use-mirrors
-#  - git clone git://github.com/vsfs/vsfs-devtools.git
-#  - cd vsfs-devtools
-#  - sudo dpkg -i libthrift*_i386.deb
-  - wget http://apache.osuosl.org/thrift/0.9.0/thrift-0.9.0.tar.gz
-  - tar -xzf thrift-*.tar.gz
-  - cd thrift-*
-  - ./configure --without-c_glib --without-java --without-csharp --without-php --without-python --without-ruby --without-erlang --without-qt
-  - make && sudo make install
+  - git clone git://github.com/vsfs/vsfs-devtools.git
+  - cd vsfs-devtools
+  - sudo dpkg -i libthrift*_amd64.deb
   - cd ..
 before_script:
   - ./bootstrap
