@@ -17,9 +17,14 @@ before_install:
   - sudo apt-get install -y libgflags-dev libgoogle-glog-dev protobuf-compiler libprotobuf-dev
   - export CXX="g++-${CXX_VERSION}"
   - sudo pip install cpp-coveralls --use-mirrors
-  - git clone git://github.com/vsfs/vsfs-devtools.git
-  - cd vsfs-devtools
-  - sudo dpkg -i *_amd64.deb
+#- git clone git://github.com/vsfs/vsfs-devtools.git
+#  - cd vsfs-devtools
+#  - sudo dpkg -i *_amd64.deb
+  - wget http://apache.osuosl.org/thrift/0.9.0/thrift-0.9.0.tar.gz
+  - tar -xzf thrift-*.tar.gz
+  - cd thrift-*
+  - ./configure --without-c_glib --without-java --without-csharp --without-php --without-python --without-ruby --without-erlang --without-qt
+  - make && sudo make install
   - cd ..
 before_script:
   - ./bootstrap
