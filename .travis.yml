@@ -19,7 +19,7 @@ before_install:
   - sudo pip install cpp-coveralls --use-mirrors
   - git clone git://github.com/vsfs/vsfs-devtools.git
   - cd vsfs-devtools
-  - sudo dpkg -i libthrift*_amd64.deb
+  - sudo dpkg -i *_amd64.deb
   - cd ..
 before_script:
   - ./bootstrap
