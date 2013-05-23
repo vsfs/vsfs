@@ -26,8 +26,10 @@
 #include "vsfs/masterd/partition_manager.h"
 
 namespace fs = boost::filesystem;
+using ::testing::ContainerEq;
 using ::testing::ElementsAre;
 using std::string;
+using std::to_string;
 using std::unique_ptr;
 using std::vector;
 
@@ -66,6 +68,8 @@ TEST_F(PartitionManagerTest, TestAddIndex) {
   EXPECT_EQ(index_path + ".0", manager.get_partition_path(index_path, 0));
   EXPECT_EQ(index_path + ".0", manager.get_partition_path(index_path, -1000));
 
+  EXPECT_FALSE(manager.add_index(index_path).ok());
+
   EXPECT_TRUE(manager.remove_index(index_path).ok());
   EXPECT_EQ("", manager.get_partition_path(index_path, 0));
 }
@@ -76,6 +80,7 @@ TEST_F(PartitionManagerTest, TestRestoreFromDisk) {
     PartitionManager manager(path);
     manager.init();
     EXPECT_TRUE(manager.add_index("/test0").ok());
+    EXPECT_TRUE(manager.add_partition("/test0", 1000).ok());
     EXPECT_TRUE(manager.add_index("/test1").ok());
     EXPECT_TRUE(manager.add_index("/test2").ok());
   }
@@ -84,11 +89,30 @@ TEST_F(PartitionManagerTest, TestRestoreFromDisk) {
     PartitionManager manager(path);
     EXPECT_TRUE(manager.init().ok());
     EXPECT_EQ("/test0.0", manager.get_partition_path("/test0", 0));
-    EXPECT_EQ("/test0.0", manager.get_partition_path("/test0", -100));
+    EXPECT_EQ("/test0.1000", manager.get_partition_path("/test0", -100));
     EXPECT_EQ("/test1.0", manager.get_partition_path("/test1", 65535));
     EXPECT_EQ("/test2.0", manager.get_partition_path("/test2", 10000));
     EXPECT_EQ("", manager.get_partition_path("/nonexist", 0));
   }
+}
+
+TEST_F(PartitionManagerTest, TestGetAllPartitions) {
+  string path = testdir_ + "/test";
+  PartitionManager manager(path);
+  manager.init();
+  manager.add_index("/test0");
+  for (uint64_t i = 1; i <= 10; ++i) {
+    EXPECT_TRUE(manager.add_partition("/test0", i * 1000).ok());
+  }
+
+  vector<string> partitions;
+  EXPECT_TRUE(manager.get_all_partitions("/test0", &partitions).ok());
+
+  vector<string> expected_partitions;
+  for (uint64_t i = 0; i <= 10; ++i) {
+    expected_partitions.emplace_back("/test0." + to_string(i * 1000));
+  }
+  EXPECT_THAT(partitions, ContainerEq(expected_partitions));
 }
 
 }  // namespace masterd

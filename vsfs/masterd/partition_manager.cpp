@@ -105,8 +105,8 @@ Status PartitionManager::add_index(const string &path) {
   CHECK_NOTNULL(store_.get());
   MutexGuard lock(mutex_);
   if (contain_key(partition_map_by_index_path_, path)) {
-    LOG(WARNING) << "The index is already existed:" << path;
-    return Status::OK;
+    LOG(WARNING) << "The index has already existed:" << path;
+    return Status(-1, "The index has already existed");
   }
   partition_map_by_index_path_[path].reset(new Partition);
   PartitionMap::key_type initial_key = 0;  // TODO(lxu): a random number?
@@ -184,8 +184,8 @@ string PartitionManager::get_partition_path(const string &path,
   return partition_path;
 }
 
-Status PartitionManager::get_all_partition_paths(
-    const string &index_path, vector<string> *paths) {
+Status PartitionManager::get_all_partitions(const string &index_path,
+                                            vector<string> *paths) {
   Partition *partitions = nullptr;
   {
     MutexGuard lock(mutex_);

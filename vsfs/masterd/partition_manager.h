@@ -114,8 +114,8 @@ class PartitionManager {
   string get_partition_path(const string &full_index_path,
                             HashValueType hash);
 
-  Status get_all_partition_paths(const string &full_index_path,
-                                 vector<string> *paths);
+  Status get_all_partitions(const string &full_index_path,
+                            vector<string> *paths);
 
   /**
    * \brief Copy an instance of PartitionMap.
