@@ -41,8 +41,25 @@ PartitionManager::PartitionManager(const string &path)
     : file_path_(path), store_(new LevelDBStore(path)) {
 }
 
-PartitionManager::PartitionManager(KeyValueStore* store) : store_(store) {
+PartitionManager::PartitionManager(LevelDBStore* store) : store_(store) {
 }
+
+namespace {
+
+Status string_to_partition_map(const string& buffer,
+                               PartitionManager::PartitionMap *pm) {
+  IndexPartition idx_partition;
+  if (!idx_partition.ParseFromString(buffer)) {
+    return Status(-1, "Failed to parse protobuf.");
+  }
+  for (int i = 0; i < idx_partition.partition_size(); ++i) {
+    const auto& partition = idx_partition.partition(i);
+    pm->insert(partition.hash_sep(), partition.path());
+  }
+  return Status::OK;
+}
+
+}  // namespace
 
 Status PartitionManager::init() {
   Status status = store_->open();
@@ -50,6 +67,18 @@ Status PartitionManager::init() {
     LOG(ERROR) << "Failed to initialize PartitionManager: "
                << status.message();
     return status;
+  }
+  for (const auto& key_and_value : *store_) {
+    const string& key = key_and_value.first;
+    const string& buffer = key_and_value.second;
+    PartitionMap new_partition_map;
+    status = string_to_partition_map(buffer, &new_partition_map);
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to load PartitionMap for " << key
+                 << " : " << status.message();
+      return status;
+    }
+    partition_map_by_index_path_[key]->partitions_.swap(new_partition_map);
   }
   return Status::OK;
 }
@@ -171,7 +200,6 @@ string PartitionManager::partition_map_to_string(const PartitionMap& pm) {
   }
   return std::move(proto_string);
 }
-
 
 }   // namespace masterd
 }   // namespace vsfs

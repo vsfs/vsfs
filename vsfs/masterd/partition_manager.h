@@ -35,7 +35,7 @@ using vobla::ConsistentHashMap;
 using vobla::Status;
 
 namespace vsfs {
-class KeyValueStore;
+class LevelDBStore;
 
 /**
  * \namespace masterd
@@ -72,7 +72,7 @@ class PartitionManager {
    * \note This constructor should only be used for dependancy injection
    * purpose.
    */
-  explicit PartitionManager(KeyValueStore* store);
+  explicit PartitionManager(LevelDBStore* store);
 
   virtual ~PartitionManager() = default;
 
@@ -134,7 +134,7 @@ class PartitionManager {
 
   mutex mutex_;
 
-  unique_ptr<KeyValueStore> store_;
+  unique_ptr<LevelDBStore> store_;
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(PartitionManager);
 };

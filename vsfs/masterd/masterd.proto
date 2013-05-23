@@ -19,7 +19,7 @@ package vsfs.masterd;
 message IndexPartition {
   message Partition {
     required uint64 hash_sep = 1;
-	required string path = 2;
+    required string path = 2;
   }
 
   repeated Partition partition = 1;
