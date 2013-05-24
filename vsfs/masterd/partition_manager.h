@@ -101,15 +101,20 @@ class PartitionManager {
   Status remove_index(const string &full_index_path);
 
   /**
-   * \brief Adds a index partition at the hash value `sep`.
+   * \brief Adds an index partition at the hash value `sep`.
    * \param full_index_path the full path of index.
    * \param sep the hash value to separate this partition from.
    */
   Status add_partition(const string &full_index_path,
                        HashValueType sep);
 
-  Status remove(const string &full_index_path,
-                HashValueType sep);
+  /**
+   * \brief Removes an index partition at the hash value 'sep'.
+   * \param full_index_path
+   * \param sep the hash value to separate the partition from.
+   */
+  Status remove_partition(const string &full_index_path,
+                          HashValueType sep);
 
   string get_partition_path(const string &full_index_path,
                             HashValueType hash);
