@@ -5,22 +5,32 @@ env:
   - CXX_VERSION=4.8
   - CXX_VERSION=4.7
 before_install:
+# g++ 4.7/4.8
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-  - sudo add-apt-repository -y ppa:wnoronha/thrift
+# thrift 0.9.0
   - sudo add-apt-repository -y ppa:fcitx-team/nightly
   - sudo add-apt-repository -y ppa:dns/gnu
   - sudo add-apt-repository -y ppa:apokluda/boost1.53
   - sudo apt-get update
-  - sudo apt-get install -y g++-${CXX_VERSION} autoconf-archive libleveldb-dev libsnappy-dev libevent-dev libthrift-dev thrift-compiler
+  - sudo apt-get install -y g++-${CXX_VERSION} autoconf-archive libleveldb-dev libsnappy-dev libevent-dev python-support
   - sudo apt-get install -y libboost1.53-dev libboost-filesystem1.53-dev libboost-system1.53-dev
   - sudo apt-get install -y libgflags-dev libgoogle-glog-dev protobuf-compiler libprotobuf-dev
   - export CXX="g++-${CXX_VERSION}"
   - sudo pip install cpp-coveralls --use-mirrors
+#- git clone git://github.com/vsfs/vsfs-devtools.git
+#  - cd vsfs-devtools
+#  - sudo dpkg -i *_amd64.deb
+  - wget http://apache.osuosl.org/thrift/0.9.0/thrift-0.9.0.tar.gz
+  - tar -xzf thrift-*.tar.gz
+  - cd thrift-*
+  - ./configure --without-c_glib --without-java --without-csharp --without-php --without-python --without-ruby --without-erlang --without-qt
+  - make && sudo make install
+  - cd ..
 before_script:
   - ./bootstrap
 script:
   - export LD_LIBRARY_PATH=/usr/local/lib
-  - CFLAGS='-g -O0' CXXFLAGS='-g -O0' ./configure --enable-gcov && make && make check
+  - CFLAGS='-g -O0' CXXFLAGS='-g -O0' ./configure --enable-gcov --disable-shared && make && make check
 after_success:
   - cp vobla/.libs/libvobla_la-*.gc* vobla
   - if [[ $CXX == 'g++-4.7' ]]; then coveralls --gcov gcov-4.7 -e lib -e thrift -e glog-0.3.3; fi

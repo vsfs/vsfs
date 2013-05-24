@@ -34,11 +34,11 @@ AC_SUBST(PROTOC, "protoc")
 AC_CHECK_LIB([glog], [openlog], [], [AC_MSG_ERROR(google-glog was not found.)])
 AC_CHECK_LIB([gflags],[getenv],[],[AC_MSG_ERROR([google-gflags was not found.])])
 # check is snappy-devel is installed, needed by leveldb
-AC_CHECK_LIB([snappy], [snappy_compress], [], [AC_MSG_ERROR([libsnappy not found])])
+AC_CHECK_LIB([snappy], [snappy_compress], [], [AC_MSG_ERROR([libsnappy was not found])])
 # use system leveldb
-AC_CHECK_LIB([leveldb], [leveldb_open], [], [AC_MSG_ERROR([libleveldb not found])],
-		     [-lsnappy -lpthread])
+AC_CHECK_LIB([leveldb], [leveldb_open], [], [AC_MSG_ERROR([libleveldb was not found])], [-lsnappy -lpthread])
 PKG_CHECK_MODULES([libthrift], [thrift])
+PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 
 # Checks for header files.
 AX_BOOST_BASE([1.53])
@@ -96,6 +96,7 @@ AC_CONFIG_FILES([Makefile
 				 contrib/vsfs.spec
 				 vsfs/common/Makefile
 				 vsfs/index/Makefile
+				 vsfs/masterd/Makefile
 				 vsfs/rpc/Makefile
 		         vsfs/Makefile
 				 ])
