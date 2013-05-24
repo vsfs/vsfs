@@ -64,6 +64,7 @@ LevelDBStore::LevelDBStore(const string &path) : db_path_(path) {
 Status LevelDBStore::open() {
   leveldb::DB *db;
   leveldb::Options options;
+  options.create_if_missing = true;
   leveldb::Status status = leveldb::DB::Open(options, db_path_, &db);
   if (!status.ok()) {
     return to_status(status);
