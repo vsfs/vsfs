@@ -115,5 +115,24 @@ TEST_F(PartitionManagerTest, TestGetAllPartitions) {
   EXPECT_THAT(partitions, ContainerEq(expected_partitions));
 }
 
+TEST_F(PartitionManagerTest, TestRemovePartition) {
+  PartitionManager manager(testdir_ + "/test1.db");
+  manager.init();
+
+  manager.add_index("test");
+  manager.add_partition("test", 100);
+  manager.add_partition("test", 200);
+
+  vector<string> partitions;
+  manager.get_all_partitions("test", &partitions);
+  EXPECT_THAT(partitions, ElementsAre("test.0", "test.100", "test.200"));
+
+  EXPECT_FALSE(manager.remove_partition("test", 120).ok());
+  EXPECT_TRUE(manager.remove_partition("test", 100).ok());
+  partitions.clear();
+  manager.get_all_partitions("test", &partitions);
+  EXPECT_THAT(partitions, ElementsAre("test.0", "test.200"));
+}
+
 }  // namespace masterd
 }  // namespace vsfs

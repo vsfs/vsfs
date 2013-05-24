@@ -164,6 +164,34 @@ Status PartitionManager::add_partition(const string &path,
   return status;
 }
 
+Status PartitionManager::remove_partition(const string &path,
+                                          HashValueType sep) {
+  Partition *partitions = nullptr;
+  {
+    MutexGuard lock(mutex_);
+    auto iter = partition_map_by_index_path_.find(path);
+    if (iter == partition_map_by_index_path_.end()) {
+      LOG(ERROR) << "Attempt to remove a hash range from an non-existed index:"
+                 << path << " hash(" << sep << ")";
+      return Status(-ENOENT, "The index does not existed.");
+    }
+    partitions = iter->second.get();
+    partitions->refcount_++;
+  }
+  MutexGuard lock(partitions->mutex_);
+  Status status = partitions->partitions_.remove(sep);
+  if (!status.ok()) {
+    return status;
+  }
+  status = write_partition_map(path);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to write partition map to DB after removing "
+               << "partition for (" << path << ", " << sep << "):"
+               << status.message();
+  }
+  return Status::OK;
+}
+
 string PartitionManager::get_partition_path(const string &path,
                                             HashValueType hash) {
   Partition *partitions = nullptr;
