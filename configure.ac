@@ -44,9 +44,9 @@ PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 AX_BOOST_BASE([1.53])
 AX_BOOST_FILESYSTEM([1.53])
 AX_BOOST_SYSTEM([1.53])
+AC_HEADER_STDBOOL
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_CHECK_HEADER_STDBOOL
 AC_TYPE_SIZE_T
 AC_TYPE_UINT64_T
 AC_TYPE_OFF_T
