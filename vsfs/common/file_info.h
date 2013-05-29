@@ -37,6 +37,15 @@ class FileInfo {
  public:
   FileInfo();
 
+  /// Copy constructor.
+  FileInfo(const FileInfo &rhs) { *this = rhs; }
+
+  /// Assign operator.
+  FileInfo& operator=(const FileInfo &rhs);
+
+  /// Move constructor.
+  FileInfo(FileInfo&&);
+
   // Not allow to create sub-class.
   ~FileInfo();
 
@@ -105,7 +114,10 @@ class FileInfo {
   void set_statbuf(struct stat *stbuf) const;
 
   /// Generates an informative string for debug purpose.
-  string debug_string() const;
+  string to_string() const;
+
+  /// Release the file ID.
+  void release();
 
  private:
   /// A universal ID in VSFS.
