@@ -39,9 +39,10 @@ class IndexPathMapInterface {
 
   virtual ~IndexPathMapInterface() {}
 
-  /// TODO(eddyxu): load and store the map to persistent storage.
-  // virtual Status load() = 0;
-  // virtual Status store() = 0;
+  /**
+   * \brief Initialize this IndexPathMap.
+   */
+  virtual Status init() = 0;
 
   /**
    * \brief Inserts an index on 'path' with 'name'.
@@ -83,8 +84,7 @@ class IndexPathMapInterface {
    * \param[in] path Find indices on this path.
    * \param[out] a vector of string filled with the index names on this path.
    */
-  virtual Status get_index_names(const string &path,
-                                 vector<string>* names) const = 0;
+  virtual vector<string> get_index_names(const string &path) const = 0;
 };
 
 }  // namespace masterd

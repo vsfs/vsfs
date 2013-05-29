@@ -33,13 +33,32 @@ using std::map;
 using std::vector;
 
 namespace vsfs {
+class LevelDBStore;
+
 namespace masterd {
 
+/**
+ * \class IndexPathMap
+ * \brief It manages the 'namespace' for file indices.
+ *
+ * It works as a write-through cache of file-index mapping. The indices
+ * namespace is stored in the LevelDBStore for persistence.
+ */
 class IndexPathMap : public IndexPathMapInterface {
  public:
-  IndexPathMap() = default;
+  /**
+   * \brief Initializes an IndexPathMap with *unopened* LevelDBStore.
+   * \param store an instance of LevelDBStore. The ownership of 'store' is
+   * transferred to this IndexPathMap.
+   */
+  explicit IndexPathMap(vsfs::LevelDBStore* store);
 
   virtual ~IndexPathMap();
+
+  /**
+   * \brief Load the data from LevelDBStore.
+   */
+  virtual Status init();
 
   virtual Status insert(const string &path, const string &name);
 
@@ -51,8 +70,7 @@ class IndexPathMap : public IndexPathMapInterface {
   virtual Status collect(const string &root, const string &name,
                          vector<string>* indices) const;
 
-  virtual Status get_index_names(const string &path,
-                                 vector<string>* names) const;
+  virtual vector<string> get_index_names(const string &path) const;
 
  private:
   /**
@@ -74,6 +92,8 @@ class IndexPathMap : public IndexPathMapInterface {
 
   /// A direct mapping from the path to the IndexPathNode.
   map<string, unique_ptr<IndexPathNode>> nodes_;
+
+  unique_ptr<vsfs::LevelDBStore> store_;
 
   /// Global lock on nodes_;
   mutex lock_;

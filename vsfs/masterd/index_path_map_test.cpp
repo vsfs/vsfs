@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 #include "vobla/status.h"
+#include "vsfs/common/leveldb_store.h"
+#include "vsfs/common/mock_leveldb_store.h"
 #include "vsfs/masterd/index_path_map.h"
 
 using ::testing::ElementsAre;
@@ -95,13 +97,12 @@ TEST(IndexPathMap, TestGetIndexNames) {
   test_map.insert("/foo/bar", "ghi");
   test_map.insert("/foo/bar", "jkl");
 
-  vector<string> names;
-  EXPECT_TRUE(test_map.get_index_names("/foo/bar", &names).ok());
+  auto names = test_map.get_index_names("/foo/bar");
   EXPECT_THAT(names, ElementsAre("abc", "def", "ghi", "jkl"));
 
-  EXPECT_FALSE(test_map.get_index_names("/foo", &names).ok());
-  EXPECT_FALSE(test_map.get_index_names("/", &names).ok());
-  EXPECT_FALSE(test_map.get_index_names("/foo/bar/zoo", &names).ok());
+  EXPECT_TRUE(test_map.get_index_names("/foo").empty());
+  EXPECT_TRUE(test_map.get_index_names("/").empty());
+  EXPECT_TRUE(test_map.get_index_names("/foo/bar/zoo").empty());
 }
 
 }  // namespace masterd

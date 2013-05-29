@@ -21,15 +21,29 @@
 #include <vector>
 #include "vobla/map_util.h"
 #include "vsfs/common/thread.h"
+#include "vsfs/common/leveldb_store.h"
 #include "vsfs/masterd/index_path_map.h"
 
 using vobla::contain_key;
 using vobla::find_or_null;
+using vsfs::LevelDBStore;
 
 namespace vsfs {
 namespace masterd {
 
+IndexPathMap::IndexPathMap(LevelDBStore* store) : store_(store) {
+}
+
 IndexPathMap::~IndexPathMap() {
+}
+
+Status IndexPathMap::init() {
+  Status status = store_->open();
+  if (!status.ok()) {
+    return status;
+  }
+  MutexGuard guard(lock_);
+  return Status::OK;
 }
 
 string IndexPathMap::cleanup_path(const string &path) const {
@@ -62,13 +76,11 @@ Status IndexPathMap::insert(const string &path, const string &name) {
 Status IndexPathMap::remove(const string &path, const string &name) {
   const string key = cleanup_path(path);
   MutexGuard guard(lock_);
-  if (!contain_key(nodes_, key)) {
+  auto node = find_or_null(nodes_, key);
+  if (!node) {
     return Status(-ENOENT, "The index does not exist.");
   }
-  // TODO(eddyxu): there is a potential concurrent bug here: if another thread
-  // is holding this node, it will result a segfault.
-  // It might be more appropriate to move the node to another deleted list.
-  nodes_.erase(key);
+  (*node)->index_names.erase(name);
   return Status::OK;
 }
 
@@ -118,17 +130,15 @@ Status IndexPathMap::collect(const string &root, const string &name,
   return Status::OK;
 }
 
-Status IndexPathMap::get_index_names(const string &path,
-                                           vector<string>* names) const {
-  CHECK_NOTNULL(names);
+vector<string> IndexPathMap::get_index_names(const string &path) const {
+  vector<string> names;
   MutexGuard guard(const_cast<IndexPathMap*>(this)->lock_);
   const auto node_pointer = find_or_null(nodes_, path);
-  if (!node_pointer) {
-    return Status(-EEXIST, string("No index existed on path: ") + path);
+  if (node_pointer) {
+    names.assign((*node_pointer)->index_names.begin(),
+                 (*node_pointer)->index_names.end());
   }
-  names->assign((*node_pointer)->index_names.begin(),
-                (*node_pointer)->index_names.end());
-  return Status::OK;
+  return names;
 }
 
 }  // namespace masterd
