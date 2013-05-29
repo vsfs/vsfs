@@ -49,6 +49,20 @@ FileInfo& FileInfo::operator=(const FileInfo &rhs) {
   return *this;
 }
 
+FileInfo& FileInfo::operator=(FileInfo&& rhs) {
+  id_ = rhs.id_;
+  uid_ = rhs.uid_;
+  gid_ = rhs.gid_;
+  mode_ = rhs.mode_;
+  size_ = rhs.size_;
+  ctime_ = rhs.ctime_;
+  mtime_ = rhs.mtime_;
+  atime_ = rhs.atime_;
+  path_ = rhs.path_;
+  uri_ = rhs.uri_;
+  return *this;
+}
+
 FileInfo::FileInfo(FileInfo&& other)
   : id_(other.id_)
   , uid_(other.uid_)

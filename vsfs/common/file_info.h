@@ -43,6 +43,8 @@ class FileInfo {
   /// Assign operator.
   FileInfo& operator=(const FileInfo &rhs);
 
+  FileInfo& operator=(FileInfo&& rhs);
+
   /// Move constructor.
   FileInfo(FileInfo&&);
 
@@ -145,10 +147,10 @@ class FileInfo {
   /// File access time.
   uint64_t atime_;
 
-  // The path in VSFS namespace.
+  /// The path in VSFS namespace.
   string path_;
 
-  // The uri for the underlying storage.
+  /// The uri for the underlying storage.
   string uri_;
 };
 
