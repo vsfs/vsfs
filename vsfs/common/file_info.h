@@ -108,22 +108,29 @@ class FileInfo {
   string debug_string() const;
 
  private:
-  // A universal ID in VSFS.
+  /// A universal ID in VSFS.
   // TODO(lxu): use 128 bits someday..
   uint64_t id_;
 
+  /// User ID.
   uint64_t uid_;
 
+  /// Group ID.
   uint64_t gid_;
 
+  /// File mode.
   uint64_t mode_;
 
+  /// File size.
   uint64_t size_;
 
+  /// File change time.
   uint64_t ctime_;
 
+  /// File modification time.
   uint64_t mtime_;
 
+  /// File access time.
   uint64_t atime_;
 
   // The path in VSFS namespace.
