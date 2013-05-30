@@ -69,10 +69,9 @@ class IndexPathMap : public IndexPathMapInterface {
   virtual Status find(const string &file_name, const string &name,
                       string *index_path) const;
 
-  virtual Status collect(const string &root, const string &name,
-                         vector<string>* indices) const;
+  virtual vector<string> collect(const string &root, const string &name);
 
-  virtual vector<string> get_index_names(const string &path) const;
+  virtual vector<string> get_index_names(const string &path);
 
  private:
   /**
@@ -81,8 +80,6 @@ class IndexPathMap : public IndexPathMapInterface {
    */
   struct IndexPathNode {
     set<string> index_names;
-
-    mutex lock;
 
     bool has_name(const string &name) const {
       return index_names.find(name) != index_names.end();

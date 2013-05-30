@@ -87,21 +87,17 @@ TEST_F(IndexPathMapTest, TestCollect) {
   test_map.insert("/foo/bar/data1", "data1");
   test_map.insert("/foo/bar/data1", "test");
 
-  vector<string> indices;
-  // The end conditon is: iter == nodes_.end().
-  EXPECT_TRUE(test_map.collect("/foo/bar", "test", &indices).ok());
+  auto indices = test_map.collect("/foo/bar", "test");
   EXPECT_THAT(indices, ElementsAre("/foo/bar", "/foo/bar/data1"));
 
   // The end conditon is: !starts_with(path, root).
   test_map.insert("/foo/sushi", "test");
-  indices.clear();
-  EXPECT_TRUE(test_map.collect("/foo/bar", "test", &indices).ok());
+  indices = test_map.collect("/foo/bar", "test");
   EXPECT_THAT(indices, ElementsAre("/foo/bar", "/foo/bar/data1"));
 
   // Search from /foo
-  indices.clear();
   test_map.insert("/foo/cdef", "cdef");
-  EXPECT_TRUE(test_map.collect("/foo", "test", &indices).ok());
+  indices = test_map.collect("/foo", "test");
   EXPECT_THAT(indices,
               ElementsAre("/foo/bar", "/foo/bar/data1", "/foo/sushi"));
 }

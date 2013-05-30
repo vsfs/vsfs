@@ -76,15 +76,14 @@ class IndexPathMapInterface {
    * \param[in] name the name of indices to be searched.
    * \param[out] indices the paths of the returned indices.
    */
-  virtual Status collect(const string &root, const string &name,
-                         vector<string>* indices) const = 0;
+  virtual vector<string> collect(const string &root, const string &name) = 0;
 
   /**
    * \brief Gets all the index names on this path.
    * \param[in] path Find indices on this path.
    * \param[out] a vector of string filled with the index names on this path.
    */
-  virtual vector<string> get_index_names(const string &path) const = 0;
+  virtual vector<string> get_index_names(const string &path) = 0;
 };
 
 }  // namespace masterd

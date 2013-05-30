@@ -116,10 +116,9 @@ Status IndexPathMap::find(const string &file_name, const string &name,
   return Status(-ENOENT, "The index does not exist.");
 }
 
-Status IndexPathMap::collect(const string &root, const string &name,
-                                   vector<string>* indices) const {
-  // TODO(eddyxu): add multi-thread support.
-  CHECK_NOTNULL(indices);
+vector<string> IndexPathMap::collect(const string &root, const string &name) {
+  vector<string> indices;
+  MutexGuard guard(lock_);
   auto iter = nodes_.lower_bound(root);
   while (iter != nodes_.end()) {
     const string& path = iter->first;
@@ -127,16 +126,16 @@ Status IndexPathMap::collect(const string &root, const string &name,
       break;
     }
     if (iter->second->has_name(name)) {
-      indices->push_back(path);
+      indices.push_back(path);
     }
     ++iter;
   }
-  return Status::OK;
+  return indices;
 }
 
-vector<string> IndexPathMap::get_index_names(const string &path) const {
+vector<string> IndexPathMap::get_index_names(const string &path) {
   vector<string> names;
-  MutexGuard guard(const_cast<IndexPathMap*>(this)->lock_);
+  MutexGuard guard(lock_);
   const auto node_pointer = find_or_null(nodes_, path);
   if (node_pointer) {
     names.assign((*node_pointer)->index_names.begin(),
