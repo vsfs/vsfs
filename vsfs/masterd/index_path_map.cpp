@@ -102,22 +102,42 @@ Status IndexPathMap::remove(const string &path, const string &name) {
   const string key = cleanup_path(path);
   MutexGuard guard(lock_);
   auto node = find_or_null(nodes_, key);
-  if (!node) {
+  if (!node || !(*node)->has(name)) {
     return Status(-ENOENT, "The index does not exist.");
   }
   (*node)->index_names.erase(name);
-  return Status::OK;
+
+  string value = (*node)->serialize();
+  auto status = store_->put(key, value);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to update IndexPathMap record for key: " << key
+               << " Reason: " << status.message();
+    VLOG(0) << "Roll back the in-memory deletion...";
+    (*node)->index_names.insert(name);
+  }
+  return status;
 }
 
 Status IndexPathMap::remove(const string &path) {
   auto key = cleanup_path(path);
   MutexGuard guard(lock_);
-  nodes_.erase(key);
-  return Status::OK;
+  auto node = find_or_null(nodes_, key);
+  if (!node) {
+    VLOG(0) << "Attempt to remove an nonexisted path: " << key;
+    return Status(-ENOENT, "The directory is not existed.");
+  }
+  auto status = store_->remove(key);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to remove IndexPathMap record for key: " << key
+               << " Reason: " << status.message();
+  } else {
+    nodes_.erase(key);
+  }
+  return status;
 }
 
 Status IndexPathMap::find(const string &file_name, const string &name,
-                                string *index_path) const {
+                          string *index_path) const {
   CHECK_NOTNULL(index_path);
   // TODO(eddyxu): add multi-thread support.
   // TODO(eddyxu): use unordered_map to accellerate name lookups.
