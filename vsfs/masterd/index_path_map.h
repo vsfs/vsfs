@@ -46,6 +46,8 @@ namespace masterd {
  */
 class IndexPathMap : public IndexPathMapInterface {
  public:
+  explicit IndexPathMap(const string &dbpath);
+
   /**
    * \brief Initializes an IndexPathMap with *unopened* LevelDBStore.
    * \param store an instance of LevelDBStore. The ownership of 'store' is

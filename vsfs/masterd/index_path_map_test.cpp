@@ -17,22 +17,37 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
+#include "vobla/file.h"
 #include "vobla/status.h"
 #include "vsfs/common/leveldb_store.h"
-#include "vsfs/common/mock_leveldb_store.h"
 #include "vsfs/masterd/index_path_map.h"
 
 using ::testing::ElementsAre;
 using std::string;
+using std::unique_ptr;
 using std::vector;
+using vobla::TemporaryDirectory;
 
 namespace vsfs {
 namespace masterd {
 
-TEST(IndexPathMap, TestCreates) {
-  IndexPathMap test_map;
+class IndexPathMapTest : public ::testing::Test {
+ protected:
+  void SetUp() {
+    tmpdir_.reset(new TemporaryDirectory);
+    testdb_ = tmpdir_->path() + "/test.db";
+  }
+
+  string testdb_;
+  unique_ptr<TemporaryDirectory> tmpdir_;
+};
+
+TEST_F(IndexPathMapTest, TestCreates) {
+  IndexPathMap test_map(testdb_);
+  test_map.init();
 
   Status status;
   EXPECT_TRUE(test_map.insert("/foo/bar", "test").ok());
@@ -44,8 +59,9 @@ TEST(IndexPathMap, TestCreates) {
   EXPECT_EQ(-EEXIST, test_map.insert("/", "test").error());
 }
 
-TEST(IndexPathMap, TestGet) {
-  IndexPathMap test_map;
+TEST_F(IndexPathMapTest, TestGet) {
+  IndexPathMap test_map(testdb_);
+  test_map.init();
 
   Status status;
   EXPECT_TRUE(test_map.insert("/foo/bar", "test").ok());
@@ -64,8 +80,8 @@ TEST(IndexPathMap, TestGet) {
   EXPECT_EQ("/", test_path);
 }
 
-TEST(IndexPathMap, TestCollect) {
-  IndexPathMap test_map;
+TEST_F(IndexPathMapTest, TestCollect) {
+  IndexPathMap test_map(testdb_);
   test_map.insert("/foo/bar", "test");
   test_map.insert("/foo/bar/data0", "data0");
   test_map.insert("/foo/bar/data1", "data1");
@@ -90,8 +106,8 @@ TEST(IndexPathMap, TestCollect) {
               ElementsAre("/foo/bar", "/foo/bar/data1", "/foo/sushi"));
 }
 
-TEST(IndexPathMap, TestGetIndexNames) {
-  IndexPathMap test_map;
+TEST_F(IndexPathMapTest, TestGetIndexNames) {
+  IndexPathMap test_map(testdb_);
   test_map.insert("/foo/bar", "abc");
   test_map.insert("/foo/bar", "def");
   test_map.insert("/foo/bar", "ghi");

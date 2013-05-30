@@ -31,6 +31,10 @@ using vsfs::LevelDBStore;
 namespace vsfs {
 namespace masterd {
 
+IndexPathMap::IndexPathMap(const string &dbpath)
+    : store_(new LevelDBStore(dbpath)) {
+}
+
 IndexPathMap::IndexPathMap(LevelDBStore* store) : store_(store) {
 }
 
