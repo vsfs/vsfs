@@ -74,10 +74,10 @@ Status IndexPathMap::insert(const string &path, const string &name) {
   MutexGuard guard(lock_);
   if (contain_key(nodes_, key)) {
     auto node = nodes_[key].get();
-    if (node->has(name)) {
-      VLOG(1) << "Name index [" << name << "] has already existed on path: "
+    if (node->have(name)) {
+      VLOG(1) << "Name index [" << name << "] have already existed on path: "
               << key;
-      return Status(-EEXIST, "The named index has existed.");
+      return Status(-EEXIST, "The named index have existed.");
     }
   } else {
     nodes_.insert(std::make_pair(
@@ -102,7 +102,7 @@ Status IndexPathMap::remove(const string &path, const string &name) {
   const string key = cleanup_path(path);
   MutexGuard guard(lock_);
   auto node = find_or_null(nodes_, key);
-  if (!node || !(*node)->has(name)) {
+  if (!node || !(*node)->have(name)) {
     return Status(-ENOENT, "The index does not exist.");
   }
   (*node)->index_names.erase(name);
@@ -136,11 +136,11 @@ Status IndexPathMap::remove(const string &path) {
   return status;
 }
 
-bool IndexPathMap::has(const string &path, const string &name) {
+bool IndexPathMap::have(const string &path, const string &name) {
   const auto key = cleanup_path(path);
   MutexGuard guard(lock_);
   auto node = find_or_null(nodes_, key);
-  return node && (*node)->has(name);
+  return node && (*node)->have(name);
 }
 
 Status IndexPathMap::find(const string &file_name, const string &name,
@@ -152,7 +152,7 @@ Status IndexPathMap::find(const string &file_name, const string &name,
   while (pos > 0) {
     string partial_path = file_name.substr(0, pos);
     const auto node_pointer = find_or_null(nodes_, partial_path);
-    if (node_pointer && (*node_pointer)->has(name)) {
+    if (node_pointer && (*node_pointer)->have(name)) {
         *index_path = partial_path;
         return Status::OK;
     }
@@ -163,7 +163,7 @@ Status IndexPathMap::find(const string &file_name, const string &name,
   }
   // Check root directory.
   const auto node_pointer = find_or_null(nodes_, "/");
-  if (node_pointer && (*node_pointer)->has(name)) {
+  if (node_pointer && (*node_pointer)->have(name)) {
     *index_path = "/";
     return Status::OK;
   }
@@ -180,7 +180,7 @@ vector<string> IndexPathMap::collect(const string &root, const string &name) {
     if (!boost::algorithm::starts_with(path, root)) {
       break;
     }
-    if (iter->second->has(name)) {
+    if (iter->second->have(name)) {
       indices.push_back(path);
     }
     ++iter;

@@ -69,8 +69,21 @@ TEST_F(IndexPathMapTest, TestRemove) {
   EXPECT_EQ(-ENOENT, test_map.remove("/foo/bar", "test2").error());
 
   EXPECT_TRUE(test_map.remove("/foo/bar", "test0").ok());
-  EXPECT_FALSE(test_map.has("/foo/bar", "test0"));
-  EXPECT_TRUE(test_map.has("/foo/bar", "test1"));
+  EXPECT_FALSE(test_map.have("/foo/bar", "test0"));
+  EXPECT_TRUE(test_map.have("/foo/bar", "test1"));
+}
+
+TEST_F(IndexPathMapTest, TestRemoveADirectory) {
+  IndexPathMap test_map(testdb_);
+  EXPECT_TRUE(test_map.init().ok());
+  test_map.insert("/foo/bar", "test0");
+  test_map.insert("/foo/bar", "test1");
+  test_map.insert("/foo/bar", "test2");
+
+  EXPECT_TRUE(test_map.remove("/foo/bar").ok());
+  EXPECT_FALSE(test_map.have("/foo/bar", "test0"));
+  EXPECT_FALSE(test_map.have("/foo/bar", "test1"));
+  EXPECT_FALSE(test_map.have("/foo/bar", "test2"));
 }
 
 TEST_F(IndexPathMapTest, TestGet) {
