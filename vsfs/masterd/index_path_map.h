@@ -72,6 +72,9 @@ class IndexPathMap : public IndexPathMapInterface {
 
   virtual Status remove(const string &path);
 
+  /// Returns true if there is an index with 'name' on path.
+  virtual bool has(const string &path, const string &name);
+
   virtual Status find(const string &file_name, const string &name,
                       string *index_path) const;
 

@@ -136,6 +136,13 @@ Status IndexPathMap::remove(const string &path) {
   return status;
 }
 
+bool IndexPathMap::has(const string &path, const string &name) {
+  const auto key = cleanup_path(path);
+  MutexGuard guard(lock_);
+  auto node = find_or_null(nodes_, key);
+  return node && (*node)->has(name);
+}
+
 Status IndexPathMap::find(const string &file_name, const string &name,
                           string *index_path) const {
   CHECK_NOTNULL(index_path);
