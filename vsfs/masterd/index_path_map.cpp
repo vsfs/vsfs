@@ -74,9 +74,9 @@ Status IndexPathMap::insert(const string &path, const string &name) {
   MutexGuard guard(lock_);
   if (contain_key(nodes_, key)) {
     auto node = nodes_[key].get();
-    if (node->index_names.find(name) != node->index_names.end()) {
+    if (node->has(name)) {
       VLOG(1) << "Name index [" << name << "] has already existed on path: "
-          << key;
+              << key;
       return Status(-EEXIST, "The named index has existed.");
     }
   } else {
@@ -92,7 +92,7 @@ Status IndexPathMap::insert(const string &path, const string &name) {
   if (!status.ok()) {
     LOG(ERROR) << "Failed to insert IndexPathMap record into DB: key: "
                << key << " Reason: " << status.message();
-    VLOG(0) << "Roll back in memory changes.";
+    VLOG(0) << "Roll back the in-memory changes...";
     node->index_names.erase(name);
   }
   return status;
