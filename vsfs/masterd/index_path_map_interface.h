@@ -54,6 +54,9 @@ class IndexPathMapInterface {
   /// Removes an index with 'name' on 'path'
   virtual Status remove(const string &path, const string &name) = 0;
 
+  /// Removes the all the indices on the path.
+  virtual Status remove(const string &path) = 0;
+
   /**
    * \brief Gets the index for a path.
    *
@@ -74,14 +77,14 @@ class IndexPathMapInterface {
    * \brief Collects all the indices under 'root' that have the 'name'.
    * \param[in] root the root directory to look for named indices.
    * \param[in] name the name of indices to be searched.
-   * \param[out] indices the paths of the returned indices.
+   * \return indices the paths of the returned indices.
    */
   virtual vector<string> collect(const string &root, const string &name) = 0;
 
   /**
    * \brief Gets all the index names on this path.
    * \param[in] path Find indices on this path.
-   * \param[out] a vector of string filled with the index names on this path.
+   * \return a vector of string filled with the index names on this path.
    */
   virtual vector<string> get_index_names(const string &path) = 0;
 };

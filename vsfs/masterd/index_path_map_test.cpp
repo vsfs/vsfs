@@ -45,9 +45,10 @@ class IndexPathMapTest : public ::testing::Test {
   unique_ptr<TemporaryDirectory> tmpdir_;
 };
 
+// TODO(eddyxu): replace leveldb with MockLevelDBStore
 TEST_F(IndexPathMapTest, TestCreates) {
   IndexPathMap test_map(testdb_);
-  test_map.init();
+  EXPECT_TRUE(test_map.init().ok());
 
   Status status;
   EXPECT_TRUE(test_map.insert("/foo/bar", "test").ok());
@@ -82,6 +83,7 @@ TEST_F(IndexPathMapTest, TestGet) {
 
 TEST_F(IndexPathMapTest, TestCollect) {
   IndexPathMap test_map(testdb_);
+  test_map.init();
   test_map.insert("/foo/bar", "test");
   test_map.insert("/foo/bar/data0", "data0");
   test_map.insert("/foo/bar/data1", "data1");
@@ -104,6 +106,7 @@ TEST_F(IndexPathMapTest, TestCollect) {
 
 TEST_F(IndexPathMapTest, TestGetIndexNames) {
   IndexPathMap test_map(testdb_);
+  test_map.init();
   test_map.insert("/foo/bar", "abc");
   test_map.insert("/foo/bar", "def");
   test_map.insert("/foo/bar", "ghi");

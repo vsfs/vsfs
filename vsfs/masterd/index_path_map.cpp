@@ -20,9 +20,10 @@
 #include <string>
 #include <vector>
 #include "vobla/map_util.h"
-#include "vsfs/common/thread.h"
 #include "vsfs/common/leveldb_store.h"
+#include "vsfs/common/thread.h"
 #include "vsfs/masterd/index_path_map.h"
+#include "vsfs/masterd/masterd.pb.h"
 
 using vobla::contain_key;
 using vobla::find_or_null;
@@ -30,6 +31,15 @@ using vsfs::LevelDBStore;
 
 namespace vsfs {
 namespace masterd {
+
+string IndexPathMap::IndexPathNode::serialize() {
+  IndexNamesOnDirectory names;
+  names.set_path(path);
+  for (const auto& name : index_names) {
+    names.add_index_name(name);
+  }
+  return names.SerializeAsString();
+}
 
 IndexPathMap::IndexPathMap(const string &dbpath)
     : store_(new LevelDBStore(dbpath)) {
@@ -60,21 +70,32 @@ string IndexPathMap::cleanup_path(const string &path) const {
 
 Status IndexPathMap::insert(const string &path, const string &name) {
   // TODO(eddyxu): optimize the concurrent control here.
-  // TODO(eddyxu): maybe it is not IndexPathMap's responsibility to check path?
   const string key = cleanup_path(path);
   MutexGuard guard(lock_);
-  if (!contain_key(nodes_, key)) {
+  if (contain_key(nodes_, key)) {
+    auto node = nodes_[key].get();
+    if (node->index_names.find(name) != node->index_names.end()) {
+      VLOG(1) << "Name index [" << name << "] has already existed on path: "
+          << key;
+      return Status(-EEXIST, "The named index has existed.");
+    }
+  } else {
     nodes_.insert(std::make_pair(
-            key, unique_ptr<IndexPathNode>(new IndexPathNode)));
+        key, unique_ptr<IndexPathNode>(new IndexPathNode(key))));
   }
-  IndexPathNode* node = nodes_[key].get();
-  if (node->index_names.find(name) != node->index_names.end()) {
-    VLOG(1) << "Name index [" << name << "] has already existed on path: "
-            << key;
-    return Status(-EEXIST, "The named index has existed.");
-  }
+
+  auto node = nodes_[key].get();
   node->index_names.insert(name);
-  return Status::OK;
+
+  string value = node->serialize();
+  auto status = store_->put(key, value);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to insert IndexPathMap record into DB: key: "
+               << key << " Reason: " << status.message();
+    VLOG(0) << "Roll back in memory changes.";
+    node->index_names.erase(name);
+  }
+  return status;
 }
 
 Status IndexPathMap::remove(const string &path, const string &name) {
@@ -88,6 +109,13 @@ Status IndexPathMap::remove(const string &path, const string &name) {
   return Status::OK;
 }
 
+Status IndexPathMap::remove(const string &path) {
+  auto key = cleanup_path(path);
+  MutexGuard guard(lock_);
+  nodes_.erase(key);
+  return Status::OK;
+}
+
 Status IndexPathMap::find(const string &file_name, const string &name,
                                 string *index_path) const {
   CHECK_NOTNULL(index_path);
@@ -97,7 +125,7 @@ Status IndexPathMap::find(const string &file_name, const string &name,
   while (pos > 0) {
     string partial_path = file_name.substr(0, pos);
     const auto node_pointer = find_or_null(nodes_, partial_path);
-    if (node_pointer && (*node_pointer)->has_name(name)) {
+    if (node_pointer && (*node_pointer)->has(name)) {
         *index_path = partial_path;
         return Status::OK;
     }
@@ -108,7 +136,7 @@ Status IndexPathMap::find(const string &file_name, const string &name,
   }
   // Check root directory.
   const auto node_pointer = find_or_null(nodes_, "/");
-  if (node_pointer && (*node_pointer)->has_name(name)) {
+  if (node_pointer && (*node_pointer)->has(name)) {
     *index_path = "/";
     return Status::OK;
   }
@@ -125,7 +153,7 @@ vector<string> IndexPathMap::collect(const string &root, const string &name) {
     if (!boost::algorithm::starts_with(path, root)) {
       break;
     }
-    if (iter->second->has_name(name)) {
+    if (iter->second->has(name)) {
       indices.push_back(path);
     }
     ++iter;

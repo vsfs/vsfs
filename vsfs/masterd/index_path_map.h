@@ -62,9 +62,15 @@ class IndexPathMap : public IndexPathMapInterface {
    */
   virtual Status init();
 
+  /**
+   * \see IndexPathMapInterface::insert
+   * \pre This map is initialized.
+   */
   virtual Status insert(const string &path, const string &name);
 
   virtual Status remove(const string &path, const string &name);
+
+  virtual Status remove(const string &path);
 
   virtual Status find(const string &file_name, const string &name,
                       string *index_path) const;
@@ -79,11 +85,19 @@ class IndexPathMap : public IndexPathMapInterface {
    * the indices on this directory.
    */
   struct IndexPathNode {
-    set<string> index_names;
+    explicit IndexPathNode(const string &p) : path(p) {
+    }
 
-    bool has_name(const string &name) const {
+    bool has(const string &name) const {
       return index_names.find(name) != index_names.end();
     }
+
+    /// Serialize it into a protobuf object IndexNmaesOnDirectory.
+    string serialize();
+
+    string path;
+
+    set<string> index_names;
   };
 
   /// Removes all '/' at the end of path.
