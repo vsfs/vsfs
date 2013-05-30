@@ -90,19 +90,19 @@ class LevelDBStore  : public KeyValueStore {
   ~LevelDBStore() = default;
 
   /// Open an existing store.
-  Status open();
+  virtual Status open();
 
   /// Creates a LevelDBStore if it does not exist on disk.
-  Status create();
+  virtual Status create();
 
   /// Gets a value buffer with the given key.
-  Status get(const string& key, string* value);
+  virtual Status get(const string& key, string* value);
 
   /// Puts a key-value pair to the leveldb.
-  Status put(const string& key, const string &value);
+  virtual Status put(const string& key, const string &value);
 
   /// Returns a key-value pair.
-  Status remove(const string& key);
+  virtual Status remove(const string& key);
 
   /**
    * \brief Returns an iterator referring to the first element in the DB.
@@ -116,6 +116,9 @@ class LevelDBStore  : public KeyValueStore {
   /// Returns an iterator rerfering to the past-the-end element in the DB.
   iterator end();
 
+ protected:
+  LevelDBStore() {}
+
  private:
   string db_path_;
 
@@ -123,7 +126,7 @@ class LevelDBStore  : public KeyValueStore {
 
   Status to_status(const leveldb::Status& l_status) const;
 
-  DISALLOW_IMPLICIT_CONSTRUCTORS(LevelDBStore);
+  // DISALLOW_IMPLICIT_CONSTRUCTORS(LevelDBStore);
 };
 
 }  // namespace vsfs
