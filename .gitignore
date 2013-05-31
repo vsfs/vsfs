@@ -21,6 +21,7 @@ Makefile.in
 *.gcov
 *.gcno
 *.gcda
+*_test
 
 *.pb.h
 *.pb.cc

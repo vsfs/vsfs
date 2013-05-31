@@ -1,3 +1,4 @@
+// vim:ts=2:sw=2:sts=2:et
 /*
  * Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
  *
@@ -23,4 +24,12 @@ message IndexPartition {
   }
 
   repeated Partition partition = 1;
+}
+
+/**
+ * \brief Capture the indices names on the same directory.
+ */
+message IndexNamesOnDirectory {
+  required string path = 1;   /// Directory path.
+  repeated string index_name = 2;  /// The names of indices on this directory.
 }
