@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VSFS_MASTERD_INDEX_PATH_MAP_INTERFACE_H_
-#define VSFS_MASTERD_INDEX_PATH_MAP_INTERFACE_H_
+#ifndef VSFS_MASTERD_INDEX_NAMESPACE_INTERFACE_H_
+#define VSFS_MASTERD_INDEX_NAMESPACE_INTERFACE_H_
 
 #include <string>
 #include <vector>
@@ -29,18 +29,14 @@ namespace vsfs {
 namespace masterd {
 
 /**
- * \class IndexPathMapInterface 'vsfs/masterd/index_path_map.h'
- * \brief The interfaces for IndexPathMap.
- * IndexPathMap is a mapping to store the path for index.
+ * \class IndexNamespaceInterface 'vsfs/masterd/index_path_map.h'
+ * \brief The interfaces for IndexNamespace.
+ * IndexNamespace is a mapping to store the path for index.
  */
-class IndexPathMapInterface {
+class IndexNamespaceInterface {
  public:
-  IndexPathMapInterface() {}
-
-  virtual ~IndexPathMapInterface() {}
-
   /**
-   * \brief Initialize this IndexPathMap.
+   * \brief Initialize this IndexNamespace.
    */
   virtual Status init() = 0;
 
@@ -92,4 +88,4 @@ class IndexPathMapInterface {
 }  // namespace masterd
 }  // namespace vsfs
 
-#endif  // VSFS_MASTERD_INDEX_PATH_MAP_INTERFACE_H_
+#endif  // VSFS_MASTERD_INDEX_NAMESPACE_INTERFACE_H_
