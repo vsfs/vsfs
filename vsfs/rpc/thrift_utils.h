@@ -39,12 +39,12 @@ class ThriftUtils {
   /**
    * \brief Serialize a thrift struct.
    */
-  template <typename Obj>
+  template <typename Obj,
+            typename Protocol = apache::thrift::protocol::TBinaryProtocol>
   static string serialize(const Obj &obj) {
     boost::shared_ptr<apache::thrift::transport::TMemoryBuffer>
         buffer(new apache::thrift::transport::TMemoryBuffer);
-    boost::shared_ptr<apache::thrift::protocol::TBinaryProtocol>
-        protocol(new apache::thrift::protocol::TBinaryProtocol(buffer));
+    boost::shared_ptr<Protocol> protocol(new Protocol(buffer));
     obj.write(protocol.get());
     return buffer->getBufferAsString();
   }
@@ -53,15 +53,15 @@ class ThriftUtils {
    * \brief Deserialize an buffer to a object.
    * \return true if success.
    */
-  template <typename Obj>
+  template <typename Obj,
+            typename Protocol = apache::thrift::protocol::TBinaryProtocol>
   static bool deserialize(const string &buf, Obj* obj) {
     CHECK_NOTNULL(obj);
     boost::shared_ptr<apache::thrift::transport::TMemoryBuffer>
         buffer(new apache::thrift::transport::TMemoryBuffer(
                reinterpret_cast<uint8_t*>(const_cast<char*>(buf.data())),
                buf.size()));
-    boost::shared_ptr<apache::thrift::protocol::TBinaryProtocol>
-        protocol(new apache::thrift::protocol::TBinaryProtocol(buffer));
+    boost::shared_ptr<Protocol> protocol(new Protocol(buffer));
     try {
       obj->read(protocol.get());
     } catch (...) {  // NOLINT
