@@ -35,6 +35,8 @@ namespace masterd {
  */
 class IndexNamespaceInterface {
  public:
+  virtual ~IndexNamespaceInterface() {}
+
   /**
    * \brief Initialize this IndexNamespace.
    */
