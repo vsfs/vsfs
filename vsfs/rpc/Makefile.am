@@ -2,7 +2,7 @@
 #
 # Makefile for vsfs rpc definations.
 
-AM_CXXFLAGS = @libthrift_CFLAGS@
+AM_CXXFLAGS = @libthrift_CFLAGS@ -I$(top_srcdir)/lib/vobla
 LDADD = @libthrift_LIBS@
 noinst_LIBRARIES = libvsfs-rpc.a
 BUILT_SOURCES = vsfs_constants.h
@@ -12,13 +12,29 @@ libvsfs_rpc_a_SOURCES = \
   MasterDaemon.h MasterDaemon.cpp \
   MetaServer.h MetaServer.cpp \
   rpc_client.h \
+  thrift_utils.h \
   vsfs_constants.h vsfs_constants.cpp \
   vsfs_types.h vsfs_types.cpp
 
 vsfs_constants.h: vsfs.thrift
-	thrift --gen cpp $<
-	mv gen-cpp/* .
-	rm -rf gen-cpp
+	thrift --gen cpp -out . $<
+
+TESTS = \
+  thrift_utils_test
+
+check_PROGRAMS = build_test_thrift $(TESTS)
+
+build_test_thrift: testdata/test_constants.h
+test_SOURCES = testdata/test_constants.h \
+	       testdata/test_constants.cpp \
+	       testdata/test_types.cpp \
+	       testdata/test_types.h
+
+testdata/test_constants.h: testdata/test.thrift
+	thrift --gen cpp -out testdata $<
+
+thrift_utils_test_SOURCES = thrift_utils_test.cpp $(test_SOURCES)
+thrift_utils_test_LDADD = -lgtest -lgtest_main @libthrift_LIBS@
 
 EXTRA_DIST = \
   vsfs.thrift
