@@ -23,9 +23,12 @@
 #include "vobla/file.h"
 #include "vobla/status.h"
 #include "vsfs/common/leveldb_store.h"
+#include "vsfs/common/mock_leveldb_store.h"
 #include "vsfs/masterd/index_namespace.h"
 
 using ::testing::ElementsAre;
+using ::testing::Return;
+using ::testing::_;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -57,6 +60,19 @@ TEST_F(IndexNamespaceTest, TestCreates) {
 
   EXPECT_TRUE(test_ns.insert("/", "test").ok());
   EXPECT_EQ(-EEXIST, test_ns.insert("/", "test").error());
+}
+
+TEST_F(IndexNamespaceTest, TestInsertFailures) {
+  MockLevelDBStore *mock_db = new MockLevelDBStore;
+  IndexNamespace test_ns(mock_db);
+
+  EXPECT_CALL(*mock_db, put(_, _))
+      .WillOnce(Return(Status(-1, "Mock failure")));
+  auto status = test_ns.insert("/foo", "bar");
+  EXPECT_EQ(-1, status.error());
+  EXPECT_EQ("Mock failure", status.message());
+  // The inserted item should be rolled back.
+  EXPECT_FALSE(test_ns.have("/foo", "bar"));
 }
 
 TEST_F(IndexNamespaceTest, TestRemove) {

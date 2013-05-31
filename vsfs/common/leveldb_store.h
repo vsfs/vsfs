@@ -87,7 +87,7 @@ class LevelDBStore  : public KeyValueStore {
   /// Constructs a
   explicit LevelDBStore(const string &path);
 
-  ~LevelDBStore() = default;
+  virtual ~LevelDBStore() {}
 
   /// Open an existing store.
   virtual Status open();
