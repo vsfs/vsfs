@@ -24,6 +24,7 @@
 #include "vsfs/common/thread.h"
 #include "vsfs/masterd/index_namespace.h"
 #include "vsfs/masterd/masterd.pb.h"
+#include "vsfs/rpc/thrift_utils.h"
 
 using vobla::contain_key;
 using vobla::find_or_null;
@@ -32,13 +33,8 @@ using vsfs::LevelDBStore;
 namespace vsfs {
 namespace masterd {
 
-string IndexNamespace::IndexPathNode::serialize() {
-  IndexNamesOnDirectory names;
-  names.set_path(path);
-  for (const auto& name : index_names) {
-    names.add_index_name(name);
-  }
-  return names.SerializeAsString();
+string serialize_namespace_node(const IndexNamespaceNode &node) {
+  return rpc::ThriftUtils::serialize(node);
 }
 
 IndexNamespace::IndexNamespace(const string &dbpath)
@@ -74,26 +70,27 @@ Status IndexNamespace::insert(const string &path, const string &name) {
   MutexGuard guard(lock_);
   if (contain_key(nodes_, key)) {
     auto node = nodes_[key].get();
-    if (node->have(name)) {
+    if (node->names.count(name)) {
       VLOG(1) << "Name index [" << name << "] have already existed on path: "
               << key;
       return Status(-EEXIST, "The named index have existed.");
     }
   } else {
     nodes_.insert(std::make_pair(
-        key, unique_ptr<IndexPathNode>(new IndexPathNode(key))));
+        key, unique_ptr<IndexNamespaceNode>(new IndexNamespaceNode)));
+    nodes_[key]->path = key;
   }
 
   auto node = nodes_[key].get();
-  node->index_names.insert(name);
+  node->names.insert(name);
 
-  string value = node->serialize();
+  string value = serialize_namespace_node(*node);
   auto status = store_->put(key, value);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to insert IndexNamespace record into DB: key: "
                << key << " Reason: " << status.message();
     VLOG(0) << "Roll back the in-memory changes...";
-    node->index_names.erase(name);
+    node->names.erase(name);
   }
   return status;
 }
@@ -102,18 +99,18 @@ Status IndexNamespace::remove(const string &path, const string &name) {
   const string key = cleanup_path(path);
   MutexGuard guard(lock_);
   auto node = find_or_null(nodes_, key);
-  if (!node || !(*node)->have(name)) {
+  if (!node || !(*node)->names.count(name)) {
     return Status(-ENOENT, "The index does not exist.");
   }
-  (*node)->index_names.erase(name);
+  (*node)->names.erase(name);
 
-  string value = (*node)->serialize();
+  string value = serialize_namespace_node(*(*node));
   auto status = store_->put(key, value);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to update IndexNamespace record for key: " << key
                << " Reason: " << status.message();
     VLOG(0) << "Roll back the in-memory deletion...";
-    (*node)->index_names.insert(name);
+    (*node)->names.insert(name);
   }
   return status;
 }
@@ -140,7 +137,7 @@ bool IndexNamespace::have(const string &path, const string &name) {
   const auto key = cleanup_path(path);
   MutexGuard guard(lock_);
   auto node = find_or_null(nodes_, key);
-  return node && (*node)->have(name);
+  return node && (*node)->names.count(name);
 }
 
 Status IndexNamespace::find(const string &file_name, const string &name,
@@ -152,7 +149,7 @@ Status IndexNamespace::find(const string &file_name, const string &name,
   while (pos > 0) {
     string partial_path = file_name.substr(0, pos);
     const auto node_pointer = find_or_null(nodes_, partial_path);
-    if (node_pointer && (*node_pointer)->have(name)) {
+    if (node_pointer && (*node_pointer)->names.count(name)) {
         *index_path = partial_path;
         return Status::OK;
     }
@@ -163,7 +160,7 @@ Status IndexNamespace::find(const string &file_name, const string &name,
   }
   // Check root directory.
   const auto node_pointer = find_or_null(nodes_, "/");
-  if (node_pointer && (*node_pointer)->have(name)) {
+  if (node_pointer && (*node_pointer)->names.count(name)) {
     *index_path = "/";
     return Status::OK;
   }
@@ -180,7 +177,7 @@ vector<string> IndexNamespace::collect(const string &root, const string &name) {
     if (!boost::algorithm::starts_with(path, root)) {
       break;
     }
-    if (iter->second->have(name)) {
+    if (iter->second->names.count(name)) {
       indices.push_back(path);
     }
     ++iter;
@@ -193,8 +190,8 @@ vector<string> IndexNamespace::get_index_names(const string &path) {
   MutexGuard guard(lock_);
   const auto node_pointer = find_or_null(nodes_, path);
   if (node_pointer) {
-    names.assign((*node_pointer)->index_names.begin(),
-                 (*node_pointer)->index_names.end());
+    names.assign((*node_pointer)->names.begin(),
+                 (*node_pointer)->names.end());
   }
   return names;
 }

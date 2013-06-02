@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include "vsfs/masterd/index_namespace_interface.h"
+#include "vsfs/masterd/masterd_types.h"
 
 using std::mutex;
 using std::set;
@@ -83,31 +84,11 @@ class IndexNamespace : public IndexNamespaceInterface {
   virtual vector<string> get_index_names(const string &path);
 
  private:
-  /**
-   * \brief The internal structure to represent a directory with the names of
-   * the indices on this directory.
-   */
-  struct IndexPathNode {
-    explicit IndexPathNode(const string &p) : path(p) {
-    }
-
-    bool have(const string &name) const {
-      return index_names.find(name) != index_names.end();
-    }
-
-    /// Serialize it into a protobuf object IndexNmaesOnDirectory.
-    string serialize();
-
-    string path;
-
-    set<string> index_names;
-  };
-
   /// Removes all '/' at the end of path.
   string cleanup_path(const string &path) const;
 
   /// A direct mapping from the path to the IndexPathNode.
-  map<string, unique_ptr<IndexPathNode>> nodes_;
+  map<string, unique_ptr<IndexNamespaceNode>> nodes_;
 
   unique_ptr<vsfs::LevelDBStore> store_;
 
