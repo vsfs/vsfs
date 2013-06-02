@@ -22,8 +22,9 @@
 #include "vobla/map_util.h"
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/thread.h"
-#include "vsfs/masterd/index_path_map.h"
+#include "vsfs/masterd/index_namespace.h"
 #include "vsfs/masterd/masterd.pb.h"
+#include "vsfs/rpc/thrift_utils.h"
 
 using vobla::contain_key;
 using vobla::find_or_null;
@@ -32,35 +33,39 @@ using vsfs::LevelDBStore;
 namespace vsfs {
 namespace masterd {
 
-string IndexPathMap::IndexPathNode::serialize() {
-  IndexNamesOnDirectory names;
-  names.set_path(path);
-  for (const auto& name : index_names) {
-    names.add_index_name(name);
-  }
-  return names.SerializeAsString();
+string serialize_namespace_node(const IndexNamespaceNode &node) {
+  return rpc::ThriftUtils::serialize(node);
 }
 
-IndexPathMap::IndexPathMap(const string &dbpath)
+IndexNamespace::IndexNamespace(const string &dbpath)
     : store_(new LevelDBStore(dbpath)) {
 }
 
-IndexPathMap::IndexPathMap(LevelDBStore* store) : store_(store) {
+IndexNamespace::IndexNamespace(LevelDBStore* store) : store_(store) {
 }
 
-IndexPathMap::~IndexPathMap() {
+IndexNamespace::~IndexNamespace() {
 }
 
-Status IndexPathMap::init() {
+Status IndexNamespace::init() {
   Status status = store_->open();
   if (!status.ok()) {
     return status;
   }
   MutexGuard guard(lock_);
+  for (const auto &key_and_ns_node : *store_) {
+    const auto& key = key_and_ns_node.first;
+    unique_ptr<IndexNamespaceNode> node(new IndexNamespaceNode);
+    if (!rpc::ThriftUtils::deserialize(key_and_ns_node.second, node.get())) {
+      LOG(ERROR) << "Failed to deserialize namespace node: " << key;
+      return Status(-1, "Failed to deserialize namespace node.");
+    }
+    nodes_.insert(std::make_pair(key, std::move(node)));
+  }
   return Status::OK;
 }
 
-string IndexPathMap::cleanup_path(const string &path) const {
+string IndexNamespace::cleanup_path(const string &path) const {
   size_t pos = path.size() - 1;
   while (pos && path[pos] == '/') {
     pos--;
@@ -68,57 +73,58 @@ string IndexPathMap::cleanup_path(const string &path) const {
   return path.substr(0, pos+1);
 }
 
-Status IndexPathMap::insert(const string &path, const string &name) {
+Status IndexNamespace::insert(const string &path, const string &name) {
   // TODO(eddyxu): optimize the concurrent control here.
   const string key = cleanup_path(path);
   MutexGuard guard(lock_);
   if (contain_key(nodes_, key)) {
     auto node = nodes_[key].get();
-    if (node->have(name)) {
+    if (node->names.count(name)) {
       VLOG(1) << "Name index [" << name << "] have already existed on path: "
               << key;
       return Status(-EEXIST, "The named index have existed.");
     }
   } else {
     nodes_.insert(std::make_pair(
-        key, unique_ptr<IndexPathNode>(new IndexPathNode(key))));
+        key, unique_ptr<IndexNamespaceNode>(new IndexNamespaceNode)));
+    nodes_[key]->path = key;
   }
 
   auto node = nodes_[key].get();
-  node->index_names.insert(name);
+  node->names.insert(name);
 
-  string value = node->serialize();
+  string value = serialize_namespace_node(*node);
   auto status = store_->put(key, value);
   if (!status.ok()) {
-    LOG(ERROR) << "Failed to insert IndexPathMap record into DB: key: "
+    LOG(ERROR) << "Failed to insert IndexNamespace record into DB: key: "
                << key << " Reason: " << status.message();
     VLOG(0) << "Roll back the in-memory changes...";
-    node->index_names.erase(name);
+    node->names.erase(name);
   }
   return status;
 }
 
-Status IndexPathMap::remove(const string &path, const string &name) {
+Status IndexNamespace::remove(const string &path, const string &name) {
   const string key = cleanup_path(path);
   MutexGuard guard(lock_);
   auto node = find_or_null(nodes_, key);
-  if (!node || !(*node)->have(name)) {
+  if (!node || !(*node)->names.count(name)) {
     return Status(-ENOENT, "The index does not exist.");
   }
-  (*node)->index_names.erase(name);
+  (*node)->names.erase(name);
 
-  string value = (*node)->serialize();
+  string value = serialize_namespace_node(*(*node));
   auto status = store_->put(key, value);
   if (!status.ok()) {
-    LOG(ERROR) << "Failed to update IndexPathMap record for key: " << key
+    LOG(ERROR) << "Failed to update IndexNamespace record for key: " << key
                << " Reason: " << status.message();
     VLOG(0) << "Roll back the in-memory deletion...";
-    (*node)->index_names.insert(name);
+    (*node)->names.insert(name);
   }
   return status;
 }
 
-Status IndexPathMap::remove(const string &path) {
+Status IndexNamespace::remove(const string &path) {
   auto key = cleanup_path(path);
   MutexGuard guard(lock_);
   auto node = find_or_null(nodes_, key);
@@ -128,7 +134,7 @@ Status IndexPathMap::remove(const string &path) {
   }
   auto status = store_->remove(key);
   if (!status.ok()) {
-    LOG(ERROR) << "Failed to remove IndexPathMap record for key: " << key
+    LOG(ERROR) << "Failed to remove IndexNamespace record for key: " << key
                << " Reason: " << status.message();
   } else {
     nodes_.erase(key);
@@ -136,14 +142,14 @@ Status IndexPathMap::remove(const string &path) {
   return status;
 }
 
-bool IndexPathMap::have(const string &path, const string &name) {
+bool IndexNamespace::have(const string &path, const string &name) {
   const auto key = cleanup_path(path);
   MutexGuard guard(lock_);
   auto node = find_or_null(nodes_, key);
-  return node && (*node)->have(name);
+  return node && (*node)->names.count(name);
 }
 
-Status IndexPathMap::find(const string &file_name, const string &name,
+Status IndexNamespace::find(const string &file_name, const string &name,
                           string *index_path) const {
   CHECK_NOTNULL(index_path);
   // TODO(eddyxu): add multi-thread support.
@@ -152,7 +158,7 @@ Status IndexPathMap::find(const string &file_name, const string &name,
   while (pos > 0) {
     string partial_path = file_name.substr(0, pos);
     const auto node_pointer = find_or_null(nodes_, partial_path);
-    if (node_pointer && (*node_pointer)->have(name)) {
+    if (node_pointer && (*node_pointer)->names.count(name)) {
         *index_path = partial_path;
         return Status::OK;
     }
@@ -163,7 +169,7 @@ Status IndexPathMap::find(const string &file_name, const string &name,
   }
   // Check root directory.
   const auto node_pointer = find_or_null(nodes_, "/");
-  if (node_pointer && (*node_pointer)->have(name)) {
+  if (node_pointer && (*node_pointer)->names.count(name)) {
     *index_path = "/";
     return Status::OK;
   }
@@ -171,7 +177,7 @@ Status IndexPathMap::find(const string &file_name, const string &name,
   return Status(-ENOENT, "The index does not exist.");
 }
 
-vector<string> IndexPathMap::collect(const string &root, const string &name) {
+vector<string> IndexNamespace::collect(const string &root, const string &name) {
   vector<string> indices;
   MutexGuard guard(lock_);
   auto iter = nodes_.lower_bound(root);
@@ -180,7 +186,7 @@ vector<string> IndexPathMap::collect(const string &root, const string &name) {
     if (!boost::algorithm::starts_with(path, root)) {
       break;
     }
-    if (iter->second->have(name)) {
+    if (iter->second->names.count(name)) {
       indices.push_back(path);
     }
     ++iter;
@@ -188,13 +194,13 @@ vector<string> IndexPathMap::collect(const string &root, const string &name) {
   return indices;
 }
 
-vector<string> IndexPathMap::get_index_names(const string &path) {
+vector<string> IndexNamespace::get_index_names(const string &path) {
   vector<string> names;
   MutexGuard guard(lock_);
   const auto node_pointer = find_or_null(nodes_, path);
   if (node_pointer) {
-    names.assign((*node_pointer)->index_names.begin(),
-                 (*node_pointer)->index_names.end());
+    names.assign((*node_pointer)->names.begin(),
+                 (*node_pointer)->names.end());
   }
   return names;
 }

@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VSFS_MASTERD_INDEX_PATH_MAP_H_
-#define VSFS_MASTERD_INDEX_PATH_MAP_H_
+#ifndef VSFS_MASTERD_INDEX_NAMESPACE_H_
+#define VSFS_MASTERD_INDEX_NAMESPACE_H_
 
 #include <map>
 #include <memory>
@@ -23,7 +23,8 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "vsfs/masterd/index_path_map_interface.h"
+#include "vsfs/masterd/index_namespace_interface.h"
+#include "vsfs/masterd/masterd_types.h"
 
 using std::mutex;
 using std::set;
@@ -38,24 +39,24 @@ class LevelDBStore;
 namespace masterd {
 
 /**
- * \class IndexPathMap
+ * \class IndexNamespace
  * \brief It manages the 'namespace' for file indices.
  *
  * It works as a write-through cache of file-index mapping. The indices
  * namespace is stored in the LevelDBStore for persistence.
  */
-class IndexPathMap : public IndexPathMapInterface {
+class IndexNamespace : public IndexNamespaceInterface {
  public:
-  explicit IndexPathMap(const string &dbpath);
+  explicit IndexNamespace(const string &dbpath);
 
   /**
-   * \brief Initializes an IndexPathMap with *unopened* LevelDBStore.
+   * \brief Initializes an IndexNamespace with *unopened* LevelDBStore.
    * \param store an instance of LevelDBStore. The ownership of 'store' is
-   * transferred to this IndexPathMap.
+   * transferred to this IndexNamespace.
    */
-  explicit IndexPathMap(vsfs::LevelDBStore* store);
+  explicit IndexNamespace(vsfs::LevelDBStore* store);
 
-  virtual ~IndexPathMap();
+  virtual ~IndexNamespace();
 
   /**
    * \brief Load the data from LevelDBStore.
@@ -63,7 +64,7 @@ class IndexPathMap : public IndexPathMapInterface {
   virtual Status init();
 
   /**
-   * \see IndexPathMapInterface::insert
+   * \see IndexNamespaceInterface::insert
    * \pre This map is initialized.
    */
   virtual Status insert(const string &path, const string &name);
@@ -83,31 +84,11 @@ class IndexPathMap : public IndexPathMapInterface {
   virtual vector<string> get_index_names(const string &path);
 
  private:
-  /**
-   * \brief The internal structure to represent a directory with the names of
-   * the indices on this directory.
-   */
-  struct IndexPathNode {
-    explicit IndexPathNode(const string &p) : path(p) {
-    }
-
-    bool have(const string &name) const {
-      return index_names.find(name) != index_names.end();
-    }
-
-    /// Serialize it into a protobuf object IndexNmaesOnDirectory.
-    string serialize();
-
-    string path;
-
-    set<string> index_names;
-  };
-
   /// Removes all '/' at the end of path.
   string cleanup_path(const string &path) const;
 
   /// A direct mapping from the path to the IndexPathNode.
-  map<string, unique_ptr<IndexPathNode>> nodes_;
+  map<string, unique_ptr<IndexNamespaceNode>> nodes_;
 
   unique_ptr<vsfs::LevelDBStore> store_;
 
@@ -118,4 +99,4 @@ class IndexPathMap : public IndexPathMapInterface {
 }  // namespace masterd
 }  // namespace vsfs
 
-#endif  // VSFS_MASTERD_INDEX_PATH_MAP_H_
+#endif  // VSFS_MASTERD_INDEX_NAMESPACE_H_
