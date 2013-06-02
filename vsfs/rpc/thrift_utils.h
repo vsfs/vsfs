@@ -26,8 +26,14 @@
 
 using std::string;
 
+namespace vobla {
+class Status;
+}
+
 namespace vsfs {
 namespace rpc {
+
+class RpcInvalidOp;
 
 /**
  * \class ThriftUtils "vsfs/rpc/thrift_utils.h"
@@ -69,6 +75,12 @@ class ThriftUtils {
     }
     return true;
   }
+
+  /**
+   * \brief Translate Status to RpcInvalidOp
+   * Thrift RPC functions will throw RpcInvalidOp if something goes wrong.
+   */
+  RpcInvalidOp StatusToRpcInvalidOp(const vobla::Status &status);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ThriftUtils);
