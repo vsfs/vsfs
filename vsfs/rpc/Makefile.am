@@ -11,7 +11,7 @@ libvsfs_rpc_a_SOURCES = \
   MasterDaemon.h MasterDaemon.cpp \
   MetaServer.h MetaServer.cpp \
   rpc_client.h \
-  thrift_utils.h \
+  thrift_utils.h thrift_utils.cpp \
   vsfs_constants.h vsfs_constants.cpp \
   vsfs_types.h vsfs_types.cpp
 
