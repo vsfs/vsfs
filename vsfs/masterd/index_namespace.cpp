@@ -53,6 +53,15 @@ Status IndexNamespace::init() {
     return status;
   }
   MutexGuard guard(lock_);
+  for (const auto &key_and_ns_node : *store_) {
+    const auto& key = key_and_ns_node.first;
+    unique_ptr<IndexNamespaceNode> node(new IndexNamespaceNode);
+    if (!rpc::ThriftUtils::deserialize(key_and_ns_node.second, node.get())) {
+      LOG(ERROR) << "Failed to deserialize namespace node: " << key;
+      return Status(-1, "Failed to deserialize namespace node.");
+    }
+    nodes_.insert(std::make_pair(key, std::move(node)));
+  }
   return Status::OK;
 }
 

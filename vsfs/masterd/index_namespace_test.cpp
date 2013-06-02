@@ -42,123 +42,134 @@ class IndexNamespaceTest : public ::testing::Test {
   void SetUp() {
     tmpdir_.reset(new TemporaryDirectory);
     testdb_ = tmpdir_->path() + "/test.db";
+    mock_db_ = new MockLevelDBStore;
+    test_ns_.reset(new IndexNamespace(mock_db_));
+  }
+
+  void TearDown() {
+    // Guarantees that the testing IndexNamespace object is destoryed before
+    // the tmpdir_.
+    test_ns_.reset();
   }
 
   string testdb_;
   unique_ptr<TemporaryDirectory> tmpdir_;
+  unique_ptr<IndexNamespace> test_ns_;
+  /// A pointe to the mock LevelDBStore. It does not own the MockLevelDBStore
+  /// object.
+  MockLevelDBStore* mock_db_;
 };
 
 // TODO(eddyxu): replace leveldb with MockLevelDBStore
 TEST_F(IndexNamespaceTest, TestCreates) {
-  IndexNamespace test_ns(testdb_);
-  EXPECT_TRUE(test_ns.init().ok());
+  // Only two successfully insertations count.
+  EXPECT_CALL(*mock_db_, put(_, _))
+      .Times(2)
+      .WillRepeatedly(Return(Status::OK));
+  EXPECT_TRUE(test_ns_->insert("/foo/bar", "test").ok());
+  EXPECT_EQ(-EEXIST, test_ns_->insert("/foo/bar", "test").error());
+  EXPECT_EQ(-EEXIST, test_ns_->insert("/foo/bar/", "test").error());
+  EXPECT_EQ(-EEXIST, test_ns_->insert("/foo/bar///", "test").error());
 
-  EXPECT_TRUE(test_ns.insert("/foo/bar", "test").ok());
-  EXPECT_EQ(-EEXIST, test_ns.insert("/foo/bar", "test").error());
-  EXPECT_EQ(-EEXIST, test_ns.insert("/foo/bar/", "test").error());
-  EXPECT_EQ(-EEXIST, test_ns.insert("/foo/bar///", "test").error());
-
-  EXPECT_TRUE(test_ns.insert("/", "test").ok());
-  EXPECT_EQ(-EEXIST, test_ns.insert("/", "test").error());
+  EXPECT_TRUE(test_ns_->insert("/", "test").ok());
+  EXPECT_EQ(-EEXIST, test_ns_->insert("/", "test").error());
 }
 
 TEST_F(IndexNamespaceTest, TestInsertFailures) {
-  MockLevelDBStore *mock_db = new MockLevelDBStore;
-  IndexNamespace test_ns(mock_db);
-
-  EXPECT_CALL(*mock_db, put(_, _))
+  EXPECT_CALL(*mock_db_, put(_, _))
       .WillOnce(Return(Status(-1, "Mock failure")));
-  auto status = test_ns.insert("/foo", "bar");
+  auto status = test_ns_->insert("/foo", "bar");
   EXPECT_EQ(-1, status.error());
   EXPECT_EQ("Mock failure", status.message());
   // The inserted item should be rolled back.
-  EXPECT_FALSE(test_ns.have("/foo", "bar"));
+  EXPECT_FALSE(test_ns_->have("/foo", "bar"));
 }
 
 TEST_F(IndexNamespaceTest, TestRemove) {
-  IndexNamespace test_ns(testdb_);
-  EXPECT_TRUE(test_ns.init().ok());
+  EXPECT_CALL(*mock_db_, put(_, _))
+      .WillRepeatedly(Return(Status::OK));
+  test_ns_->insert("/foo/bar", "test0");
+  test_ns_->insert("/foo/bar", "test1");
+  EXPECT_EQ(-ENOENT, test_ns_->remove("/foo", "test0").error());
+  EXPECT_EQ(-ENOENT, test_ns_->remove("/foo/bar", "test2").error());
 
-  test_ns.insert("/foo/bar", "test0");
-  test_ns.insert("/foo/bar", "test1");
-  EXPECT_EQ(-ENOENT, test_ns.remove("/foo", "test0").error());
-  EXPECT_EQ(-ENOENT, test_ns.remove("/foo/bar", "test2").error());
-
-  EXPECT_TRUE(test_ns.remove("/foo/bar", "test0").ok());
-  EXPECT_FALSE(test_ns.have("/foo/bar", "test0"));
-  EXPECT_TRUE(test_ns.have("/foo/bar", "test1"));
+  EXPECT_TRUE(test_ns_->remove("/foo/bar", "test0").ok());
+  EXPECT_FALSE(test_ns_->have("/foo/bar", "test0"));
+  EXPECT_TRUE(test_ns_->have("/foo/bar", "test1"));
 }
 
 TEST_F(IndexNamespaceTest, TestRemoveADirectory) {
-  IndexNamespace test_ns(testdb_);
-  EXPECT_TRUE(test_ns.init().ok());
-  test_ns.insert("/foo/bar", "test0");
-  test_ns.insert("/foo/bar", "test1");
-  test_ns.insert("/foo/bar", "test2");
+  EXPECT_CALL(*mock_db_, put(_, _))
+      .WillRepeatedly(Return(Status::OK));
+  test_ns_->insert("/foo/bar", "test0");
+  test_ns_->insert("/foo/bar", "test1");
+  test_ns_->insert("/foo/bar", "test2");
 
-  EXPECT_TRUE(test_ns.remove("/foo/bar").ok());
-  EXPECT_FALSE(test_ns.have("/foo/bar", "test0"));
-  EXPECT_FALSE(test_ns.have("/foo/bar", "test1"));
-  EXPECT_FALSE(test_ns.have("/foo/bar", "test2"));
+  EXPECT_CALL(*mock_db_, remove("/foo/bar"))
+      .WillOnce(Return(Status::OK));
+  EXPECT_TRUE(test_ns_->remove("/foo/bar").ok());
+  EXPECT_FALSE(test_ns_->have("/foo/bar", "test0"));
+  EXPECT_FALSE(test_ns_->have("/foo/bar", "test1"));
+  EXPECT_FALSE(test_ns_->have("/foo/bar", "test2"));
 }
 
 TEST_F(IndexNamespaceTest, TestGet) {
-  IndexNamespace test_ns(testdb_);
-  test_ns.init();
+  EXPECT_CALL(*mock_db_, put(_, _))
+      .WillRepeatedly(Return(Status::OK));
 
-  EXPECT_TRUE(test_ns.insert("/foo/bar", "test").ok());
-  test_ns.insert("/foo/bar/zoo", "nontest");
-  test_ns.insert("/", "test");
+  EXPECT_TRUE(test_ns_->insert("/foo/bar", "test").ok());
+  test_ns_->insert("/foo/bar/zoo", "nontest");
+  test_ns_->insert("/", "test");
 
   string test_path;
-  EXPECT_TRUE(test_ns.find("/foo/bar/zoo/test.txt", "test", &test_path).ok());
+  EXPECT_TRUE(test_ns_->find("/foo/bar/zoo/test.txt", "test", &test_path).ok());
   EXPECT_EQ("/foo/bar", test_path);
-  EXPECT_TRUE(test_ns.find("/foo/bar", "test", &test_path).ok());
+  EXPECT_TRUE(test_ns_->find("/foo/bar", "test", &test_path).ok());
   EXPECT_EQ("/foo/bar", test_path);
-  EXPECT_FALSE(test_ns.find("/foo/bar/zoo/test.txt", "nowhere",
+  EXPECT_FALSE(test_ns_->find("/foo/bar/zoo/test.txt", "nowhere",
                              &test_path).ok());
 
-  EXPECT_TRUE(test_ns.find("/foo/fruit", "test", &test_path).ok());
+  EXPECT_TRUE(test_ns_->find("/foo/fruit", "test", &test_path).ok());
   EXPECT_EQ("/", test_path);
 }
 
 TEST_F(IndexNamespaceTest, TestCollect) {
-  IndexNamespace test_ns(testdb_);
-  test_ns.init();
-  test_ns.insert("/foo/bar", "test");
-  test_ns.insert("/foo/bar/data0", "data0");
-  test_ns.insert("/foo/bar/data1", "data1");
-  test_ns.insert("/foo/bar/data1", "test");
+  EXPECT_CALL(*mock_db_, put(_, _))
+      .WillRepeatedly(Return(Status::OK));
+  test_ns_->insert("/foo/bar", "test");
+  test_ns_->insert("/foo/bar/data0", "data0");
+  test_ns_->insert("/foo/bar/data1", "data1");
+  test_ns_->insert("/foo/bar/data1", "test");
 
-  auto indices = test_ns.collect("/foo/bar", "test");
+  auto indices = test_ns_->collect("/foo/bar", "test");
   EXPECT_THAT(indices, ElementsAre("/foo/bar", "/foo/bar/data1"));
 
   // The end conditon is: !starts_with(path, root).
-  test_ns.insert("/foo/sushi", "test");
-  indices = test_ns.collect("/foo/bar", "test");
+  test_ns_->insert("/foo/sushi", "test");
+  indices = test_ns_->collect("/foo/bar", "test");
   EXPECT_THAT(indices, ElementsAre("/foo/bar", "/foo/bar/data1"));
 
   // Search from /foo
-  test_ns.insert("/foo/cdef", "cdef");
-  indices = test_ns.collect("/foo", "test");
+  test_ns_->insert("/foo/cdef", "cdef");
+  indices = test_ns_->collect("/foo", "test");
   EXPECT_THAT(indices,
               ElementsAre("/foo/bar", "/foo/bar/data1", "/foo/sushi"));
 }
 
 TEST_F(IndexNamespaceTest, TestGetIndexNames) {
-  IndexNamespace test_ns(testdb_);
-  test_ns.init();
-  test_ns.insert("/foo/bar", "abc");
-  test_ns.insert("/foo/bar", "def");
-  test_ns.insert("/foo/bar", "ghi");
-  test_ns.insert("/foo/bar", "jkl");
+  EXPECT_CALL(*mock_db_, put(_, _))
+      .WillRepeatedly(Return(Status::OK));
+  test_ns_->insert("/foo/bar", "abc");
+  test_ns_->insert("/foo/bar", "def");
+  test_ns_->insert("/foo/bar", "ghi");
+  test_ns_->insert("/foo/bar", "jkl");
 
-  auto names = test_ns.get_index_names("/foo/bar");
+  auto names = test_ns_->get_index_names("/foo/bar");
   EXPECT_THAT(names, ElementsAre("abc", "def", "ghi", "jkl"));
 
-  EXPECT_TRUE(test_ns.get_index_names("/foo").empty());
-  EXPECT_TRUE(test_ns.get_index_names("/").empty());
-  EXPECT_TRUE(test_ns.get_index_names("/foo/bar/zoo").empty());
+  EXPECT_TRUE(test_ns_->get_index_names("/foo").empty());
+  EXPECT_TRUE(test_ns_->get_index_names("/").empty());
+  EXPECT_TRUE(test_ns_->get_index_names("/foo/bar/zoo").empty());
 }
 
 }  // namespace masterd
