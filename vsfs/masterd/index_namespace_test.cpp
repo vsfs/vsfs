@@ -30,6 +30,7 @@ using ::testing::ElementsAre;
 using ::testing::Return;
 using ::testing::_;
 using std::string;
+using std::to_string;
 using std::unique_ptr;
 using std::vector;
 using vobla::TemporaryDirectory;
@@ -170,6 +171,30 @@ TEST_F(IndexNamespaceTest, TestGetIndexNames) {
   EXPECT_TRUE(test_ns_->get_index_names("/foo").empty());
   EXPECT_TRUE(test_ns_->get_index_names("/").empty());
   EXPECT_TRUE(test_ns_->get_index_names("/foo/bar/zoo").empty());
+}
+
+TEST_F(IndexNamespaceTest, TestReloadFromFileSystem) {
+  {
+    IndexNamespace test_ns(testdb_);
+    EXPECT_TRUE(test_ns.init().ok());
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j < 10; j++) {
+        test_ns.insert(string("/path") + to_string(i),
+                       string("name") + to_string(j));
+      }
+    }
+  }
+
+  {
+    IndexNamespace test_ns(testdb_);
+    EXPECT_TRUE(test_ns.init().ok());
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j < 10; j++) {
+        test_ns.have(string("/path") + to_string(i),
+                     string("name") + to_string(j));
+      }
+    }
+  }
 }
 
 }  // namespace masterd
