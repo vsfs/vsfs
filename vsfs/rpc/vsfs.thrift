@@ -204,97 +204,15 @@ struct RpcIndexMigrationData {
 typedef list<RpcIndexInfo> RpcIndexInfoList
 
 /**
- * \brief MasterDaemon, the centralized coordinartor for VSFS cluster.
+ * \brief MasterServer, the centralized coordinartor for VSFS cluster.
  */
-service MasterDaemon {
+service MasterServer {
   /**
-   * \brief An index server join the hash ring.
-   *
+   * \brief An index server joins the hash ring.
    * \return RpcNodeAddressList a list of replica servers for this index
    * server.
    */
   RpcNodeAddressList join_index_server(1:RpcNodeInfo info);
-
-  /**
-   * \brief A Meta Server join the hash ring.
-   * \return RpcNodeAddressList a list of replica Meta Servers.
-   */
-  RpcNodeAddressList join_meta_server(1:RpcNodeInfo info);
-
-  void disjoin(1:RpcNodeInfo info);
-
-  /**
-   * \brief Add a new index partition to index partition CH ring after a
-   * server completed index migration and created a new index partition.
-   * \param[in] idx_info basic info of the index.
-   * \param[in] sep the start position of the new partition.
-   */
-  void add_index_partition(1:RpcIndexInfo idx_info, 2:i64 sep)
-	throws (1:RpcInvalidOp ouch);
-
-  /// Get the next available ID.
-  i64 get_txn_id();
-
-  /**
-   * \brief Acquires 'num_ids' of Txn Ids.
-   * \param num_ids the total number of Txn IDs to ask.
-   * \return the first ID of the 'num_ids' IDs.
-   */
-  i64 get_txn_ids(1:i64 num_ids);
-
-  RpcNodeAddressList search(1:RpcComplexQuery query);
-
-  /**
-   * \brief Creates an index and assign it to a IndexServer in the hash
-   * ring.
-   * \return the address of IndexServer to manages this index.
-   */
-  RpcIndexLocation create_index(1:RpcIndexCreateType index)
-	throws (1:RpcInvalidOp ouch);
-
-  /// Locates index servers for files.
-  RpcIndexLocationList locate_index(1: RpcIndexLookupRequest lookup)
-	throws (1:RpcInvalidOp ouch);
-
-  /// Locates all partitions of each index.
-  RpcIndexPartitionRingList locate_partitions(1: RpcIndexLookupRequest lookup)
-	throws (1:RpcInvalidOp ouch);
-
-  /**
-   * \brief Returns the index paths for all index that have names in
-   * `index_names`, which also includes files under 'root_path'.
-   */
-  RpcIndexLocationList locate_index_for_search(
-	  1:string root_path, 2:list<string> index_names)
-	throws (1:RpcInvalidOp ouch);
-
-  /**
-   * \brief Locate MetaServer for file_id, for each file_id, return a
-   * (file_id, server) pair.
-   */
-  RpcMetaLocationList locate_metadata(
-	  1:list<i64> file_ids) throws (1:RpcInvalidOp ouch);
-
-  /**
-   * \brief locate the RpcNodeAddress of this file.
-   * \param path the absolute path in VSFS.
-   */
-  RpcNodeAddress locate(1:string path) throws (1:RpcInvalidOp ouch);
-
-  RpcNodeAddress create(1:string group_id) throws (1:RpcInvalidOp ouch);
-
-  /**
-   * \brief Index Migration phase 1.
-   */
-  RpcNodeAddress get_new_index_partition_addr(
-	  1:i64 split_pos, 2:RpcIndexInfo idx_info, 3:RpcNodeAddress giver_node)
-	throws (1:RpcInvalidOp ouch);
-
-  /**
-   * \brief Query the index info on master node.
-   */
-  RpcIndexInfoList info(1:RpcIndexInfoRequest request)
-	throws (1:RpcInvalidOp ouch);
 }
 
 /**

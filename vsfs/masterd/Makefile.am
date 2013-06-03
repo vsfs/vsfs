@@ -7,15 +7,19 @@ BUILT_SOURCES = protobuf masterd_types.h
 
 noinst_LIBRARIES = libvsfs-masterd.a
 libvsfs_masterd_a_SOURCES = \
+  index_namespace.cpp \
+  index_namespace.h \
   index_server_manager.cpp \
   index_server_manager.h \
-  index_namespace.h \
-  index_namespace.cpp \
+  master_controller.cpp \
+  master_controller.h \
+  master_server.cpp \
+  master_server.h \
+  masterd.pb.cc \
   masterd_constants.cpp \
   masterd_constants.h \
   masterd_types.cpp \
   masterd_types.h \
-  masterd.pb.cc \
   masterd.pb.h \
   partition_manager.cpp \
   partition_manager.h
