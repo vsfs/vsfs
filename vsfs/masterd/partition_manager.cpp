@@ -226,7 +226,7 @@ Status PartitionManager::get_all_partitions(const string &index_path,
     partitions->refcount_++;
   }
   MutexGuard lock(partitions->mutex_);
-  partitions->partitions_.get_values(paths);
+  *paths = partitions->partitions_.get_values();
   partitions->refcount_--;
   return Status::OK;
 }

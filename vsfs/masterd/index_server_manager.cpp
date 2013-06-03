@@ -108,7 +108,7 @@ IndexServerManager::get_partitions() {
   vector<HashValueType> partitions;
   MutexGuard lock(lock_);
   if (!ring_.empty()) {
-    ring_.get_partitions(&partitions);
+    partitions = ring_.get_partitions();
   }
   return partitions;
 }

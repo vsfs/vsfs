@@ -19,9 +19,11 @@
  * \brief The representation of an opened file in VSFS.
  */
 
+#include <errno.h>
+#include <fcntl.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <fcntl.h>
 #include <unistd.h>
 #include <algorithm>
 #include <string>
@@ -65,17 +67,17 @@ Status File::open(const string& path, int flags, mode_t mode) {
   fd_ = ::open(path.c_str(), flags, mode);
   if (fd_ < 0) {
     fd_ = 0;
-    return Status(-1, "Failed to open file.");
+    return Status(-errno, strerror(errno));
   }
   return Status::OK;
 }
 
 Status File::close() {
   if (fd_ < 0) {
-    return Status(-1, "Invalid file descriptor for closing file.");
+    return Status::OK;
   }
   if (::close(fd_) < 0) {
-    return Status(-1, "Failed to close file.");
+    return Status(-errno, strerror(errno));
   }
   release();
   return Status::OK;
