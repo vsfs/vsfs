@@ -1,9 +1,17 @@
-/**
- * \file master_server.cpp
- *
- * \brief Implementation of MasterController.
- *
+/*
  * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #include <boost/filesystem.hpp>
@@ -13,6 +21,7 @@
 #include <glog/logging.h>
 #include <protocol/TBinaryProtocol.h>
 #include <server/TNonblockingServer.h>
+#include <server/TServer.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -95,20 +104,6 @@ Status MasterController::join_index_server(const NodeInfo &node,
   }
 
   // TODO(lxu): use ConsistentHashMap::succ() to find N replicas.
-  return status;
-}
-
-Status MasterController::join_index_server(uint64_t pos, const NodeInfo &node,
-                                           RpcNodeAddressList *replicas) {
-  CHECK_NOTNULL(replicas);
-  LOG(INFO) << "IndexServer: " << node.address.host
-            << ": " << node.address.port
-            << " is trying to join the cluster ring at position:" << pos;
-  Status status = index_server_manager_->add(pos, node);
-  if (!status.ok()) {
-    LOG(ERROR) << "MasterController::join_index_server: "
-               << status.message();
-  }
   return status;
 }
 

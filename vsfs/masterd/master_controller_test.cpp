@@ -44,21 +44,16 @@ class MasterControllerTest : public ::testing::Test {
     controller_.reset(new MasterController);
   }
 
-  void TearDown() {
-    controller_.reset();
-  }
-
   /// Evenly divide the C.H ring into 'num_index_servers' segements and let
   /// each index server manage one segment.
   void join_index_servers(int num_index_servers) {
-    uint64_t vnode_size = kPartitonSize / num_index_servers;
     for (int i = 0; i < num_index_servers; ++i) {
       RpcNodeAddressList replicas;
       NodeInfo index_server;
       index_server.address.host = "192.168.1." + to_string(i);
       index_server.address.port = 5550 + i;
-      ASSERT_TRUE(controller_->join_index_server(vnode_size * i,
-                                             index_server, &replicas).ok());
+      ASSERT_TRUE(controller_->join_index_server(
+          index_server, &replicas).ok());
     }
   }
 
