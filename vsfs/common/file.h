@@ -24,8 +24,10 @@
 
 #include <algorithm>
 #include <string>
+#include "vobla/status.h"
 
 using std::string;
+using vobla::Status;
 
 namespace vsfs {
 
@@ -35,10 +37,8 @@ namespace vsfs {
   */
 class File {
  public:
+  /// Construct a new file object.
   File();
-
-  /// Constructor.
-  File(const char* path, int flags, mode_t mode);
 
   /// Copy constructor.
   File(const File &rhs);
@@ -51,19 +51,23 @@ class File {
 
   File& operator=(File&& rhs);
 
+  /// Destruct the file object.
   ~File();
 
   /// Gets the file descriptor of the file.
   int fd() const;
 
+  /// Opens a file.
+  Status open(const string& path, int flags, mode_t mode);
+
   /// Close the file and release the file descriptor.
-  void close();
+  Status close();
 
   /// Swap another file with this file.
   void swap(File& other);
 
-  /// Release the file descriptor.
-  void release();
+  /// Returns the file descriptor and release the ownership.
+  int release();
 
  private:
   /// File Descriptor.

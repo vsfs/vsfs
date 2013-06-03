@@ -32,14 +32,7 @@ using std::string;
 
 namespace vsfs {
 
-File::File() {
-}
-
-File::File(const char* path, int flags, mode_t mode) {
-  fd_ = open(path, flags, mode);
-  if (fd_ < 0) {
-    // TODO(ziling): handle the open failure here.
-  }
+File::File() : fd_(0) {
 }
 
 File::File(const File &rhs) {
@@ -68,17 +61,34 @@ int File::fd() const {
   return fd_;
 }
 
-void File::close() {
-  ::close(fd_);
+Status File::open(const string& path, int flags, mode_t mode) {
+  fd_ = ::open(path.c_str(), flags, mode);
+  if (fd_ < 0) {
+    fd_ = 0;
+    return Status(-1, "Failed to open file.");
+  }
+  return Status::OK;
+}
+
+Status File::close() {
+  if (fd_ < 0) {
+    return Status(-1, "Invalid file descriptor for closing file.");
+  }
+  if (::close(fd_) < 0) {
+    return Status(-1, "Failed to close file.");
+  }
   release();
+  return Status::OK;
 }
 
 void File::swap(File& other) {
   std::swap(fd_, other.fd_);
 }
 
-void File::release() {
+int File::release() {
+  int old_fd = fd_;
   fd_ = -1;
+  return old_fd;
 }
 
 }  // namespace vsfs
