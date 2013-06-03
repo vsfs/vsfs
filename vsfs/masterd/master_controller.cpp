@@ -13,7 +13,6 @@
 #include <glog/logging.h>
 #include <protocol/TBinaryProtocol.h>
 #include <server/TNonblockingServer.h>
-#include <transport/TTransportUtils.h>
 #include <string>
 #include <utility>
 #include <vector>
@@ -31,21 +30,14 @@ namespace fs = boost::filesystem;
 using apache::thrift::concurrency::PosixThreadFactory;
 using apache::thrift::concurrency::ThreadManager;
 using apache::thrift::TProcessor;
-using apache::thrift::protocol::TBinaryProtocol;
 using apache::thrift::protocol::TBinaryProtocolFactory;
 using apache::thrift::protocol::TProtocolFactory;
 using apache::thrift::server::TNonblockingServer;
-using apache::thrift::transport::TBufferedTransportFactory;
-using apache::thrift::transport::TServerTransport;
 using apache::thrift::transport::TTransportFactory;
 using std::string;
 using vsfs::index::IndexInfo;
 
 DEFINE_int32(port, 9876, "Sets the listening port.");
-DEFINE_bool(master_server_fast_partition_lookup, false,
-            "Sets true to tune the speed of partition lookup.");
-DEFINE_string(master_server_type, "nonblocking",
-              "Sets the server type: threaded|nonblocking|threadpool.");
 DEFINE_string(dir, ".", "Sets the directory to store metadata.");
 
 namespace vsfs {
@@ -66,7 +58,7 @@ MasterController::~MasterController() {
 
 void MasterController::start() {
   shared_ptr<MasterServer> handler(new MasterServer(this));
-  shared_ptr<TProcessor> processor(new rpc::MasterServerProcessor(handler));
+  shared_ptr<TProcessor> processor(new MasterServerProcessor(handler));
   shared_ptr<TProtocolFactory> protocol_factory(new TBinaryProtocolFactory());
 
   shared_ptr<ThreadManager> thread_manager =
@@ -90,7 +82,7 @@ void MasterController::stop() {
 }
 
 Status MasterController::join_index_server(const NodeInfo &node,
-                                       RpcNodeAddressList *replicas) {
+                                           RpcNodeAddressList *replicas) {
   CHECK_NOTNULL(replicas);
   LOG(INFO) << "IndexServer: " << node.address.host
             << ": " << node.address.port
@@ -107,7 +99,7 @@ Status MasterController::join_index_server(const NodeInfo &node,
 }
 
 Status MasterController::join_index_server(uint64_t pos, const NodeInfo &node,
-                                       RpcNodeAddressList *replicas) {
+                                           RpcNodeAddressList *replicas) {
   CHECK_NOTNULL(replicas);
   LOG(INFO) << "IndexServer: " << node.address.host
             << ": " << node.address.port

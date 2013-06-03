@@ -17,8 +17,6 @@
 
 using std::string;
 using std::vector;
-using vsfs::masterd::IndexServerManager;
-using vsfs::rpc::NodeInfo;
 
 namespace vsfs {
 namespace masterd {

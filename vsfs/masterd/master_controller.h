@@ -60,13 +60,13 @@ class MasterController {
    * servers.
    */
   Status join_index_server(const NodeInfo &node,
-                           rpc::RpcNodeAddressList *replicas);
+                           RpcNodeAddressList *replicas);
 
   /**
    * \brief Inserts an IndexServer to a particular position.
    */
   Status join_index_server(uint64_t pos, const NodeInfo &node,
-                           rpc::RpcNodeAddressList *replicas);
+                           RpcNodeAddressList *replicas);
 
  private:
   shared_ptr<TServer> server_;

@@ -29,11 +29,9 @@ using std::string;
 using std::unique_ptr;
 using std::vector;
 using vobla::Status;
-using namespace vsfs::rpc;  // NOLINT
 
 namespace vsfs {
 
-using rpc::ThriftUtils;
 using index::IndexInfo;
 
 namespace masterd {

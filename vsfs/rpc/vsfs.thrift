@@ -8,9 +8,9 @@
  *  transparently.
  */
 
-// TODO(eddyxu): change the namespace to vsfs::rpc
-namespace cpp vsfs.rpc
-namespace py vsfs.rpc
+namespace cpp vsfs
+namespace py vsfs
+namespace java vsfs
 
 typedef i64 RpcFileId
 typedef list<string> RpcFileList

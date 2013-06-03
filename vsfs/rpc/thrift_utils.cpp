@@ -21,7 +21,6 @@
 using vobla::Status;
 
 namespace vsfs {
-namespace rpc {
 
 RpcInvalidOp ThriftUtils::StatusToRpcInvalidOp(const Status &status) {
   RpcInvalidOp invalid;
@@ -30,5 +29,4 @@ RpcInvalidOp ThriftUtils::StatusToRpcInvalidOp(const Status &status) {
   return invalid;
 }
 
-}  // namespace rpc
 }  // namespace vsfs

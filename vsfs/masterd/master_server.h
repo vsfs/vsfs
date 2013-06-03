@@ -22,7 +22,6 @@
 #include "vobla/macros.h"
 #include "vsfs/rpc/MasterServer.h"
 
-using namespace vsfs::rpc;  // NOLINT
 using std::string;
 using std::vector;
 
@@ -37,7 +36,7 @@ class MasterController;
  *  - Index server -> Its IP address (addr:port)
  *  - Index Info -> Index Name
  */
-class MasterServer : public vsfs::rpc::MasterServerIf {
+class MasterServer : public vsfs::MasterServerIf {
  public:
   /**
    * \brief Constructs a MasterServer with its parent controller.

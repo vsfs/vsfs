@@ -29,7 +29,7 @@ using std::mutex;
 using std::string;
 using std::vector;
 using vobla::Status;
-using vsfs::rpc::NodeInfo;
+using vsfs::NodeInfo;
 
 namespace vsfs {
 namespace masterd {
