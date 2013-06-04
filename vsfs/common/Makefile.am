@@ -23,6 +23,7 @@ log.pb.h: log.proto
 
 TESTS = \
 	complex_query_test \
+	file_test \
 	leveldb_store_test \
 	posix_path_test
 
@@ -35,6 +36,7 @@ LDADD = libvsfs-common.a \
 
 complex_query_test_SOURCES = complex_query.h complex_query.cpp \
 			     complex_query_test.cpp
+file_test_SOURCES = file.h file.cpp file_test.cpp
 posix_path_test_SOURCES = posix_path.h posix_path.cpp posix_path_test.cpp
 leveldb_store_test_SOURCES = leveldb_store_test.cpp
 

@@ -63,6 +63,15 @@ int File::fd() const {
   return fd_;
 }
 
+Status File::open(const string& path, int flags) {
+  fd_ = ::open(path.c_str(), flags);
+  if (fd_ < 0) {
+    fd_ = 0;
+    return Status(-errno, strerror(errno));
+  }
+  return Status::OK;
+}
+
 Status File::open(const string& path, int flags, mode_t mode) {
   fd_ = ::open(path.c_str(), flags, mode);
   if (fd_ < 0) {
@@ -89,7 +98,7 @@ void File::swap(File& other) {
 
 int File::release() {
   int old_fd = fd_;
-  fd_ = -1;
+  fd_ = 0;
   return old_fd;
 }
 

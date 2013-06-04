@@ -57,7 +57,10 @@ class File {
   /// Gets the file descriptor of the file.
   int fd() const;
 
-  /// Opens a file.
+  /// Opens a file without mode.
+  Status open(const string& path, int flags);
+
+  /// Opens a file with mode.
   Status open(const string& path, int flags, mode_t mode);
 
   /// Close the file and release the file descriptor.
