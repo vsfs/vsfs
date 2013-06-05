@@ -55,24 +55,6 @@ TEST(FileTest, TestAssignmentOperator) {
   EXPECT_EQ(fd_old, other.fd());
 }
 
-TEST(FileTest, TestMoveConstructor) {
-  string f("/etc/hosts");
-  File file;
-  file.open(f.c_str(), O_RDONLY);
-  int fd_old = file.fd();
-  File other(file);
-  EXPECT_EQ(fd_old, other.fd());
-}
-
-TEST(FileTest, TestCopyConstructor) {
-  string f("/etc/hosts");
-  File file;
-  file.open(f.c_str(), O_RDONLY);
-  int fd_old = file.fd();
-  File other = file;
-  EXPECT_EQ(fd_old, other.fd());
-}
-
 TEST(FileTest, TestRelease) {
   string f("/etc/hosts");
   File file;

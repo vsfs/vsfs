@@ -40,15 +40,10 @@ class File {
   /// Construct a new file object.
   File();
 
-  /// Copy constructor.
-  File(const File &rhs);
-
   /// Move constructor.
   File(File&&);
 
-  /// Assignment operator.
-  File& operator=(const File &rhs);
-
+  /// Move assignment operator.
   File& operator=(File&& rhs);
 
   /// Destruct the file object.

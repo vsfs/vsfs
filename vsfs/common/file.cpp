@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * \file file.cpp
- * \brief The representation of an opened file in VSFS.
- */
-
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -37,21 +32,13 @@ namespace vsfs {
 File::File() : fd_(0) {
 }
 
-File::File(const File &rhs) {
-  *this = rhs;
-}
-
 File::File(File&& other) : fd_(other.fd_) {
   other.release();
 }
 
-File& File::operator=(const File &rhs) {
-  fd_ = rhs.fd_;
-  return *this;
-}
-
 File& File::operator=(File&& rhs) {
   fd_ = rhs.fd_;
+  rhs.release();
   return *this;
 }
 
