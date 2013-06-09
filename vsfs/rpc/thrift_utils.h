@@ -80,7 +80,7 @@ class ThriftUtils {
    * \brief Translate Status to RpcInvalidOp
    * Thrift RPC functions will throw RpcInvalidOp if something goes wrong.
    */
-  RpcInvalidOp StatusToRpcInvalidOp(const vobla::Status &status);
+  static RpcInvalidOp StatusToRpcInvalidOp(const vobla::Status &status);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ThriftUtils);
