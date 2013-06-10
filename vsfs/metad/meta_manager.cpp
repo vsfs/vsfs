@@ -26,7 +26,7 @@
 
 using std::to_string;
 using std::vector;
-using vobla::contain_key;
+using vobla::contain_key_and_value;
 using vsfs::LevelDBStore;
 
 namespace vsfs {
@@ -137,6 +137,11 @@ Status MetaManager::search(const vector<int64_t>& file_ids,
     results->push_back(it->second);
   }
   return Status::OK;
+}
+
+bool MetaManager::have(uint64_t file_id, const string& file_path) {
+  MutexGuard guard(lock_);
+  return contain_key_and_value(map_, file_id, file_path);
 }
 
 size_t MetaManager::size() {

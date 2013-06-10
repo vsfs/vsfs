@@ -134,12 +134,43 @@ TEST_F(MetaManagerTest, TestFindUseInt64AsId) {
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
 }
 
+TEST_F(MetaManagerTest, TestHave) {
+  EXPECT_CALL(*mock_db_, put(_, _))
+      .WillRepeatedly(Return(Status::OK));
+  test_mm_->insert(1, "/foo/bar").ok();
+  EXPECT_TRUE(test_mm_->have(1, "/foo/bar"));
+  EXPECT_FALSE(test_mm_->have(2, "/foo/bar"));
+  EXPECT_FALSE(test_mm_->have(1, "/foo/zoo"));
+}
+
 TEST_F(MetaManagerTest, TestSize) {
   EXPECT_CALL(*mock_db_, put(_, _))
       .WillRepeatedly(Return(Status::OK));
   test_mm_->insert(1, "/foo/bar").ok();
   test_mm_->insert(2, "/foo/zoo").ok();
   EXPECT_EQ(static_cast<size_t>(2), test_mm_->size());
+}
+
+TEST_F(MetaManagerTest, TestInit) {
+  {
+    MetaManager test_mm(testdb_);
+    EXPECT_TRUE(test_mm.init().ok());
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j < 10; j++) {
+        test_mm.insert(i, string("/path") + to_string(j));
+      }
+    }
+  }
+
+  {
+    MetaManager test_mm(testdb_);
+    EXPECT_TRUE(test_mm.init().ok());
+    for (int i = 0; i < 5; i++) {
+      for (int j = 0; j < 10; j++) {
+        test_mm.have(i, string("/path") + to_string(j));
+      }
+    }
+  }
 }
 
 }  // namespace metad

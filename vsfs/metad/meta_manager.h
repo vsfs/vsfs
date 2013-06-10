@@ -94,6 +94,12 @@ class MetaManager {
    */
   Status search(const vector<int64_t>& file_ids, vector<string>* results);
 
+  /**
+   * \brief Returns true if there is a file_id and its corresponding file_path
+   * pair exists.
+   */
+  bool have(uint64_t file_id, const string &file_path);
+
   /// Gets the number of entries in the key-value storage.
   size_t size();
 
