@@ -111,8 +111,8 @@ TEST_F(MetaManagerTest, TestFind) {
       .WillRepeatedly(Return(Status::OK));
   string test_path;
   EXPECT_EQ(-ENOENT, test_mm_->find(3, &test_path).error());
-  test_mm_->insert(1, "/foo/bar").ok();
-  test_mm_->insert(2, "/foo/zoo").ok();
+  test_mm_->insert(1, "/foo/bar");
+  test_mm_->insert(2, "/foo/zoo");
 
   EXPECT_TRUE(test_mm_->find(1, &test_path).ok());
   EXPECT_EQ("/foo/bar", test_path);
@@ -121,7 +121,7 @@ TEST_F(MetaManagerTest, TestFind) {
   EXPECT_EQ(-ENOENT, test_mm_->find(3, &test_path).error());
 }
 
-TEST_F(MetaManagerTest, TestFindUseInt64AsId) {
+TEST_F(MetaManagerTest, TestSearch) {
   EXPECT_CALL(*mock_db_, put(_, _))
       .WillRepeatedly(Return(Status::OK));
   vector<int64_t> file_ids;
