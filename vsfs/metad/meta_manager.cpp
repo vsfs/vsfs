@@ -17,8 +17,8 @@
 #include <glog/logging.h>
 #include <string>
 #include <vector>
-#include "vsfs/common/thread.h"
 #include "vobla/map_util.h"
+#include "vsfs/common/thread.h"
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/rpc/thrift_utils.h"
 #include "vsfs/rpc/vsfs_types.h"
@@ -55,7 +55,7 @@ Status MetaManager::init() {
   return Status::OK;
 }
 
-Status MetaManager::insert(uint64_t file_id, const string &file_path) {
+Status MetaManager::insert(int64_t file_id, const string &file_path) {
   MutexGuard guard(lock_);
   auto it = map_.find(file_id);
   if (it != map_.end()) {
@@ -80,7 +80,7 @@ Status MetaManager::insert(uint64_t file_id, const string &file_path) {
 
 Status MetaManager::insert(const RpcMetaDataList& metadata) {
   for (const RpcMetaData& file_id_and_path : metadata) {
-    uint64_t key = static_cast<uint64_t>(file_id_and_path.file_id);
+    int64_t key = static_cast<int64_t>(file_id_and_path.file_id);
     auto status = insert(key, file_id_and_path.file_path);
     if (!status.ok()) {
       return status;
@@ -89,7 +89,7 @@ Status MetaManager::insert(const RpcMetaDataList& metadata) {
   return Status::OK;
 }
 
-Status MetaManager::remove(uint64_t file_id) {
+Status MetaManager::remove(int64_t file_id) {
   MutexGuard guard(lock_);
   auto it = map_.find(file_id);
   if (it == map_.end()) {
@@ -108,7 +108,7 @@ Status MetaManager::remove(uint64_t file_id) {
   return Status::OK;
 }
 
-Status MetaManager::find(uint64_t file_id, string *file_path) {
+Status MetaManager::find(int64_t file_id, string *file_path) {
   CHECK_NOTNULL(file_path);
   MutexGuard guard(lock_);
   auto it = map_.find(file_id);
@@ -122,24 +122,20 @@ Status MetaManager::find(uint64_t file_id, string *file_path) {
 Status MetaManager::search(const vector<int64_t>& file_ids,
                            vector<string>* results) {
   CHECK_NOTNULL(results);
-  // TODO(ziling): big lock here. Optimize it. Prevent any operation before
-  // this search request finished.
   MutexGuard guard(lock_);
   for (auto id : file_ids) {
-    uint64_t hash_id = static_cast<uint64_t>(id);
-    // TODO(ziling): use thread pool to imrpve performance.
+    int64_t hash_id = static_cast<int64_t>(id);
     auto it = map_.find(hash_id);
     if (it == map_.end()) {
       LOG(ERROR) << "Failed to find FileID: " << hash_id;
       return Status(-ENOENT, "The FileID does not exist.");
     }
-    // TODO(ziling): handle duplicate records.
     results->push_back(it->second);
   }
   return Status::OK;
 }
 
-bool MetaManager::have(uint64_t file_id, const string& file_path) {
+bool MetaManager::have(int64_t file_id, const string& file_path) {
   MutexGuard guard(lock_);
   return contain_key_and_value(map_, file_id, file_path);
 }

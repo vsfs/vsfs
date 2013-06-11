@@ -47,13 +47,22 @@ namespace metad {
  */
 class MetaManager {
  public:
+  /**
+   * \brief Initialize a MetaManager with the specified path of an existing
+   * LevelDBStore.
+   */
   explicit MetaManager(const string &dbpath);
 
+  /**
+   * \brief Initialize a MetaManager with *unopened* LevelDBStore.
+   * \param store an instance of LevelDBStore. The ownership of this 'store'
+   * is transferred to MetaManager.
+   */
   explicit MetaManager(vsfs::LevelDBStore* store);
 
   ~MetaManager();
 
-  /*
+  /**
    * \brief Loads the data from LevelDBStore.
    */
   Status init();
@@ -64,10 +73,10 @@ class MetaManager {
    * \param[in] file_id The unique ID of the file.
    * \param[in] file_path The path of the file.
    */
-  Status insert(uint64_t file_id, const string &file_path);
+  Status insert(int64_t file_id, const string &file_path);
 
   /**
-   * \brief Inserts a bunch of files' id and their path as a record into the
+   * \brief Inserts file ids and their paths as a record into the
    * key-value storage.
    * \param[in] A vector and (file_id, file_path) pair to be inserted into
    * the key-value storage.
@@ -78,14 +87,14 @@ class MetaManager {
    * \brief Removes a file record from the key-value storage.
    * \param[in] file_id the ID of the file.
    */
-  Status remove(uint64_t file_id);
+  Status remove(int64_t file_id);
 
   /**
    * \brief Finds a file's path according to its id.
    * \param[in] file_id the ID of the file.
    * \param[out] file_path the path of the file.
    */
-  Status find(uint64_t file_id, string *file_path);
+  Status find(int64_t file_id, string *file_path);
 
   /**
    * \brief Finds a list of file_ids's corresponding file path.
@@ -98,14 +107,14 @@ class MetaManager {
    * \brief Returns true if there is a file_id and its corresponding file_path
    * pair exists.
    */
-  bool have(uint64_t file_id, const string &file_path);
+  bool have(int64_t file_id, const string &file_path);
 
   /// Gets the number of entries in the key-value storage.
   size_t size();
 
  private:
   /// Mapping from FileID to FilePath.
-  unordered_map<uint64_t, string> map_;
+  unordered_map<int64_t, string> map_;
 
   /// LevelDB store.
   unique_ptr<vsfs::LevelDBStore> store_;

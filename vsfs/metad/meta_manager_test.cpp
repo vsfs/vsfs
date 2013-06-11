@@ -16,9 +16,9 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <set>
 #include <string>
 #include <vector>
-#include <set>
 #include "vobla/file.h"
 #include "vobla/status.h"
 #include "vsfs/common/hash_util.h"
@@ -131,7 +131,7 @@ TEST_F(MetaManagerTest, TestFindUseInt64AsId) {
     string filepath = string("/energy/file-") +
                       to_string(i) + ".txt";
     expected_files.insert(filepath);
-    uint64_t hash = HashUtil::file_path_to_hash(filepath);
+    int64_t hash = HashUtil::file_path_to_hash(filepath);
     test_mm_->insert(hash, filepath);
     file_ids.push_back(hash);
   }
@@ -164,9 +164,7 @@ TEST_F(MetaManagerTest, TestInit) {
     MetaManager test_mm(testdb_);
     EXPECT_TRUE(test_mm.init().ok());
     for (int i = 0; i < 5; i++) {
-      for (int j = 0; j < 10; j++) {
-        test_mm.insert(i, string("/path") + to_string(j));
-      }
+        test_mm.insert(i, string("/path") + to_string(i));
     }
   }
 
@@ -174,9 +172,7 @@ TEST_F(MetaManagerTest, TestInit) {
     MetaManager test_mm(testdb_);
     EXPECT_TRUE(test_mm.init().ok());
     for (int i = 0; i < 5; i++) {
-      for (int j = 0; j < 10; j++) {
-        test_mm.have(i, string("/path") + to_string(j));
-      }
+        test_mm.have(i, string("/path") + to_string(i));
     }
   }
 }
