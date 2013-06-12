@@ -78,6 +78,14 @@ class IndexServerManager {
   Status get(HashValueType path_hash, NodeInfo* node); // NOLINT
 
   /**
+   * \brief Gets the replica servers for node.
+   * \param node the node info of the requiring node.
+   * \param num_replicas the number of replica servers to be returned.
+   */
+  vector<NodeInfo> get_replica_servers(const NodeInfo& node,
+                                       size_t num_replicas);
+
+  /**
    * \brief Get the number of physical nodes currently in the ring.
    */
   size_t num_nodes();

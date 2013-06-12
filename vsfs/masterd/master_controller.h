@@ -50,6 +50,11 @@ class PartitionManager;
 
 /**
  * \brief MasterController the main control block of master server.
+ *
+ * It maintains the following mappings.
+ *  - Index name -> Index server
+ *  - Index server -> Its IP address (addr:port)
+ *  - Index Info -> Index Name
  */
 class MasterController {
  public:

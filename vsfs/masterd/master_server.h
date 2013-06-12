@@ -31,10 +31,7 @@ namespace masterd {
 class MasterController;
 
 /**
- * \brief Master Server maintains few mappings:
- *  - Index name -> Index server
- *  - Index server -> Its IP address (addr:port)
- *  - Index Info -> Index Name
+ * \brief The RPC server for Master Server.
  */
 class MasterServer : public vsfs::MasterServerIf {
  public:

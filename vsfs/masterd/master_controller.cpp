@@ -103,7 +103,12 @@ Status MasterController::join_index_server(const NodeInfo &node,
     return status;
   }
 
-  // TODO(lxu): use ConsistentHashMap::succ() to find N replicas.
+  const size_t kNumReplicaServers = 2;
+  auto replica_servers = index_server_manager_->get_replica_servers(
+      node, kNumReplicaServers);
+  for (const auto& node : replica_servers) {
+    replicas->emplace_back(node.address);
+  }
   return status;
 }
 
