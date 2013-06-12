@@ -75,13 +75,12 @@ Status MetaManager::insert(int64_t file_id, const string &file_path) {
     VLOG(0) << "Roll back the in-memory changes...";
     map_.erase(file_id);
   }
-  return Status::OK;
+  return status;
 }
 
 Status MetaManager::insert(const RpcMetaDataList& metadata) {
   for (const RpcMetaData& file_id_and_path : metadata) {
-    int64_t key = static_cast<int64_t>(file_id_and_path.file_id);
-    auto status = insert(key, file_id_and_path.file_path);
+    auto status = insert(file_id_and_path.file_id, file_id_and_path.file_path);
     if (!status.ok()) {
       return status;
     }
@@ -119,15 +118,14 @@ Status MetaManager::find(int64_t file_id, string *file_path) {
   return Status::OK;
 }
 
-Status MetaManager::search(const vector<int64_t>& file_ids,
-                           vector<string>* results) {
+Status MetaManager::find(const vector<int64_t>& file_ids,
+                         vector<string>* results) {
   CHECK_NOTNULL(results);
   MutexGuard guard(lock_);
   for (auto id : file_ids) {
-    int64_t hash_id = static_cast<int64_t>(id);
-    auto it = map_.find(hash_id);
+    auto it = map_.find(id);
     if (it == map_.end()) {
-      LOG(ERROR) << "Failed to find FileID: " << hash_id;
+      LOG(ERROR) << "Failed to find FileID: " << id;
       return Status(-ENOENT, "The FileID does not exist.");
     }
     results->push_back(it->second);

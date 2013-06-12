@@ -89,6 +89,16 @@ TEST_F(MetaManagerTest, TestInsertVector) {
   EXPECT_EQ(-EEXIST, test_mm_->insert(2, "/foo/zoo/").error());
 }
 
+TEST_F(MetaManagerTest, TestInsertFailure) {
+  EXPECT_CALL(*mock_db_, put(_, _))
+      .WillOnce(Return(Status(-1, "Mock Failure")));
+  auto status = test_mm_->insert(1, "/foo/bar/");
+  EXPECT_EQ(-1, status.error());
+  EXPECT_EQ("Mock Failure", status.message());
+  // The inserted item should be rolled back.
+  EXPECT_FALSE(test_mm_->have(1, "/foo/bar/"));
+}
+
 TEST_F(MetaManagerTest, TestRemove) {
   EXPECT_CALL(*mock_db_, put(_, _))
       .Times(2)
@@ -121,7 +131,7 @@ TEST_F(MetaManagerTest, TestFind) {
   EXPECT_EQ(-ENOENT, test_mm_->find(3, &test_path).error());
 }
 
-TEST_F(MetaManagerTest, TestSearch) {
+TEST_F(MetaManagerTest, TestFindVector) {
   EXPECT_CALL(*mock_db_, put(_, _))
       .WillRepeatedly(Return(Status::OK));
   vector<int64_t> file_ids;
@@ -137,7 +147,7 @@ TEST_F(MetaManagerTest, TestSearch) {
   }
 
   vector<string> file_names;
-  EXPECT_TRUE(test_mm_->search(file_ids, &file_names).ok());
+  EXPECT_TRUE(test_mm_->find(file_ids, &file_names).ok());
   set<string> actual_files(file_names.begin(), file_names.end());
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
 }

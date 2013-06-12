@@ -60,7 +60,7 @@ class MetaManager {
    */
   explicit MetaManager(vsfs::LevelDBStore* store);
 
-  ~MetaManager();
+  virtual ~MetaManager();
 
   /**
    * \brief Loads the data from LevelDBStore.
@@ -101,7 +101,7 @@ class MetaManager {
    * \param[in] file_ids the IDs of the files.
    * \param[out] results the corresponding file paths.
    */
-  Status search(const vector<int64_t>& file_ids, vector<string>* results);
+  Status find(const vector<int64_t>& file_ids, vector<string>* results);
 
   /**
    * \brief Returns true if there is a file_id and its corresponding file_path
