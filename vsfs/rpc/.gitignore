@@ -1,3 +1,5 @@
 *_constants.*
 *_types.*
 *.skeleton.cpp
+*Server.h
+*Server.cpp

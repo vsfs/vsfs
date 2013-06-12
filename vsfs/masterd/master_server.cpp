@@ -14,19 +14,39 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
+#include <memory>
+#include <string>
+#include <vector>
 #include "vobla/status.h"
+#include "vsfs/index/index_info.h"
+#include "vsfs/masterd/master_server.h"
+#include "vsfs/masterd/master_controller.h"
 #include "vsfs/rpc/thrift_utils.h"
-#include "vsfs/rpc/vsfs_types.h"
 
+using std::set;
+using std::string;
+using std::unique_ptr;
+using std::vector;
 using vobla::Status;
 
 namespace vsfs {
 
-RpcInvalidOp ThriftUtils::StatusToRpcInvalidOp(const Status &status) {
-  RpcInvalidOp invalid;
-  invalid.what = status.error();
-  invalid.why = status.message();
-  return invalid;
+using index::IndexInfo;
+
+namespace masterd {
+
+MasterServer::MasterServer(MasterController *ctrl)
+    : controller_(ctrl) {
 }
 
+void MasterServer::join_index_server(RpcNodeAddressList& _return,  // NOLINT
+                                     const RpcNodeInfo& info) {
+  Status status = controller_->join_index_server(info, &_return);
+  if (!status.ok()) {
+    throw ThriftUtils::StatusToRpcInvalidOp(status);
+  }
+}
+
+}  // namespace masterd
 }  // namespace vsfs

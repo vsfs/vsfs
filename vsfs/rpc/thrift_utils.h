@@ -31,7 +31,6 @@ class Status;
 }
 
 namespace vsfs {
-namespace rpc {
 
 class RpcInvalidOp;
 
@@ -86,7 +85,6 @@ class ThriftUtils {
   DISALLOW_IMPLICIT_CONSTRUCTORS(ThriftUtils);
 };
 
-}  // namespace rpc
 }  // namespace vsfs
 
 #endif  // VSFS_RPC_THRIFT_UTILS_H_

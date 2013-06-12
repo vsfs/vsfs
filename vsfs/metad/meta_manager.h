@@ -31,8 +31,6 @@ using std::unique_ptr;
 using std::unordered_map;
 using std::vector;
 using vobla::Status;
-using vsfs::rpc::RpcMetaData;
-using vsfs::rpc::RpcMetaDataList;
 
 namespace vsfs {
 class LevelDBStore;

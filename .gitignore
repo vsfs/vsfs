@@ -44,3 +44,7 @@ vsfs-*.tar.*
 vsfs.spec
 
 lib/gmock-*
+
+# thrift generated files
+*_types.*
+*_constants.*
