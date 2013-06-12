@@ -105,6 +105,7 @@ vector<NodeInfo> IndexServerManager::get_replica_servers(
   size_t actual_num_replicas = std::min(num_replicas, ring_.num_nodes() - 1);
   NodeInfo cur_node, succ_node;
   cur_node = node;
+  MutexGuard guard(lock_);
   for (size_t i = 0; i < actual_num_replicas; i++) {
     ring_.succ_by_value(cur_node, &succ_node);
     retval.emplace_back(succ_node);

@@ -1,9 +1,17 @@
-/**
- * \file index_server_manager_test.cpp
- *
- * \brief Unit test for IndexServerManager.
- *
+/*
  * Copyright 2013 (c) Ziling Huang <hzlgis@gmail.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #include <gtest/gtest.h>
@@ -16,6 +24,7 @@
 #include "vsfs/rpc/vsfs_types.h"
 
 using std::string;
+using std::to_string;
 using std::vector;
 
 namespace vsfs {
@@ -62,7 +71,7 @@ TEST(IndexServerManagerTest, TestRemoveIndexServer) {
   EXPECT_EQ(static_cast<size_t>(0), test_idx.num_nodes());
 }
 
-TEST(IndexServerManagertTest, TestGetIndexServer) {
+TEST(IndexServerManagerTest, TestGetIndexServer) {
   IndexServerManager test_idx;
 
   NodeInfo node1;
@@ -101,6 +110,22 @@ TEST(IndexServerManagertTest, TestGetIndexServer) {
   EXPECT_NEAR(node2_count, 500, 50);
   EXPECT_NEAR(node3_count, 500, 50);
   EXPECT_NEAR(node4_count, 500, 50);*/
+}
+
+TEST(IndexServerManagerTest, TestGetReplicaServers) {
+  IndexServerManager test_ism;
+  for (int i = 0; i < 10; i++) {
+    NodeInfo node;
+    node.server_id = string("node") + to_string(i);
+    test_ism.add(i * 1000, node);
+  }
+
+  NodeInfo node;
+  node.server_id = string("node2");
+  auto replicas = test_ism.get_replica_servers(node, 2);
+  EXPECT_EQ(2u, replicas.size());
+  EXPECT_EQ("node3", replicas[0].server_id);
+  EXPECT_EQ("node4", replicas[1].server_id);
 }
 
 }  // namespace masterd
