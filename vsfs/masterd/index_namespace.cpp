@@ -34,7 +34,7 @@ namespace vsfs {
 namespace masterd {
 
 string serialize_namespace_node(const IndexNamespaceNode &node) {
-  return rpc::ThriftUtils::serialize(node);
+  return ThriftUtils::serialize(node);
 }
 
 IndexNamespace::IndexNamespace(const string &dbpath)
@@ -56,7 +56,7 @@ Status IndexNamespace::init() {
   for (const auto &key_and_ns_node : *store_) {
     const auto& key = key_and_ns_node.first;
     unique_ptr<IndexNamespaceNode> node(new IndexNamespaceNode);
-    if (!rpc::ThriftUtils::deserialize(key_and_ns_node.second, node.get())) {
+    if (!ThriftUtils::deserialize(key_and_ns_node.second, node.get())) {
       LOG(ERROR) << "Failed to deserialize namespace node: " << key;
       return Status(-1, "Failed to deserialize namespace node.");
     }

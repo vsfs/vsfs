@@ -16,6 +16,7 @@
 
 #include <glog/logging.h>
 #include <time.h>
+#include <algorithm>
 #include <cstdlib>
 #include <limits>
 #include <string>
@@ -96,6 +97,21 @@ Status IndexServerManager::get(HashValueType path_hash,
     return Status(-ENOENT, "Can't find any Index Server.");
   }
   return Status::OK;
+}
+
+vector<NodeInfo> IndexServerManager::get_replica_servers(
+    const NodeInfo& node, size_t num_replicas) {
+  vector<NodeInfo> retval;
+  size_t actual_num_replicas = std::min(num_replicas, ring_.num_nodes() - 1);
+  NodeInfo cur_node, succ_node;
+  cur_node = node;
+  MutexGuard guard(lock_);
+  for (size_t i = 0; i < actual_num_replicas; i++) {
+    ring_.succ_by_value(cur_node, &succ_node);
+    retval.emplace_back(succ_node);
+    cur_node = succ_node;
+  }
+  return retval;
 }
 
 size_t IndexServerManager::num_nodes() {
