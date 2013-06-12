@@ -27,6 +27,7 @@
 
 using std::mutex;
 using std::string;
+using std::unique_ptr;
 using std::unordered_map;
 using std::vector;
 using vobla::Status;
