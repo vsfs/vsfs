@@ -36,8 +36,10 @@ using index::IndexInfo;
 
 namespace masterd {
 
-MasterServer::MasterServer(MasterController *ctrl)
-    : controller_(ctrl) {
+MasterServer::MasterServer(MasterController *ctrl) : controller_(ctrl) {
+}
+
+MasterServer::~MasterServer() {
 }
 
 void MasterServer::join_index_server(RpcNodeAddressList& _return,  // NOLINT

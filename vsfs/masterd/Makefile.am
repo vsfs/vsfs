@@ -3,12 +3,14 @@
 
 CLEANFILES=*.gcov *.gcno *.gcda
 BUILT_SOURCES = protobuf masterd_types.h
-#bin_PROGRAMS = masterd
+bin_PROGRAMS = masterd
+EXTRA_DIST = masterd.proto masterd.thrift
 
 noinst_LIBRARIES = libvsfs-masterd.a
 libvsfs_masterd_a_SOURCES = \
   index_namespace.cpp \
   index_namespace.h \
+  index_namespace_interface.h \
   index_server_manager.cpp \
   index_server_manager.h \
   master_controller.cpp \
@@ -32,9 +34,12 @@ masterd_types.h: masterd.thrift
 masterd.pb.h: masterd.proto
 	$(PROTOC) --cpp_out=. $<
 
-#masterd_SOURCES = masterd.cpp
-#masterd_LDADD = \
-#  libvsfs-masterd.a
+masterd_SOURCES = masterd.cpp
+masterd_LDADD = \
+  libvsfs-masterd.a \
+  $(top_srcdir)/vsfs/rpc/libvsfs-rpc.a \
+  $(top_srcdir)/vsfs/common/libvsfs-common.a \
+  $(libthrift_LIBS) -lthriftnb $(PROTOBUF_LIBS)
 
 TESTS = \
   index_namespace_test \
@@ -43,9 +48,9 @@ TESTS = \
   partition_manager_test
 
 check_PROGRAMS = $(TESTS)
-LDADD = libvsfs-masterd.a ../common/libvsfs-common.a $(masterd_LDADD) \
-	-lgtest -lgtest_main -lgmock \
-	$(libthrift_LIBS) $(PROTOBUF_LIBS)
+LDADD = libvsfs-masterd.a $(masterd_LDADD) \
+	-lgtest -lgtest_main -lgmock
+
 index_namespace_test_SOURCES = index_namespace_test.cpp
 index_server_manager_test_SOURCES = index_server_manager_test.cpp
 master_controller_test_SOURCES = master_controller_test.cpp
