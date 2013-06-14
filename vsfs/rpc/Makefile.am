@@ -4,7 +4,7 @@
 
 LDADD = @libthrift_LIBS@
 noinst_LIBRARIES = libvsfs-rpc.a
-BUILT_SOURCES = vsfs_constants.h
+BUILT_SOURCES = vsfs_constants.h testdata/test_constants.h
 
 libvsfs_rpc_a_SOURCES = \
   IndexServer.h IndexServer.cpp \
