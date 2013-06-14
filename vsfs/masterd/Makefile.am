@@ -4,11 +4,13 @@
 CLEANFILES=*.gcov *.gcno *.gcda
 BUILT_SOURCES = protobuf masterd_types.h
 bin_PROGRAMS = masterd
+EXTRA_DIST = masterd.proto masterd.thrift
 
 noinst_LIBRARIES = libvsfs-masterd.a
 libvsfs_masterd_a_SOURCES = \
   index_namespace.cpp \
   index_namespace.h \
+  index_namespace_interface.h \
   index_server_manager.cpp \
   index_server_manager.h \
   master_controller.cpp \

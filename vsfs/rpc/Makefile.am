@@ -37,4 +37,5 @@ thrift_utils_test_CXXFLAGS = $(AM_CXXFLAGS) $(libthrift_CFLAGS)
 thrift_utils_test_LDADD = -lgtest -lgtest_main @libthrift_LIBS@
 
 EXTRA_DIST = \
+  testdata/test.thrift \
   vsfs.thrift
