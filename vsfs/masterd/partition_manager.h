@@ -58,7 +58,7 @@ class PartitionManager {
    *
    * \TODO(eddyxu): move hash value to a centralized file.
    */
-  typedef uint64_t HashValueType;
+  typedef int64_t HashValueType;
 
   typedef ConsistentHashMap<HashValueType, string> PartitionMap;
 

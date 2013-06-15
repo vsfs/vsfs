@@ -32,7 +32,7 @@ namespace masterd {
 
 TEST(IndexServerManagerTest, TestAddIndexServer) {
   IndexServerManager test_idx;
-  vector<size_t> partitions;
+  vector<int64_t> partitions;
   NodeInfo node1;
   NodeInfo node2;
   NodeInfo node3;
@@ -94,7 +94,7 @@ TEST(IndexServerManagerTest, TestGetIndexServer) {
   NodeInfo tmp;
   for (int i = 0; i < 2000; i++) {
     string path = "/tmp_data/test_data/" + std::to_string(i);
-    uint64_t file_id = HashUtil::file_path_to_hash(path);
+    int64_t file_id = HashUtil::file_path_to_hash(path);
     EXPECT_TRUE(test_idx.get(file_id, &tmp).ok());
     if (tmp.server_id == "node1") {
       node1_count++;
