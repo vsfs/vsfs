@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <boost/locale.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <algorithm>
@@ -61,7 +62,6 @@ class IndexNamespaceTest : public ::testing::Test {
   MockLevelDBStore* mock_db_;
 };
 
-// TODO(eddyxu): replace leveldb with MockLevelDBStore
 TEST_F(IndexNamespaceTest, TestCreates) {
   // Only two successfully insertations count.
   EXPECT_CALL(*mock_db_, put(_, _))
@@ -74,6 +74,23 @@ TEST_F(IndexNamespaceTest, TestCreates) {
 
   EXPECT_TRUE(test_ns_->insert("/", "test").ok());
   EXPECT_EQ(-EEXIST, test_ns_->insert("/", "test").error());
+}
+
+TEST_F(IndexNamespaceTest, TestCreateNameInUTF8) {
+  const string path(u8"/这是一个目录");
+  const string name(u8"索引一");
+  {
+    IndexNamespace test_ns(testdb_);
+    test_ns.init();
+        EXPECT_TRUE(test_ns.insert(path, name).ok());
+    EXPECT_TRUE(test_ns.have(path, name));
+  }
+
+  {
+    IndexNamespace test_ns(testdb_);
+    test_ns.init();
+    EXPECT_TRUE(test_ns.have(path, name));
+  }
 }
 
 TEST_F(IndexNamespaceTest, TestInsertFailures) {

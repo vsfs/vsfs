@@ -101,7 +101,7 @@ TEST_F(PartitionManagerTest, TestGetAllPartitions) {
   PartitionManager manager(path);
   manager.init();
   manager.add_index("/test0");
-  for (uint64_t i = 1; i <= 10; ++i) {
+  for (int64_t i = 1; i <= 10; ++i) {
     EXPECT_TRUE(manager.add_partition("/test0", i * 1000).ok());
   }
 
@@ -109,7 +109,7 @@ TEST_F(PartitionManagerTest, TestGetAllPartitions) {
   EXPECT_TRUE(manager.get_all_partitions("/test0", &partitions).ok());
 
   vector<string> expected_partitions;
-  for (uint64_t i = 0; i <= 10; ++i) {
+  for (int64_t i = 0; i <= 10; ++i) {
     expected_partitions.emplace_back("/test0." + to_string(i * 1000));
   }
   EXPECT_THAT(partitions, ContainerEq(expected_partitions));

@@ -41,9 +41,9 @@ using vsfs::index::IndexInfo;
 namespace vsfs {
 namespace masterd {
 
-static const uint64_t kNumPartitions = 4;
-static const uint64_t kPartitonSize =
-    std::numeric_limits<uint64_t>::max() / kNumPartitions;
+static const int64_t kNumPartitions = 4;
+static const int64_t kPartitonSize =
+    std::numeric_limits<int64_t>::max() / kNumPartitions;
 
 /// Unit tests for Master Server.
 class MasterControllerTest : public ::testing::Test {

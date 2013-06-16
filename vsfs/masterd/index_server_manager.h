@@ -43,7 +43,7 @@ namespace masterd {
  */
 class IndexServerManager {
  public:
-  typedef uint64_t HashValueType;
+  typedef int64_t HashValueType;
 
   /// Default constructor.
   IndexServerManager();
