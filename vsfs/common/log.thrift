@@ -19,11 +19,17 @@ namespace cpp vsfs
 namespace java vsfs
 namespace py vsfs
 
+/**
+ * \brief A entity of log.
+ */
 struct LogEntity {
-  1: i64 txn_id,
-  2: binary data
+  1: i64 txn_id,  /// Transaction ID.
+  2: binary data  /// The serialized data of updates.
 }
 
+/**
+ * \brief A buffer of a sequence of entities (updates).
+ */
 struct LogBuffer {
   1: list<LogEntity> buffer
 }
