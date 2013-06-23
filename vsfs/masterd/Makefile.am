@@ -2,9 +2,9 @@
 # Makefile.am for Vsfs::masterd
 
 CLEANFILES=*.gcov *.gcno *.gcda
-BUILT_SOURCES = protobuf masterd_types.h
+BUILT_SOURCES = masterd_types.h
 bin_PROGRAMS = masterd
-EXTRA_DIST = masterd.proto masterd.thrift
+EXTRA_DIST = masterd.thrift
 
 noinst_LIBRARIES = libvsfs-masterd.a
 libvsfs_masterd_a_SOURCES = \
@@ -17,29 +17,22 @@ libvsfs_masterd_a_SOURCES = \
   master_controller.h \
   master_server.cpp \
   master_server.h \
-  masterd.pb.cc \
   masterd_constants.cpp \
   masterd_constants.h \
   masterd_types.cpp \
   masterd_types.h \
-  masterd.pb.h \
   partition_manager.cpp \
   partition_manager.h
 
-protobuf: masterd.pb.h
-
 masterd_types.h: masterd.thrift
 	thrift --gen cpp -out . $<
-
-masterd.pb.h: masterd.proto
-	$(PROTOC) --cpp_out=. $<
 
 masterd_SOURCES = masterd.cpp
 masterd_LDADD = \
   libvsfs-masterd.a \
   $(top_srcdir)/vsfs/rpc/libvsfs-rpc.a \
   $(top_srcdir)/vsfs/common/libvsfs-common.a \
-  $(libthrift_LIBS) -lthriftnb $(PROTOBUF_LIBS)
+  $(libthrift_LIBS) -lthriftnb
 
 TESTS = \
   index_namespace_test \
@@ -55,5 +48,3 @@ index_namespace_test_SOURCES = index_namespace_test.cpp
 index_server_manager_test_SOURCES = index_server_manager_test.cpp
 master_controller_test_SOURCES = master_controller_test.cpp
 partition_manager_test_SOURCES = partition_manager_test.cpp
-
-.PHONY: protobuf

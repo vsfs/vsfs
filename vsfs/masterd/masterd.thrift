@@ -22,3 +22,12 @@ struct IndexNamespaceNode {
   1: string path,
   2: set<string> names,
 }
+
+struct IndexPartition {
+  1: i64 hash_sep,  // Hash Separator
+  2: string path,
+}
+
+struct IndexConsistentHashRing {
+  1: list<IndexPartition> partitions,
+}
