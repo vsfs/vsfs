@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * \file vsfs/index/range_index.h
- * \brief A one-dimentional *in memory* range index.
- */
-
 #ifndef VSFS_INDEX_RANGE_INDEX_H_
 #define VSFS_INDEX_RANGE_INDEX_H_
 
@@ -38,6 +33,7 @@
 #include "vobla/status.h"
 #include "vobla/traits.h"
 #include "vsfs/common/thread.h"
+#include "vsfs/rpc/vsfs_types.h"
 
 using boost::lexical_cast;
 using std::map;
@@ -113,6 +109,11 @@ class RangeIndexInterface {
    * erases the key-value pair.
    */
   virtual Status erase_string_val(const string &key, const string &value) = 0;
+
+  /**
+   * \brief A general interface to apply modifications.
+   */
+  virtual Status apply(const vector<RpcIndexRecordUpdateOp> &op) = 0;
 
   template <typename K>
   void search(K key, FileIdVector *results) {
@@ -204,8 +205,7 @@ class RangeIndex : public RangeIndexInterface {
     return Status::OK;
   }
 
-  /*
-  Status update(const vector<RpcIndexRecordUpdateOp> &updates) {
+  Status apply(const vector<RpcIndexRecordUpdateOp> &updates) {
     MutexGuard guard(lock_);
     for (const auto& update : updates) {
       KeyType key = 0;
@@ -232,7 +232,6 @@ class RangeIndex : public RangeIndexInterface {
     }
     return Status::OK;
   }
-  */
 
   /**
    * \brief Erases Key-FileId pair from the in-memory RangeIndex.
