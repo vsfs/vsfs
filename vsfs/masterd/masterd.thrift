@@ -28,6 +28,9 @@ struct IndexPartition {
   2: string path,
 }
 
+/**
+ * \brief A Consistent Hash Ring for one file index.
+ */
 struct IndexConsistentHashRing {
   1: list<IndexPartition> partitions,
 }
