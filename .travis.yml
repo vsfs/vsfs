@@ -14,7 +14,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y g++-${CXX_VERSION} autoconf-archive libleveldb-dev libsnappy-dev libevent-dev python-support
   - sudo apt-get install -y libboost1.53-dev libboost-filesystem1.53-dev libboost-system1.53-dev
-  - sudo apt-get install -y libgflags-dev libgoogle-glog-dev protobuf-compiler libprotobuf-dev
+  - sudo apt-get install -y libgflags-dev libgoogle-glog-dev
   - export CXX="g++-${CXX_VERSION}"
   - sudo pip install cpp-coveralls --use-mirrors
 #- git clone git://github.com/vsfs/vsfs-devtools.git
