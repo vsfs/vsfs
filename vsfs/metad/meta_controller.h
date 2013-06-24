@@ -27,7 +27,6 @@
 #include <vector>
 #include "vobla/status.h"
 // #include "vsfs/client/vsfs_rpc_client.h"
-#include "vsfs/rpc/MasterDaemon.h"
 #include "vsfs/metad/meta_manager.h"
 
 using apache::thrift::server::TThreadedServer;

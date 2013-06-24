@@ -29,7 +29,6 @@
 #include <thread>
 #include <vector>
 // #include "vsfs/client/vsfs_rpc_client.h"
-#include "vsfs/rpc/MasterDaemon.h"
 #include "vsfs/metad/meta_server.h"
 #include "vsfs/metad/meta_controller.h"
 
