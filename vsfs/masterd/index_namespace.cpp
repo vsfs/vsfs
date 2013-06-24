@@ -23,7 +23,6 @@
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/masterd/index_namespace.h"
-#include "vsfs/masterd/masterd.pb.h"
 #include "vsfs/rpc/thrift_utils.h"
 
 using vobla::contain_key;
