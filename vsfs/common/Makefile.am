@@ -1,7 +1,7 @@
 #vim: ts=8:st=8:noexpandtab
 
 BUILT_SOURCES = log_types.h
-CLEANFILES = *.pb.h *.pb.cc *.gcda *.gcno *.gcov
+CLEANFILES = *.gcda *.gcno *.gcov
 
 noinst_LIBRARIES = libvsfs-common.a
 libvsfs_common_a_SOURCES = \
@@ -41,5 +41,3 @@ complex_query_test_SOURCES = complex_query.h complex_query.cpp \
 leveldb_store_test_SOURCES = leveldb_store_test.cpp
 log_manager_test_SOURCES = log_manager_test.cpp
 posix_path_test_SOURCES = posix_path.h posix_path.cpp posix_path_test.cpp
-
-.PHONY: protobuf
