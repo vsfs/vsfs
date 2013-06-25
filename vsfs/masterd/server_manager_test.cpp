@@ -20,7 +20,7 @@
 #include <vector>
 #include "vobla/status.h"
 #include "vsfs/common/hash_util.h"
-#include "vsfs/masterd/index_server_manager.h"
+#include "vsfs/masterd/server_manager.h"
 #include "vsfs/rpc/vsfs_types.h"
 
 using std::string;
@@ -30,8 +30,8 @@ using std::vector;
 namespace vsfs {
 namespace masterd {
 
-TEST(IndexServerManagerTest, TestAddIndexServer) {
-  IndexServerManager test_idx;
+TEST(ServerManagerTest, TestAddIndexServer) {
+  ServerManager test_idx;
   vector<int64_t> partitions;
   NodeInfo node1;
   NodeInfo node2;
@@ -60,8 +60,8 @@ TEST(IndexServerManagerTest, TestAddIndexServer) {
   }
 }
 
-TEST(IndexServerManagerTest, TestRemoveIndexServer) {
-  IndexServerManager test_idx;
+TEST(ServerManagerTest, TestRemoveIndexServer) {
+  ServerManager test_idx;
   NodeInfo node;
   node.address.host = "192.168.1.1";
   node.server_id = "node1";
@@ -71,8 +71,8 @@ TEST(IndexServerManagerTest, TestRemoveIndexServer) {
   EXPECT_EQ(static_cast<size_t>(0), test_idx.num_nodes());
 }
 
-TEST(IndexServerManagerTest, TestGetIndexServer) {
-  IndexServerManager test_idx;
+TEST(ServerManagerTest, TestGetIndexServer) {
+  ServerManager test_idx;
 
   NodeInfo node1;
   NodeInfo node2;
@@ -112,8 +112,8 @@ TEST(IndexServerManagerTest, TestGetIndexServer) {
   EXPECT_NEAR(node4_count, 500, 50);*/
 }
 
-TEST(IndexServerManagerTest, TestGetReplicaServers) {
-  IndexServerManager test_ism;
+TEST(ServerManagerTest, TestGetReplicaServers) {
+  ServerManager test_ism;
   for (int i = 0; i < 10; i++) {
     NodeInfo node;
     node.server_id = string("node") + to_string(i);
