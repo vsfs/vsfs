@@ -26,7 +26,8 @@
 #include <thread>
 #include <vector>
 #include "vobla/status.h"
-// #include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/rpc/MasterServer.h"
+#include "vsfs/rpc/rpc_client.h"
 #include "vsfs/metad/meta_manager.h"
 
 using apache::thrift::server::TThreadedServer;
@@ -37,12 +38,16 @@ using std::thread;
 using std::string;
 using std::unique_ptr;
 using std::vector;
+using vsfs::MasterServerClient;
+using vsfs::rpc::RpcClient;
 
 namespace vsfs {
 namespace metad {
 
 class MetaController {
  public:
+  typedef RpcClient<MasterServerClient> MasterClientType;
+
   MetaController();
 
   virtual ~MetaController();
@@ -84,9 +89,9 @@ class MetaController {
   virtual Status find(const vector<int64_t>& file_ids,
                       vector<string>* results);
 
-  /* MasterDaemonClient* master_connection() const {
+  MasterServerClient* master_connection() const {
     return master_->handler();
-  } */
+  }
 
  private:
   string host_;
@@ -101,7 +106,7 @@ class MetaController {
   unique_ptr<MetaManager> manager_;
 
   /// Connection to master
-  // unique_ptr<client::VSFSRpcClient::MasterClientType> master_;
+  unique_ptr<MasterClientType> master_;
 
   void background_task();
 

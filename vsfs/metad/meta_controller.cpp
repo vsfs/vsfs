@@ -28,7 +28,7 @@
 #include <string>
 #include <thread>
 #include <vector>
-// #include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/rpc/rpc_client.h"
 #include "vsfs/metad/meta_server.h"
 #include "vsfs/metad/meta_controller.h"
 
@@ -45,6 +45,7 @@ using std::string;
 using std::vector;
 using vsfs::rpc::NodeAddressList;
 using vsfs::rpc::NodeInfo;
+using vsfs::rpc::RpcClient;
 
 DEFINE_string(host, "", "Manually set the hostname of this MetaManager.");
 DEFINE_int32(port, 6666, "Set the listen port of MetaManager.");
@@ -55,15 +56,13 @@ DEFINE_int32(master_port, 9876, "Set the port of the master node.");
 
 namespace vsfs {
 
-// using client::VSFSRpcClient;
 
 namespace metad {
 
 MetaManager::MetaManager()
-    : host_(FLAGS_host), port_(FLAGS_port), manager_(new MetaManager)
-      // ,master_(new VSFSRpcClient::MasterClientType(FLAGS_master_addr,
-      //                                            FLAGS_master_port))
-                                                  { // NOLINT
+    : host_(FLAGS_host), port_(FLAGS_port), manager_(new MetaManager),
+      master_(new VSFSRpcClient::MasterClientType(FLAGS_master_addr,
+                                                  FLAGS_master_port)) {
 }
 
 MetaManager::~MetaManager() {
@@ -74,7 +73,6 @@ void MetaManager::background_task() {
   LOG(INFO) << "Joining master: " << FLAGS_master_addr
             << ":" << FLAGS_master_port;
   join();
-
   // TODO(Ziling): background tasks
 }
 
@@ -106,8 +104,8 @@ void MetaManager::stop() {
 }
 
 Status MetaManager::join() {
-  // CHECK_NOTNULL(master_.get());
-  // master_->open();
+  CHECK_NOTNULL(master_->handler());
+  master_->open();
   NodeInfo node_info;
 
   if (host_.empty()) {
@@ -124,7 +122,7 @@ Status MetaManager::join() {
   node_info.server_id = FLAGS_server_id;
 
   NodeAddressList replica_server_addresses;
-  // master_->handler()->join_meta_server(replica_server_addresses, node_info);
+  master_->handler()->join_meta_server(replica_server_addresses, node_info);
 
   // TODO(Ziling): join replica and LOG INFO
   return Status::OK;
