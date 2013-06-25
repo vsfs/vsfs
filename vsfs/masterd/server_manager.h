@@ -32,12 +32,10 @@ using vobla::Status;
 using vsfs::NodeInfo;
 
 namespace vsfs {
-
 namespace masterd {
 /**
  * \class ServerManager "vsfs/masterd/server_manager.h"
  * \brief It manages all the servers on a consistent hashing ring,
- * and assigns each server a hash range to feed indices.
  *
  * \note This class is thread-safe.
  */
@@ -48,7 +46,7 @@ class ServerManager {
   /// Default constructor.
   ServerManager();
 
-  ~ServerManager();
+  virtual ~ServerManager();
 
   /**
    * \brief add a node at a random position on the ring.
@@ -82,7 +80,7 @@ class ServerManager {
    * \param num_replicas the number of replica servers to be returned.
    */
   vector<NodeInfo> get_replica_servers(const NodeInfo& node,
-                                               size_t num_replicas);
+                                       size_t num_replicas);
 
   /**
    * \brief Get the number of physical nodes currently in the ring.

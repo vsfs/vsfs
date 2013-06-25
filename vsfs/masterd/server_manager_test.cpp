@@ -28,7 +28,6 @@ using std::to_string;
 using std::vector;
 
 namespace vsfs {
-
 namespace masterd {
 
 TEST(ServerManagerTest, TestAddIndexServer) {

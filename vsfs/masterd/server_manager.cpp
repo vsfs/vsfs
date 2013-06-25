@@ -15,7 +15,6 @@
  */
 
 #include <glog/logging.h>
-#include <time.h>
 #include <algorithm>
 #include <cstdlib>
 #include <limits>
@@ -32,11 +31,9 @@ using vobla::append_keys_from_map;
 using vobla::Range;
 
 namespace vsfs {
-
 namespace masterd {
 
 ServerManager::ServerManager() {
-  srand(time(NULL));
 }
 
 ServerManager::~ServerManager() {
@@ -120,8 +117,7 @@ size_t ServerManager::num_nodes() {
   return ring_.num_nodes();
 }
 
-vector<ServerManager::HashValueType>
-ServerManager::get_partitions() {
+vector<ServerManager::HashValueType> ServerManager::get_partitions() {
   vector<HashValueType> partitions;
   MutexGuard lock(lock_);
   if (!ring_.empty()) {
