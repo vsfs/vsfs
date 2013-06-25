@@ -18,7 +18,9 @@
 #define VSFS_QUERY_AST_H_
 
 #include <memory>
+#include <string>
 
+using std::string;
 using std::unique_ptr;
 
 namespace vsfs {
@@ -30,11 +32,16 @@ namespace query {
  */
 class AST {
  public:
+  enum class Type {
+    UNKNOWN,
+    BINARY_OP,
+  };
+
   AST();
 
   virtual ~AST();
 
-  virtual int type() = 0;
+  virtual Type type() = 0;
 
   AST* left() const;
 
@@ -44,12 +51,49 @@ class AST {
 
   void set_right(AST* r);
 
- private:
+ protected:
   unique_ptr<AST> left_;
   unique_ptr<AST> right_;
 };
 
 class BinaryOpAst : public AST {
+ public:
+  enum class OpCode {
+    UNKNOWN,
+    EQ,
+    NEQ,
+    GT,
+    GE,
+    LT,
+    LE,
+    ADD,
+    SUB,
+    MULTIPLY,
+    DIVIDE,
+    MOD,
+    AND,
+    OR,
+    XOR,
+  };
+
+  BinaryOpAst();
+
+  explicit BinaryOpAst(OpCode op);
+
+  explicit BinaryOpAst(const string& opstr);
+
+  virtual ~BinaryOpAst();
+
+  virtual Type type() const {
+    return Type::BINARY_OP;
+  }
+
+  OpCode opcode() const;
+
+  void set_opcode() const;
+
+ protected:
+  OpCode opcode_;
 };
 
 }  // namespace query

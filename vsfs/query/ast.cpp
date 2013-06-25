@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
+#include <string>
 #include "vsfs/query/ast.h"
+
+using std::string;
 
 namespace vsfs {
 namespace query {
@@ -35,6 +38,51 @@ void AST::set_left(AST* l) {
 
 AST* AST::right() const {
   return right_.get();
+}
+
+namespace {
+
+BinaryOpAst::OpCode parse_op(const string& op) {
+  if (op == "=") {
+    return BinaryOpAst::OpCode::EQ;
+  } else if (op == "!=") {
+    return BinaryOpAst::OpCode::NEQ;
+  } else if (op == ">") {
+    return BinaryOpAst::OpCode::GT;
+  } else if (op == ">=") {
+    return BinaryOpAst::OpCode::GE;
+  } else if (op == "<") {
+    return BinaryOpAst::OpCode::LT;
+  } else if (op == "<=") {
+    return BinaryOpAst::OpCode::LE;
+  } else if (op == "+") {
+    return BinaryOpAst::OpCode::ADD;
+  } else if (op == "-") {
+    return BinaryOpAst::OpCode::SUB;
+  } else if (op == "*") {
+    return BinaryOpAst::OpCode::MULTIPLY;
+  } else if (op == "/") {
+    return BinaryOpAst::OpCode::DIVIDE;
+  } else if (op == "&") {
+    return BinaryOpAst::OpCode::AND;
+  } else if (op == "|") {
+    return BinaryOpAst::OpCode::OR;
+  } else if (op == "^") {
+    return BinaryOpAst::OpCode::XOR;
+  } else {
+    return BinaryOpAst::OpCode::UNKNOWN;
+  }
+}
+
+}  // namespace
+
+BinaryOpAst::BinaryOpAst() : opcode_(OpCode::UNKNOWN) {
+}
+
+BinaryOpAst::BinaryOpAst(OpCode code) : opcode_(code) {
+}
+
+BinaryOpAst::BinaryOpAst(const string& opstr) : opcode_(parse_op(opstr)) {
 }
 
 }  // namespace query
