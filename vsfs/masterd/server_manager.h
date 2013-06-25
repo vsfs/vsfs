@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VSFS_MASTERD_INDEX_SERVER_MANAGER_H_
-#define VSFS_MASTERD_INDEX_SERVER_MANAGER_H_
+#ifndef VSFS_MASTERD_SERVER_MANAGER_H_
+#define VSFS_MASTERD_SERVER_MANAGER_H_
 
 #include <mutex>
 #include <string>
@@ -33,33 +33,30 @@ using vsfs::NodeInfo;
 
 namespace vsfs {
 namespace masterd {
-
 /**
- * \class IndexServerManager "vsfs/masterd/index_server_manager.h"
- * \brief It maintains all the IndexServers on a consistent hashing ring,
- * and assigns each server a hash range to feed indices.
+ * \class ServerManager "vsfs/masterd/server_manager.h"
+ * \brief It manages all the servers on a consistent hashing ring,
  *
  * \note This class is thread-safe.
  */
-class IndexServerManager {
+class ServerManager {
  public:
   typedef int64_t HashValueType;
 
   /// Default constructor.
-  IndexServerManager();
+  ServerManager();
 
-  /// Deconstructor.
-  virtual ~IndexServerManager();
+  virtual ~ServerManager();
 
   /**
    * \brief add a node at a random position on the ring.
-   * \note Index Server call this function when join.
+   * \note Server call this function when join.
    */
   Status add(const NodeInfo& node);
 
   /**
    * \brief add a node at a client specified position on the ring.
-   * \note Index Server call this function when join.
+   * \note Server call this function when join.
    */
   Status add(HashValueType pos, const NodeInfo& node);
 
@@ -70,7 +67,7 @@ class IndexServerManager {
 
   /**
    * \brief Given a hash of the partitioned index's path, get the
-   * corresponding Index Server based on the position of the hash in
+   * corresponding Server based on the position of the hash in
    * the hash ring.
    * \param [in] path_hash the hash value of the path of the index partition.
    * \param [out] node the Node's information.
@@ -90,6 +87,9 @@ class IndexServerManager {
    */
   size_t num_nodes();
 
+  /**
+   * \brief Get all the partitions in the ring.
+   */
   vector<HashValueType> get_partitions();
 
   /**
@@ -110,10 +110,10 @@ class IndexServerManager {
   /// Global lock on ring_.
   mutex lock_;
 
-  DISALLOW_COPY_AND_ASSIGN(IndexServerManager);
+  DISALLOW_COPY_AND_ASSIGN(ServerManager);
 };
 
 }  // namespace masterd
 }  // namespace vsfs
 
-#endif  // VSFS_MASTERD_INDEX_SERVER_MANAGER_H_
+#endif  // VSFS_MASTERD_SERVER_MANAGER_H_

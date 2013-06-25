@@ -25,13 +25,13 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/hash_util.h"
+#include "vsfs/common/leveldb_store.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/masterd/partition_manager.h"
 #include "vsfs/masterd/index_namespace.h"
-#include "vsfs/masterd/index_server_manager.h"
 #include "vsfs/masterd/master_controller.h"
+#include "vsfs/masterd/server_manager.h"
 #include "vsfs/rpc/MasterServer.h"
 #include "vsfs/masterd/master_server.h"
 
@@ -53,7 +53,7 @@ namespace vsfs {
 namespace masterd {
 
 MasterController::MasterController()
-    : index_server_manager_(new IndexServerManager) {
+    : index_server_manager_(new ServerManager) {
 
   FLAGS_dir = fs::absolute(FLAGS_dir).string();
   index_partition_manager_.reset(new PartitionManager(
