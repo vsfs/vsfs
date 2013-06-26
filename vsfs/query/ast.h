@@ -37,18 +37,40 @@ class AST {
     BINARY_OP,
   };
 
+  /// Default constructor.
   AST();
 
+  /// Destructor.
   virtual ~AST();
 
-  virtual Type type() = 0;
+  /// Returns the type of the AST node.
+  virtual Type type() const = 0;
 
+  /// Returns true if this AST node is valid.
+  virtual bool valid() const = 0;
+
+  /// Returns the left child of this AST node. It can be nullptr.
   AST* left() const;
 
+  /**
+   * \brief Sets the new left child of this AST node.
+   * \param l the new left child. Its ownership is transferred to this AST
+   * node.
+   *
+   * The existed left child (and its sub-tree) will be deleted.
+   */
   void set_left(AST* l);
 
+  /// Returns the right child of this AST node. It can be nullptr.
   AST* right() const;
 
+  /**
+   * \brief Sets a new right child for this AST node.
+   * \param r the new right child. Its ownership is transferred to this AST
+   * node.
+   *
+   * The existed right child will be deleted.
+   */
   void set_right(AST* r);
 
  protected:
@@ -56,30 +78,63 @@ class AST {
   unique_ptr<AST> right_;
 };
 
-class BinaryOpAst : public AST {
+/**
+ * \class ExprAst "vsfs/query/ast.h"
+ * \brief Expression AST node.
+ */
+class ExprAst : public AST {
+ public:
+  enum class ValueType {
+    UNNOWN,
+    BOOL,
+    INT8,
+    UINT8,
+    INT16,
+    UINT16,
+    INT32,
+    UINT32,
+    INT64,
+    UINT64,
+    FLOAT,
+    DOUBLE,
+    STRING,
+  };
+
+  /// Returns the value type of this expression.
+  virtual ValueType value_type() const = 0;
+};
+
+/**
+ * \class BinaryOpAst "vsfs/query/ast.h"
+ * \brief AST Node for a binary operator.
+ */
+class BinaryOpAst : public ExprAst {
  public:
   enum class OpCode {
     UNKNOWN,
-    EQ,
-    NEQ,
-    GT,
-    GE,
-    LT,
-    LE,
-    ADD,
-    SUB,
-    MULTIPLY,
-    DIVIDE,
-    MOD,
-    AND,
-    OR,
-    XOR,
+    EQ,   /// Equal
+    NEQ,  /// Not equal
+    GT,   /// Greater than
+    GE,   /// Greater or equal
+    LT,   /// Less than
+    LE,   /// Less or equal
+    ADD,  /// Add
+    SUB,  /// Substract
+    MUL,  /// multiply
+    DIV,  /// Divide
+    MOD,  /// Module
+    AND,  /// Logical and
+    OR,   /// Logical or
+    XOR,  /// Logical xor
   };
 
+  /// Constructs a default BinaryOpAst.
   BinaryOpAst();
 
+  /// Constructs a BinaryOpAst with given op code.
   explicit BinaryOpAst(OpCode op);
 
+  /// Constructs a BinaryOpAst with the operator string.
   explicit BinaryOpAst(const string& opstr);
 
   virtual ~BinaryOpAst();
@@ -88,9 +143,15 @@ class BinaryOpAst : public AST {
     return Type::BINARY_OP;
   }
 
+  virtual ValueType value_type() const;
+
+  virtual bool valid() const;
+
+  /// Returns the opcode.
   OpCode opcode() const;
 
-  void set_opcode() const;
+  /// Sets the new opcode.
+  void set_opcode(OpCode code);
 
  protected:
   OpCode opcode_;

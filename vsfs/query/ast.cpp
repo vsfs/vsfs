@@ -40,6 +40,10 @@ AST* AST::right() const {
   return right_.get();
 }
 
+void AST::set_right(AST* r) {
+  right_.reset(r);
+}
+
 namespace {
 
 BinaryOpAst::OpCode parse_op(const string& op) {
@@ -60,9 +64,11 @@ BinaryOpAst::OpCode parse_op(const string& op) {
   } else if (op == "-") {
     return BinaryOpAst::OpCode::SUB;
   } else if (op == "*") {
-    return BinaryOpAst::OpCode::MULTIPLY;
+    return BinaryOpAst::OpCode::MUL;
   } else if (op == "/") {
-    return BinaryOpAst::OpCode::DIVIDE;
+    return BinaryOpAst::OpCode::DIV;
+  } else if (op == "%") {
+    return BinaryOpAst::OpCode::MOD;
   } else if (op == "&") {
     return BinaryOpAst::OpCode::AND;
   } else if (op == "|") {
@@ -83,6 +89,32 @@ BinaryOpAst::BinaryOpAst(OpCode code) : opcode_(code) {
 }
 
 BinaryOpAst::BinaryOpAst(const string& opstr) : opcode_(parse_op(opstr)) {
+}
+
+BinaryOpAst::~BinaryOpAst() {
+}
+
+bool BinaryOpAst::valid() const {
+  if (left_ == nullptr || right_ == nullptr) {
+    return false;
+  }
+  return left_->valid() && right_->valid();
+}
+
+ExprAst::ValueType BinaryOpAst::value_type() const {
+  // TODO(eddyxu): check left value and right value.
+  if (opcode_ >= OpCode::AND && opcode_ <= OpCode::XOR) {
+    return ValueType::BOOL;
+  }
+  return ValueType::INT64;
+}
+
+BinaryOpAst::OpCode BinaryOpAst::opcode() const {
+  return opcode_;
+}
+
+void BinaryOpAst::set_opcode(OpCode code) {
+  opcode_ = code;
 }
 
 }  // namespace query
