@@ -25,8 +25,9 @@
 #include "vsfs/common/key_value_store.h"
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/thread.h"
-#include "vsfs/masterd/masterd.pb.h"
+#include "vsfs/masterd/masterd_types.h"
 #include "vsfs/masterd/partition_manager.h"
+#include "vsfs/rpc/thrift_utils.h"
 
 namespace fs = boost::filesystem;
 using std::string;
@@ -49,13 +50,12 @@ namespace {
 /// Deserialize a buffer to the PartitionMap.
 Status string_to_partition_map(const string& buffer,
                                PartitionManager::PartitionMap *pm) {
-  IndexPartition idx_partition;
-  if (!idx_partition.ParseFromString(buffer)) {
-    return Status(-1, "Failed to parse protobuf.");
+  IndexConsistentHashRing idx_ring;
+  if (!ThriftUtils::deserialize(buffer, &idx_ring)) {
+    return Status(-1, "Failed to parse thrift object.");
   }
-  for (int i = 0; i < idx_partition.partition_size(); ++i) {
-    const auto& partition = idx_partition.partition(i);
-    pm->insert(partition.hash_sep(), partition.path());
+  for (const auto& partition : idx_ring.partitions) {
+    pm->insert(partition.hash_sep, partition.path);
   }
   return Status::OK;
 }
@@ -64,16 +64,14 @@ Status string_to_partition_map(const string& buffer,
 /// an empty string.
 string partition_map_to_string(const PartitionManager::PartitionMap& pm) {
   string proto_string;
-  IndexPartition idx_partition;
+  IndexConsistentHashRing idx_ring;
   for (const auto& sep_and_path : pm) {
-    auto partition = idx_partition.add_partition();
-    partition->set_hash_sep(sep_and_path.first);
-    partition->set_path(sep_and_path.second);
+    idx_ring.partitions.emplace_back();
+    auto& partition = idx_ring.partitions.back();
+    partition.hash_sep = sep_and_path.first;
+    partition.path = sep_and_path.second;
   }
-  if (!idx_partition.SerializeToString(&proto_string)) {
-    return "";
-  }
-  return std::move(proto_string);
+  return ThriftUtils::serialize(idx_ring);
 }
 
 }  // namespace

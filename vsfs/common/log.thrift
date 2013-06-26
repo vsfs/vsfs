@@ -1,6 +1,6 @@
-// vim:ts=2:sw=2:sts=2:et
+// vim: ft=thrift:sw=2:sts=2
 /*
- * Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,21 +15,21 @@
  * limitations under the License.
  */
 
-package vsfs.masterd;
+namespace cpp vsfs
+namespace java vsfs
+namespace py vsfs
 
-message IndexPartition {
-  message Partition {
-    required uint64 hash_sep = 1;
-    required string path = 2;
-  }
-
-  repeated Partition partition = 1;
+/**
+ * \brief A entity of log.
+ */
+struct LogEntity {
+  1: i64 txn_id,  /// Transaction ID.
+  2: binary data  /// The serialized data of updates.
 }
 
 /**
- * \brief Capture the indices names on the same directory.
+ * \brief A buffer of a sequence of entities (updates).
  */
-message IndexNamesOnDirectory {
-  required string path = 1;   /// Directory path.
-  repeated string index_name = 2;  /// The names of indices on this directory.
+struct LogBuffer {
+  1: list<LogEntity> buffer
 }

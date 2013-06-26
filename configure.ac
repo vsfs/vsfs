@@ -24,11 +24,6 @@ AC_MSG_NOTICE([RPM_RELEASE='$RPM_RELEASE'])
 AC_PROG_CXX
 AC_PROG_CC
 AC_LANG([C++])
-AC_CHECK_PROG([HAVE_PROTOC], [protoc], [yes], [no])
-if test x"$HAVE_PROTOC" != x"yes"; then
-	AC_MSG_ERROR([Protobuf compiler was not found.])
-fi
-AC_SUBST(PROTOC, "protoc")
 
 # Checks for libraries.
 AC_CHECK_LIB([glog], [openlog], [], [AC_MSG_ERROR(google-glog was not found.)])
@@ -39,7 +34,6 @@ AC_CHECK_LIB([snappy], [snappy_compress], [], [AC_MSG_ERROR([libsnappy was not f
 AC_CHECK_LIB([leveldb], [leveldb_open], [], [AC_MSG_ERROR([libleveldb was not found.])], [-lsnappy -lpthread])
 AC_CHECK_LIB([event], [main], [], [AC_MSG_ERROR([libevent was not found.])])
 PKG_CHECK_MODULES([libthrift], [thrift-nb])
-PKG_CHECK_MODULES([PROTOBUF], [protobuf])
 
 # Checks for header files.
 AX_BOOST_BASE([1.53])
