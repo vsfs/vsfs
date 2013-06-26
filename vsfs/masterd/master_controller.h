@@ -83,6 +83,17 @@ class MasterController {
    */
   Status join_index_server(const NodeInfo &node, RpcNodeAddressList *replicas);
 
+  /**
+   * \brief Lets an MetaServer join the consistent hash ring, and
+   * send the address of its replica machines back to it.
+   *
+   * \param node The node information of the joining index server.
+   * \param replicas A node address vector that is filled with the addresses
+   * for the replica servers.
+   * \return Status::OK if success.
+   */
+  Status join_meta_server(const NodeInfo &node, RpcNodeAddressList *replicas);
+
  private:
   shared_ptr<TServer> server_;
 
@@ -91,6 +102,8 @@ class MasterController {
   unique_ptr<PartitionManager> index_partition_manager_;
 
   unique_ptr<ServerManager> index_server_manager_;
+
+  unique_ptr<ServerManager> meta_server_manager_;
 
   DISALLOW_COPY_AND_ASSIGN(MasterController);
 };
