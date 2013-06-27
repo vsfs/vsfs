@@ -50,5 +50,13 @@ void MasterServer::join_index_server(RpcNodeAddressList& _return,  // NOLINT
   }
 }
 
+void MasterServer::join_meta_server(RpcNodeAddressList& _return,  // NOLINT
+                                    const RpcNodeInfo& info) {
+  Status status = controller_->join_meta_server(info, &_return);
+  if (!status.ok()) {
+    throw ThriftUtils::StatusToRpcInvalidOp(status);
+  }
+}
+
 }  // namespace masterd
 }  // namespace vsfs
