@@ -46,8 +46,8 @@ class MetaServer : public MetaServerIf {
 
   virtual void find(string& result, int64_t file_id);  // NOLINT
 
-  virtual void find(vector<string>& file_paths,  // NOLINT
-                    const vector<int64_t>& file_ids);
+  virtual void search(vector<string>& file_paths,  // NOLINT
+                      const vector<int64_t>& file_ids);
 
  private:
   MetaController* controller_;

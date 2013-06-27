@@ -29,6 +29,7 @@
 #include <thread>
 #include <vector>
 #include "vsfs/rpc/rpc_client.h"
+#include "vsfs/rpc/vsfs_types.h"
 #include "vsfs/metad/meta_server.h"
 #include "vsfs/metad/meta_controller.h"
 
@@ -43,12 +44,12 @@ using apache::thrift::transport::TTransportFactory;
 using boost::shared_ptr;
 using std::string;
 using std::vector;
-using vsfs::rpc::NodeAddressList;
-using vsfs::rpc::NodeInfo;
+using vsfs::NodeAddressList;
+using vsfs::NodeInfo;
 using vsfs::rpc::RpcClient;
 
-DEFINE_string(host, "", "Manually set the hostname of this MetaManager.");
-DEFINE_int32(port, 6666, "Set the listen port of MetaManager.");
+DEFINE_string(host, "", "Manually set the hostname of this MetaController.");
+DEFINE_int32(port, 6666, "Set the listen port of MetaController.");
 DEFINE_string(server_id, "", "Set the server ID.");
 DEFINE_string(master_addr, "localhost", "Set the address of the master"
               "node.");
@@ -59,26 +60,26 @@ namespace vsfs {
 
 namespace metad {
 
-MetaManager::MetaManager()
-    : host_(FLAGS_host), port_(FLAGS_port), manager_(new MetaManager),
-      master_(new VSFSRpcClient::MasterClientType(FLAGS_master_addr,
-                                                  FLAGS_master_port)) {
+MetaController::MetaController(const string &basedir)
+    : host_(FLAGS_host), port_(FLAGS_port), base_dir_(basedir),
+      manager_(new MetaManager(basedir)),
+      master_(new MasterClientType(FLAGS_master_addr, FLAGS_master_port)) {
 }
 
-MetaManager::~MetaManager() {
+MetaController::~MetaController() {
   stop();
 }
 
-void MetaManager::background_task() {
+void MetaController::background_task() {
   LOG(INFO) << "Joining master: " << FLAGS_master_addr
             << ":" << FLAGS_master_port;
   join();
   // TODO(Ziling): background tasks
 }
 
-void MetaManager::start() {
-  shared_ptr<MetaManagerHandler> handler(new MetaManagerHandler(this));
-  shared_ptr<TProcessor> processor(new MetaManagerProcessor(handler));
+void MetaController::start() {
+  shared_ptr<MetaServer> handler(new MetaServer(this));
+  shared_ptr<TProcessor> processor(new MetaServerProcessor(handler));
   shared_ptr<TProtocolFactory> protocol_factory(new TBinaryProtocolFactory());
   shared_ptr<TServerTransport> server_transport(
       new TServerSocket(port_));
@@ -86,13 +87,13 @@ void MetaManager::start() {
       new TBufferedTransportFactory());
   server_.reset(new TThreadedServer(processor, server_transport,
                                     transport_factory, protocol_factory));
-  LOG(INFO) << "Starting MetaManager at port:" << port_;
-  background_thread_ = thread(&MetaManager::background_task, this);
+  LOG(INFO) << "Starting MetaController at port:" << port_;
+  background_thread_ = thread(&MetaController::background_task, this);
   server_->serve();
   LOG(INFO) << "Shutting down completely.";
 }
 
-void MetaManager::stop() {
+void MetaController::stop() {
   LOG(INFO) << "Attempts to shutdown...";
   if (server_) {
     server_->stop();
@@ -103,7 +104,7 @@ void MetaManager::stop() {
   }
 }
 
-Status MetaManager::join() {
+Status MetaController::join() {
   CHECK_NOTNULL(master_->handler());
   master_->open();
   NodeInfo node_info;
@@ -128,23 +129,23 @@ Status MetaManager::join() {
   return Status::OK;
 }
 
-Status MetaManager::insert(uint64_t file_id, const string &file_path) {
+Status MetaController::insert(uint64_t file_id, const string &file_path) {
   return manager_->insert(file_id, file_path);
 }
 
-Status MetaManager::insert(const RpcMetaDataList& metadata) {
+Status MetaController::insert(const RpcMetaDataList& metadata) {
   return manager_->insert(metadata);
 }
 
-Status MetaManager::remove(uint64_t file_id) {
+Status MetaController::remove(uint64_t file_id) {
   return manager_->remove(file_id);
 }
 
-Status MetaManager::find(uint64_t file_id, string *file_path) {
+Status MetaController::find(uint64_t file_id, string *file_path) {
   return manager_->find(file_id, file_path);
 }
 
-Status MetaManager::find(const vector<int64_t>& file_ids,
+Status MetaController::find(const vector<int64_t>& file_ids,
                         vector<string>* results) {
   return manager_->find(file_ids, results);
 }

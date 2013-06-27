@@ -59,8 +59,8 @@ void MetaServer::find(string& result, int64_t file_id) {  // NOLINT
   }
 }
 
-void MetaServer::find(vector<string>& file_paths,  // NOLINT
-                             const vector<int64_t>& file_ids) {
+void MetaServer::search(vector<string>& file_paths,  // NOLINT
+                        const vector<int64_t>& file_ids) {
   Status status = controller_->find(file_ids, &file_paths);
   if (!status.ok()) {
     RpcInvalidOp ouch = ThriftUtils::StatusToRpcInvalidOp(status);

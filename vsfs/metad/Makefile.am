@@ -11,7 +11,7 @@ CLEANFILES=*.gcno *.gcov *.gcda
 noinst_LIBRARIES = libvsfs-metad.a
 libvsfs_metad_a_SOURCES = \
 	meta_manager.h meta_manager.cpp \
-	meta_server.h meta_server.cpp
+	meta_server.h meta_server.cpp \
 	meta_controller.h meta_controller.cpp
 
 #metad_SOURCES = metad.cpp

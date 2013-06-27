@@ -48,7 +48,7 @@ class MetaController {
  public:
   typedef RpcClient<MasterServerClient> MasterClientType;
 
-  MetaController();
+  explicit MetaController(const string &basedir);
 
   virtual ~MetaController();
 
@@ -98,6 +98,9 @@ class MetaController {
 
   /// Listen port.
   int port_;
+
+  /// path for leveldb store.
+  string base_dir_;
 
   /// Thrift RPC server.
   shared_ptr<TThreadedServer> server_;
