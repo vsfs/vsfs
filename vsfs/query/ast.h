@@ -137,14 +137,18 @@ class BinaryOpAst : public ExprAst {
   /// Constructs a BinaryOpAst with the operator string.
   explicit BinaryOpAst(const string& opstr);
 
+  /// Destructor
   virtual ~BinaryOpAst();
 
+  /// Returns the AST node type.
   virtual Type type() const {
     return Type::BINARY_OP;
   }
 
+  /// Returns the expression value type of this binary op.
   virtual ValueType value_type() const;
 
+  /// Returns true if this binary op is valid.
   virtual bool valid() const;
 
   /// Returns the opcode.

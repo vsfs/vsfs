@@ -36,6 +36,7 @@ TEST(BinaryOpAstTest, TestParseByOpStr) {
   EXPECT_EQ(BinaryOpAst::OpCode::AND, BinaryOpAst("&").opcode());
   EXPECT_EQ(BinaryOpAst::OpCode::OR, BinaryOpAst("|").opcode());
   EXPECT_EQ(BinaryOpAst::OpCode::XOR, BinaryOpAst("^").opcode());
+  EXPECT_EQ(BinaryOpAst::OpCode::UNKNOWN, BinaryOpAst("<>").opcode());
 }
 
 }  // namespace query
