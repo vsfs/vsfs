@@ -232,12 +232,12 @@ IndexManager::~IndexManager() {
   bg_flusher_thread_.join();
 }
 
-Status IndexManager::create(uint64_t txn_id,
-                            const string &root_path,
-                            const string &name,
-                            int index_type,
-                            int key_type) {
+Status IndexManager::create(
+    int64_t txn_id, const string &root_path, const string &name,
+    int index_type, int key_type) {
   // Ignores transaction ID for now.
+  (void) txn_id;
+
   if (root_path.empty() || name.empty()) {
     return Status(-1, "Invalid parameters.");
   }

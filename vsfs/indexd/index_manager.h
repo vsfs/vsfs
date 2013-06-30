@@ -128,11 +128,8 @@ class IndexManager {
    *
    * \see "vobla/traits.h" for the definitions of possible key type values.
    */
-  virtual Status create(uint64_t txn_id,
-                        const string &index_path,
-                        const string &name,
-                        int index_type,
-                        int key_type);
+  virtual Status create(int64_t txn_id, const string &index_path,
+                        const string &name, int index_type, int key_type);
 
   /*
   virtual Status remove(uint64_t txn_id,
