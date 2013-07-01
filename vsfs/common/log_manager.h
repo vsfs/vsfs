@@ -21,10 +21,10 @@
 #include <list>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
-#include <sstream>
 #include "vobla/macros.h"
 #include "vobla/status.h"
 #include "vsfs/common/log_types.h"
@@ -79,7 +79,7 @@ class LogRecord {
   }
 
   /// Transforms the record to a string buffer.
-  string buffer() const {
+  string serialize() const {
     return ThriftUtils::serialize(*record_);
   }
 
@@ -194,7 +194,7 @@ class LogManager {
       for (; it != log_.end(); ++it) {
         LogEntity entity;
         entity.txn_id = it->txn_id();
-        entity.data = std::move(it->buffer());
+        entity.data = std::move(it->serialize());
         log_buffer_.buffer.emplace_back(entity);
         existing_bytes += sizeof(entity.txn_id) + entity.data.size();
         if (existing_bytes >= bytes) {

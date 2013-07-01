@@ -45,8 +45,8 @@ class IndexInfo;
 namespace masterd {
 
 class IndexNamespace;
-class IndexServerManager;
 class PartitionManager;
+class ServerManager;
 
 /**
  * \brief MasterController the main control block of master server.
@@ -90,7 +90,7 @@ class MasterController {
 
   unique_ptr<PartitionManager> index_partition_manager_;
 
-  unique_ptr<IndexServerManager> index_server_manager_;
+  unique_ptr<ServerManager> index_server_manager_;
 
   DISALLOW_COPY_AND_ASSIGN(MasterController);
 };

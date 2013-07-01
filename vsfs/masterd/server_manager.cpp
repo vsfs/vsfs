@@ -15,7 +15,6 @@
  */
 
 #include <glog/logging.h>
-#include <time.h>
 #include <algorithm>
 #include <cstdlib>
 #include <limits>
@@ -24,7 +23,7 @@
 #include <vector>
 #include "vobla/range.h"
 #include "vsfs/common/thread.h"
-#include "vsfs/masterd/index_server_manager.h"
+#include "vsfs/masterd/server_manager.h"
 
 using std::string;
 using std::vector;
@@ -34,14 +33,13 @@ using vobla::Range;
 namespace vsfs {
 namespace masterd {
 
-IndexServerManager::IndexServerManager() {
-  srand(time(NULL));
+ServerManager::ServerManager() {
 }
 
-IndexServerManager::~IndexServerManager() {
+ServerManager::~ServerManager() {
 }
 
-Status IndexServerManager::add(const NodeInfo& node) {
+Status ServerManager::add(const NodeInfo& node) {
   MutexGuard guard(lock_);
   HashValueType pos = 0;
   if (ring_.empty()) {
@@ -70,7 +68,7 @@ Status IndexServerManager::add(const NodeInfo& node) {
   return ring_.insert(pos, node);
 }
 
-Status IndexServerManager::add(HashValueType pos, const NodeInfo& node) {
+Status ServerManager::add(HashValueType pos, const NodeInfo& node) {
   MutexGuard guard(lock_);
   if (ring_.has_key(pos)) {
     return Status(-EEXIST, "This position is already used.");
@@ -78,7 +76,7 @@ Status IndexServerManager::add(HashValueType pos, const NodeInfo& node) {
   return ring_.insert(pos, node);
 }
 
-Status IndexServerManager::remove(HashValueType pos) {
+Status ServerManager::remove(HashValueType pos) {
   MutexGuard guard(lock_);
   // TODO(ziling): remove the record in redirection_map.
   if (!ring_.has_key(pos)) {
@@ -87,7 +85,7 @@ Status IndexServerManager::remove(HashValueType pos) {
   return ring_.remove(pos);
 }
 
-Status IndexServerManager::get(HashValueType path_hash,
+Status ServerManager::get(HashValueType path_hash,
                                NodeInfo* node) {
   CHECK_NOTNULL(node);
   // TODO(Ziling): use rw-lock to improve performance.
@@ -99,7 +97,7 @@ Status IndexServerManager::get(HashValueType path_hash,
   return Status::OK;
 }
 
-vector<NodeInfo> IndexServerManager::get_replica_servers(
+vector<NodeInfo> ServerManager::get_replica_servers(
     const NodeInfo& node, size_t num_replicas) {
   vector<NodeInfo> retval;
   size_t actual_num_replicas = std::min(num_replicas, ring_.num_nodes() - 1);
@@ -114,13 +112,12 @@ vector<NodeInfo> IndexServerManager::get_replica_servers(
   return retval;
 }
 
-size_t IndexServerManager::num_nodes() {
+size_t ServerManager::num_nodes() {
   MutexGuard guard(lock_);
   return ring_.num_nodes();
 }
 
-vector<IndexServerManager::HashValueType>
-IndexServerManager::get_partitions() {
+vector<ServerManager::HashValueType> ServerManager::get_partitions() {
   vector<HashValueType> partitions;
   MutexGuard lock(lock_);
   if (!ring_.empty()) {
