@@ -83,6 +83,15 @@ class MasterController {
    */
   Status join_index_server(const NodeInfo &node, RpcNodeAddressList *replicas);
 
+  /**
+   * \brief Creates an File Index and returns the index server locations.
+   * \param[in] request the index creation request.
+   * \param[out] filled by the index server's location.
+   * \return Status::OK if success.
+   */
+  Status create_index(const RpcIndexCreateRequest &request,
+                      RpcIndexLocation *index_location);
+
  private:
   shared_ptr<TServer> server_;
 

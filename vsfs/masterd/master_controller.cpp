@@ -52,6 +52,14 @@ DEFINE_string(dir, ".", "Sets the directory to store metadata.");
 namespace vsfs {
 namespace masterd {
 
+namespace {
+
+string get_full_index_path(const string &root, const string &name) {
+  return root + "/.vsfs/" + name;
+}
+
+}
+
 MasterController::MasterController()
     : index_server_manager_(new ServerManager) {
 
@@ -110,6 +118,48 @@ Status MasterController::join_index_server(const NodeInfo &node,
     replicas->emplace_back(node.address);
   }
   return status;
+}
+
+Status MasterController::create_index(const RpcIndexCreateRequest &request,
+                                      RpcIndexLocation *index_location) {
+  CHECK_NOTNULL(index_location);
+  // TODO(lxu): move IndexPathMap into IndexPartitionManager, so they share
+  // a single mutex to avoid inconsistency issues between them.
+  Status status = index_namespace_->insert(request.root_path,
+                                           request.name);
+  if (!status.ok()) {
+    return status;
+  }
+  string full_path = get_full_index_path(request.root_path,
+                                         request.name);
+  LOG(INFO) << "Creating index on partition 0: " << full_path;
+  status = index_partition_manager_->add_index(full_path);
+  if (!status.ok()) {
+    // Roll back.
+    LOG(ERROR) << "Failed to insert index (" << full_path
+               << ") into index partition manager:" << status.message();
+    index_namespace_->remove(request.root_path, request.name);
+    return status;
+  }
+
+  NodeInfo node;
+  // The first partition always starts from hash value 0.
+  string partition_path =
+      index_partition_manager_->get_partition_path(full_path, 0);
+  size_t path_hash = HashUtil::file_path_to_hash(partition_path);
+  status = index_server_manager_->get(path_hash, &node);
+  if (!status.ok()) {
+    // Roll back.
+    LOG(ERROR) << "Failed to get index server for: " << full_path
+               << ": " << status.message();
+    index_namespace_->remove(request.root_path, request.name);
+    index_partition_manager_->remove_index(full_path);
+    return status;
+  }
+  index_location->full_index_path = partition_path;
+  index_location->server_addr.host = node.address.host;
+  index_location->server_addr.port = node.address.port;
+  return Status::OK;
 }
 
 }  // namespace masterd
