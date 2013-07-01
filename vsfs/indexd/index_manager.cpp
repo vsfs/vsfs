@@ -79,7 +79,7 @@ IndexManager::RangeIndexWrapper::RangeIndexWrapper(
 
 IndexManager::RangeIndexWrapper::RangeIndexWrapper(
     const string &path, RangeIndexInterface *ri, bool dty)
-  : base_path_(path), index_(ri), status_(NORMAL), dirty_(dty) {
+    : base_path_(path), index_(ri), status_(NORMAL), dirty_(dty) {
   CHECK_NOTNULL(ri);
 }
 
