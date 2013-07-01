@@ -123,7 +123,7 @@ Status MasterController::join_index_server(const NodeInfo &node,
 Status MasterController::create_index(const RpcIndexCreateRequest &request,
                                       RpcIndexLocation *index_location) {
   CHECK_NOTNULL(index_location);
-  // TODO(lxu): move IndexPathMap into IndexPartitionManager, so they share
+  // TODO(eddyxu): move IndexPathMap into IndexPartitionManager, so they share
   // a single mutex to avoid inconsistency issues between them.
   Status status = index_namespace_->insert(request.root_path,
                                            request.name);
