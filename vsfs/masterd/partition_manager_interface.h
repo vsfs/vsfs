@@ -58,7 +58,7 @@ class PartitionManagerInterface {
                                     HashValueType hash) = 0;
 
 
-  /// Gest all partition's paths
+  /// Gets all partition's paths
   virtual Status get_all_partitions(const string &full_index_path,
                                     vector<string> *paths) = 0;
 
