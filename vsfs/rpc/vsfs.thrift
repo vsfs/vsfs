@@ -117,11 +117,12 @@ struct RpcIndexUpdate {
   2: required list<RpcIndexRecordUpdateList> updates,
 }
 
+/// The request of creating a file index.
 struct RpcIndexCreateRequest {
-  1: required string root_path,
-  2: required string name,
-  3: required i32 index_type,
-  4: optional i32 key_type,
+  1: required string root,  // The root path of the index scope.
+  2: required string name,  // The name of this index.
+  3: required i32 index_type,  // The data structure of this index.
+  4: optional i32 key_type,  // The key type of this index.
 }
 
 struct RpcIndexLocation {

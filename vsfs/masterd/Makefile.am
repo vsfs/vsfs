@@ -45,6 +45,6 @@ LDADD = libvsfs-masterd.a $(masterd_LDADD) \
 	-lgtest -lgtest_main -lgmock
 
 index_namespace_test_SOURCES = index_namespace_test.cpp
-master_controller_test_SOURCES = master_controller_test.cpp
+master_controller_test_SOURCES = master_controller_test.cpp mock_index_namespace.h
 partition_manager_test_SOURCES = partition_manager_test.cpp
 server_manager_test_SOURCES = server_manager_test.cpp

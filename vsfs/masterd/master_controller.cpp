@@ -70,7 +70,22 @@ MasterController::MasterController()
           FLAGS_dir + "/namespace.primer.db"));
 }
 
+MasterController::MasterController(IndexNamespaceInterface* idx_ns,
+                                   PartitionManagerInterface* pm)
+    : index_server_manager_(new ServerManager), index_partition_manager_(pm),
+      index_namespace_(idx_ns) {
+}
+
 MasterController::~MasterController() {
+}
+
+Status MasterController::init() {
+  auto status = index_namespace_->init();
+  if (!status.ok()) {
+    return status;
+  }
+  status = index_partition_manager_->init();
+  return status;
 }
 
 void MasterController::start() {
@@ -86,6 +101,7 @@ void MasterController::start() {
   thread_manager->start();
   server_.reset(new TNonblockingServer(processor, protocol_factory,
                                        FLAGS_port, thread_manager));
+
   LOG(INFO) << "Master server is starting...";
   server_->serve();
   LOG(INFO) << "Master server quits...";
@@ -123,22 +139,22 @@ Status MasterController::join_index_server(const NodeInfo &node,
 Status MasterController::create_index(const RpcIndexCreateRequest &request,
                                       RpcIndexLocation *index_location) {
   CHECK_NOTNULL(index_location);
-  // TODO(eddyxu): move IndexPathMap into IndexPartitionManager, so they share
-  // a single mutex to avoid inconsistency issues between them.
-  Status status = index_namespace_->insert(request.root_path,
-                                           request.name);
+  // TODO(eddyxu): move IndexNamespace into IndexPartitionManager, so they
+  // share a single mutex to avoid inconsistency issues between them.
+  Status status = index_namespace_->insert(request.root, request.name);
   if (!status.ok()) {
+    LOG(ERROR) << "Failed to create index on index namespace: "
+               << status.message();
     return status;
   }
-  string full_path = get_full_index_path(request.root_path,
-                                         request.name);
+  string full_path = get_full_index_path(request.root, request.name);
   LOG(INFO) << "Creating index on partition 0: " << full_path;
   status = index_partition_manager_->add_index(full_path);
   if (!status.ok()) {
     // Roll back.
     LOG(ERROR) << "Failed to insert index (" << full_path
                << ") into index partition manager:" << status.message();
-    index_namespace_->remove(request.root_path, request.name);
+    index_namespace_->remove(request.root, request.name);
     return status;
   }
 
@@ -152,7 +168,7 @@ Status MasterController::create_index(const RpcIndexCreateRequest &request,
     // Roll back.
     LOG(ERROR) << "Failed to get index server for: " << full_path
                << ": " << status.message();
-    index_namespace_->remove(request.root_path, request.name);
+    index_namespace_->remove(request.root, request.name);
     index_partition_manager_->remove_index(full_path);
     return status;
   }
