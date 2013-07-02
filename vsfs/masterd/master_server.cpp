@@ -50,5 +50,13 @@ void MasterServer::join_index_server(RpcNodeAddressList& _return,  // NOLINT
   }
 }
 
+void MasterServer::create_index(RpcIndexLocation& location,  // NOLINT
+                                const RpcIndexCreateRequest& request) {
+  Status status = controller_->create_index(request, &location);
+  if (!status.ok()) {
+    throw ThriftUtils::StatusToRpcInvalidOp(status);
+  }
+}
+
 }  // namespace masterd
 }  // namespace vsfs
