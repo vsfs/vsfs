@@ -18,6 +18,7 @@
 #define VSFS_MASTERD_MASTER_CONTROLLER_H_
 
 #include <boost/shared_ptr.hpp>
+#include <gtest/gtest_prod.h>
 #include <memory>
 #include <string>
 #include <vector>
@@ -44,8 +45,8 @@ class IndexInfo;
 
 namespace masterd {
 
-class IndexNamespace;
-class PartitionManager;
+class IndexNamespaceInterface;
+class PartitionManagerInterface;
 class ServerManager;
 
 /**
@@ -60,7 +61,17 @@ class MasterController {
  public:
   MasterController();
 
+  /**
+   * \brief Constructs a MasterController using dependency injections.
+   *
+   * It must be used by tests.
+   */
+  MasterController(IndexNamespaceInterface* idx_ns,
+                   PartitionManagerInterface* pm);
+
   virtual ~MasterController();
+
+  Status init();
 
   /**
    * \brief Starts the Masterd RPC server.
@@ -83,12 +94,23 @@ class MasterController {
    */
   Status join_index_server(const NodeInfo &node, RpcNodeAddressList *replicas);
 
+  /**
+   * \brief Creates an File Index and returns the index server locations.
+   * \param[in] request the index creation request.
+   * \param[out] filled by the index server's location.
+   * \return Status::OK if success.
+   */
+  Status create_index(const RpcIndexCreateRequest &request,
+                      RpcIndexLocation *index_location);
+
  private:
+  FRIEND_TEST(MasterControllerTest, TestCreateIndex);
+
   shared_ptr<TServer> server_;
 
-  unique_ptr<IndexNamespace> index_namespace_;
+  unique_ptr<IndexNamespaceInterface> index_namespace_;
 
-  unique_ptr<PartitionManager> index_partition_manager_;
+  unique_ptr<PartitionManagerInterface> index_partition_manager_;
 
   unique_ptr<ServerManager> index_server_manager_;
 
