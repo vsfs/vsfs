@@ -53,12 +53,22 @@ class PartitionManagerInterface {
   /// Removes an index partition at the hash value 'sep'.
   virtual Status remove_partition(const string& key, HashValueType sep) = 0;
 
+  /// Gets the path of a partition.
   virtual string get_partition_path(const string &full_index_path,
                                     HashValueType hash) = 0;
 
+
+  /// Gest all partition's paths
   virtual Status get_all_partitions(const string &full_index_path,
                                     vector<string> *paths) = 0;
 
+  /**
+   * \brief Copys an instance of PartitionMap.
+   * \param[in] full_index_path the actual path for this index, as same as used
+   * in the above functions.
+   * \param[out] partition_map it will be filled with the content of the
+   * consistent hash ring for the index on 'full_index_path'.
+   */
   virtual Status copy_partition_map(const string &full_index_path,
                                     PartitionMap *partition_map) = 0;
 };
