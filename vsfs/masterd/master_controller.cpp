@@ -72,8 +72,8 @@ MasterController::MasterController()
 
 MasterController::MasterController(IndexNamespaceInterface* idx_ns,
                                    PartitionManagerInterface* pm)
-    : index_server_manager_(new ServerManager), index_partition_manager_(pm),
-      index_namespace_(idx_ns) {
+    : index_namespace_(idx_ns), index_partition_manager_(pm),
+    index_server_manager_(new ServerManager) {
 }
 
 MasterController::~MasterController() {
