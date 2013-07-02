@@ -221,7 +221,7 @@ service MasterServer {
    * \return the address of IndexServer to manages this index.
    */
   RpcIndexLocation create_index(1:RpcIndexCreateRequest index)
-	throws (1:RpcInvalidOp ouch);
+    throws (1:RpcInvalidOp ouch);
 }
 
 /**
