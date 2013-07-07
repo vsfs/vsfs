@@ -17,6 +17,7 @@
 #ifndef VSFS_COMMON_KEY_VALUE_STORE_H_
 #define VSFS_COMMON_KEY_VALUE_STORE_H_
 
+#include <boost/utility.hpp>
 #include <string>
 #include "vobla/status.h"
 
@@ -35,7 +36,7 @@ namespace vsfs {
  *  - get(key, &value)
  *  - remove(key)
  */
-class KeyValueStore {
+class KeyValueStore : boost::noncopyable {
  public:
   /**
    * \brief Opens an KeyValueStore. The default behavior of `open()` is
