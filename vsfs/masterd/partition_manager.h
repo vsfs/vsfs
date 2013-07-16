@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,15 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include "vobla/consistent_hash_map.h"
 #include "vobla/macros.h"
 #include "vobla/status.h"
+#include "vsfs/masterd/partition_manager_interface.h"
 
 using std::mutex;
 using std::string;
 using std::unique_ptr;
 using std::unordered_map;
 using std::vector;
-using vobla::ConsistentHashMap;
 using vobla::Status;
 
 namespace vsfs {
@@ -51,17 +50,8 @@ namespace masterd {
  * RAM, the content in RAM is consistent with the persistent K-V store (i.e.,
  * a LevelDB).
  */
-class PartitionManager {
+class PartitionManager : public PartitionManagerInterface {
  public:
-  /**
-   * \note Note that here the hash value is not the full SHA1 or MD5 value,
-   *
-   * \TODO(eddyxu): move hash value to a centralized file.
-   */
-  typedef int64_t HashValueType;
-
-  typedef ConsistentHashMap<HashValueType, string> PartitionMap;
-
   /**
    * \brief Constructs a PartitionManager with the file path to the local
    * store.

@@ -26,17 +26,21 @@
 #include "vsfs/common/hash_util.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/masterd/master_controller.h"
+#include "vsfs/masterd/mock_index_namespace.h"
+#include "vsfs/masterd/mock_partition_manager.h"
 #include "vsfs/rpc/vsfs_types.h"
 
 using ::testing::Contains;
-using ::testing::Pair;
 using ::testing::Key;
+using ::testing::Pair;
+using ::testing::Return;
 using std::string;
 using std::to_string;
 using std::unique_ptr;
 using std::vector;
 using vobla::Status;
 using vsfs::index::IndexInfo;
+
 
 namespace vsfs {
 namespace masterd {
@@ -49,7 +53,11 @@ static const int64_t kPartitonSize =
 class MasterControllerTest : public ::testing::Test {
  protected:
   void SetUp() {
-    controller_.reset(new MasterController);
+    index_namespace_ = new MockIndexNamespace;
+    partition_manager_ = new MockPartitionManager;
+    // controller_ manages to delete index_namespace and partition_manager.
+    controller_.reset(new MasterController(index_namespace_,
+                                           partition_manager_));
   }
 
   /// Evenly divide the C.H ring into 'num_index_servers' segements and let
@@ -67,7 +75,31 @@ class MasterControllerTest : public ::testing::Test {
 
   // Test Master Server instance.
   unique_ptr<MasterController> controller_;
+  MockIndexNamespace* index_namespace_;
+  MockPartitionManager* partition_manager_;
 };
+
+TEST_F(MasterControllerTest, TestCreateIndex) {
+  join_index_servers(3);
+
+  EXPECT_CALL(*index_namespace_, insert("/test/data", "name0"))
+      .Times(1).WillOnce(Return(Status::OK));
+  EXPECT_CALL(*partition_manager_, add_index("/test/data/.vsfs/name0"))
+      .Times(1).WillOnce(Return(Status::OK));
+  EXPECT_CALL(*partition_manager_,
+              get_partition_path("/test/data/.vsfs/name0", 0))
+      .Times(1).WillOnce(Return("test_path_0"));
+
+  RpcIndexCreateRequest request;
+  request.root = "/test/data";
+  request.name = "name0";
+  request.index_type = IndexInfo::BTREE;
+  request.key_type = TypeIDs::INT16;
+
+  RpcIndexLocation loc;
+  EXPECT_TRUE(controller_->create_index(request, &loc).ok());
+  EXPECT_EQ("test_path_0", loc.full_index_path);
+}
 
 }  // namespace masterd
 }  // namespace vsfs

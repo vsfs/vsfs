@@ -84,7 +84,7 @@ class LevelDBStore  : public KeyValueStore {
 
   typedef LevelDBStoreIterator iterator;
 
-  /// Constructs a
+  /// Constructs a LevelDB on the given path.
   explicit LevelDBStore(const string &path);
 
   virtual ~LevelDBStore() {}
@@ -117,16 +117,16 @@ class LevelDBStore  : public KeyValueStore {
   iterator end();
 
  protected:
-  LevelDBStore() {}
+  LevelDBStore() = default;
 
  private:
-  string db_path_;
-
-  unique_ptr<leveldb::DB> db_;
-
+  /// Transforms leveldb::Status into vobla::Status.
   Status to_status(const leveldb::Status& l_status) const;
 
-  // DISALLOW_IMPLICIT_CONSTRUCTORS(LevelDBStore);
+  string db_path_;
+
+  /// The instance of a LevelDB.
+  unique_ptr<leveldb::DB> db_;
 };
 
 }  // namespace vsfs

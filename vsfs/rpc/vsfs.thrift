@@ -117,11 +117,12 @@ struct RpcIndexUpdate {
   2: required list<RpcIndexRecordUpdateList> updates,
 }
 
-struct RpcIndexCreateType {
-  1: required string root_path,
-  2: required string name,
-  3: required i32 index_type,
-  4: optional i32 key_type,
+/// The request of creating a file index.
+struct RpcIndexCreateRequest {
+  1: required string root,  // The root path of the index scope.
+  2: required string name,  // The name of this index.
+  3: required i32 index_type,  // The data structure of this index.
+  4: optional i32 key_type,  // The key type of this index.
 }
 
 struct RpcIndexLocation {
@@ -220,6 +221,14 @@ service MasterServer {
    * server.
    */
   RpcNodeAddressList join_meta_server(1:RpcNodeInfo info);
+
+  /**
+   * \brief Creates an index and assign it to a IndexServer in the hash
+   * ring.
+   * \return the address of IndexServer to manages this index.
+   */
+  RpcIndexLocation create_index(1:RpcIndexCreateRequest index)
+    throws (1:RpcInvalidOp ouch);
 }
 
 /**
@@ -231,7 +240,7 @@ service IndexServer {
   /**
    * \brief Creates an index.
    */
-  void create_index(1:RpcIndexCreateType index)
+  void create_index(1:RpcIndexCreateRequest index)
 	  throws (1:RpcInvalidOp ouch);
 
   /**
