@@ -86,6 +86,9 @@ class MetaController {
    */
   virtual Status find(uint64_t file_id, string *file_path);
 
+  /**
+   * \brief Given multiple file_ids, return the corresponding file_paths.
+   */
   virtual Status find(const vector<int64_t>& file_ids,
                       vector<string>* results);
 

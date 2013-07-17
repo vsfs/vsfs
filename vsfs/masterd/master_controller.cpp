@@ -144,7 +144,7 @@ Status MasterController::join_meta_server(const NodeInfo &node,
   LOG(INFO) << "MetaServer: " << node.address.host
             << ": " << node.address.port
             << " is trying to join the cluster.";
-  Status status = index_server_manager_->add(node);
+  Status status = meta_server_manager_->add(node);
   if (!status.ok()) {
     LOG(ERROR) << "MasterController::join_meta_server: "
                << status.message();

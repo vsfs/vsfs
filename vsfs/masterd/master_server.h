@@ -46,10 +46,10 @@ class MasterServer : public vsfs::MasterServerIf {
 
   ~MasterServer();
 
-  void join_index_server(RpcNodeAddressList& _return,  // NOLINT
+  void join_index_server(RpcNodeAddressList& results,  // NOLINT
                          const RpcNodeInfo& info);
 
-  void join_meta_server(RpcNodeAddressList& _return,  // NOLINT
+  void join_meta_server(RpcNodeAddressList& results,  // NOLINT
                         const RpcNodeInfo& info);
 
   /**

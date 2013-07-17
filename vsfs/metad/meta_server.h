@@ -40,12 +40,24 @@ class MetaServer : public MetaServerIf {
 
   virtual ~MetaServer();
 
+  /**
+   * \brief Insert metadata into meta server.
+   */
   virtual void insert(const RpcMetaDataList& metadata);
 
+  /**
+   * \brief Remove metadata from meta server.
+   */
   virtual void remove(int64_t file_id);
 
+  /**
+   * \brief Find file_path according to the given file_id.
+   */
   virtual void find(string& result, int64_t file_id);  // NOLINT
 
+  /**
+   * \brief Find file_paths according to multiple file_ids.
+   */
   virtual void search(vector<string>& file_paths,  // NOLINT
                       const vector<int64_t>& file_ids);
 

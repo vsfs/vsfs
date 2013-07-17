@@ -56,8 +56,6 @@ DEFINE_string(master_addr, "localhost", "Set the address of the master"
 DEFINE_int32(master_port, 9876, "Set the port of the master node.");
 
 namespace vsfs {
-
-
 namespace metad {
 
 MetaController::MetaController(const string &basedir)
