@@ -61,6 +61,8 @@ class MasterController {
  public:
   MasterController();
 
+  explicit MasterController(const string& basedir);
+
   /**
    * \brief Constructs a MasterController using dependency injections.
    *

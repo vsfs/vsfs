@@ -60,14 +60,16 @@ string get_full_index_path(const string &root, const string &name) {
 
 }
 
-MasterController::MasterController()
-    : index_server_manager_(new ServerManager) {
+MasterController::MasterController() : MasterController(FLAGS_dir) {
+}
 
-  FLAGS_dir = fs::absolute(FLAGS_dir).string();
+MasterController::MasterController(const string& basedir)
+    : index_server_manager_(new ServerManager) {
+  string abs_basedir = fs::absolute(basedir).string();
   index_partition_manager_.reset(new PartitionManager(
-          FLAGS_dir + "/partition_map.db"));
+          abs_basedir + "/partition_map.db"));
   index_namespace_.reset(new IndexNamespace(
-          FLAGS_dir + "/namespace.primer.db"));
+          abs_basedir + "/namespace.primer.db"));
 }
 
 MasterController::MasterController(IndexNamespaceInterface* idx_ns,
@@ -225,7 +227,7 @@ Status MasterController::locate_index(const RpcIndexLookupRequest &request,
     results->back().full_index_path = partition_path;
     results->back().server_addr = index_server.address;
     results->back().file_ids.reserve(partition_and_file_ids.second.size());
-    for (uint64_t file_id : partition_and_file_ids.second) {
+    for (auto file_id : partition_and_file_ids.second) {
       results->back().file_ids.push_back(file_id);
     }
   }

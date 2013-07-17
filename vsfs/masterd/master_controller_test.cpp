@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "vobla/file.h"
 #include "vobla/status.h"
 #include "vobla/traits.h"
 #include "vsfs/common/hash_util.h"
@@ -34,6 +35,7 @@ using ::testing::Contains;
 using ::testing::Key;
 using ::testing::Pair;
 using ::testing::Return;
+using ::testing::_;
 using std::string;
 using std::to_string;
 using std::unique_ptr;
@@ -53,9 +55,20 @@ static const int64_t kPartitonSize =
 class MasterControllerTest : public ::testing::Test {
  protected:
   void SetUp() {
+    tmpdir_.reset(new vobla::TemporaryDirectory);
+    // controller_ manages to delete index_namespace and partition_manager.
+    controller_.reset(new MasterController(tmpdir_->path()));
+    ASSERT_TRUE(controller_->init().ok());
+  }
+
+  void TearDown() {
+    controller_.reset();  // make sure controller is destroyed before tmpdir.
+    tmpdir_.reset();
+  }
+
+  void reset_mock_controller() {
     index_namespace_ = new MockIndexNamespace;
     partition_manager_ = new MockPartitionManager;
-    // controller_ manages to delete index_namespace and partition_manager.
     controller_.reset(new MasterController(index_namespace_,
                                            partition_manager_));
   }
@@ -73,22 +86,34 @@ class MasterControllerTest : public ::testing::Test {
     }
   }
 
-  // Test Master Server instance.
+  /// A helper function to create file indices.
+  Status create_index(const string &root_path, const string &name,
+                      int index_type, int key_type,
+                      RpcIndexLocation *loc) {
+    CHECK_NOTNULL(loc);
+    RpcIndexCreateRequest create_request;
+    create_request.root = root_path;
+    create_request.name = name;
+    create_request.index_type = index_type;
+    create_request.key_type = key_type;
+    return controller_->create_index(create_request, loc);
+  }
+
+  Status create_index(const string &root_path, const string &name,
+                      int index_type = IndexInfo::BTREE,
+                      int key_type = UINT64) {
+    RpcIndexLocation loc;
+    return create_index(root_path, name, index_type, key_type, &loc);
+  }
+
   unique_ptr<MasterController> controller_;
   MockIndexNamespace* index_namespace_;
   MockPartitionManager* partition_manager_;
+  unique_ptr<vobla::TemporaryDirectory> tmpdir_;
 };
 
 TEST_F(MasterControllerTest, TestCreateIndex) {
   join_index_servers(3);
-
-  EXPECT_CALL(*index_namespace_, insert("/test/data", "name0"))
-      .Times(1).WillOnce(Return(Status::OK));
-  EXPECT_CALL(*partition_manager_, add_index("/test/data/.vsfs/name0"))
-      .Times(1).WillOnce(Return(Status::OK));
-  EXPECT_CALL(*partition_manager_,
-              get_partition_path("/test/data/.vsfs/name0", 0))
-      .Times(1).WillOnce(Return("test_path_0"));
 
   RpcIndexCreateRequest request;
   request.root = "/test/data";
@@ -98,7 +123,27 @@ TEST_F(MasterControllerTest, TestCreateIndex) {
 
   RpcIndexLocation loc;
   EXPECT_TRUE(controller_->create_index(request, &loc).ok());
-  EXPECT_EQ("test_path_0", loc.full_index_path);
+  EXPECT_EQ("/test/data/.vsfs/name0.0", loc.full_index_path);
+}
+
+TEST_F(MasterControllerTest, TestLocateIndex) {
+  join_index_servers(1);
+
+  RpcIndexLocation index_loc;
+  EXPECT_TRUE(create_index("/foo/bar", "energy", IndexInfo::BTREE, FLOAT,
+                           &index_loc).ok());
+
+  RpcIndexLookupRequest lookup_request;
+  lookup_request.name = "energy";
+  lookup_request.dir_to_file_id_map["/foo/bar/abc"].push_back(
+      HashUtil::file_path_to_hash("/foo/bar/abc/efg"));
+  lookup_request.dir_to_file_id_map["/foo/bar/bcd"].push_back(
+      HashUtil::file_path_to_hash("/foo/bar/bcd/aaa"));
+  RpcIndexLocationList locations;
+  EXPECT_TRUE(controller_->locate_index(lookup_request, &locations).ok());
+  EXPECT_EQ(1u, locations.size());
+  EXPECT_EQ("/foo/bar/.vsfs/energy.0", locations[0].full_index_path);
+  EXPECT_EQ(2u, locations[0].file_ids.size());
 }
 
 }  // namespace masterd
