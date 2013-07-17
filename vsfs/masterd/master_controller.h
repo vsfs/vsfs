@@ -59,8 +59,14 @@ class ServerManager;
  */
 class MasterController {
  public:
+  /// Default constructor.
   MasterController();
 
+  /**
+   * \brief Constructs a MasterController with given directory.
+   *
+   * The namespace and index partitons will be stored in the 'basedir'.
+   */
   explicit MasterController(const string& basedir);
 
   /**
@@ -73,16 +79,13 @@ class MasterController {
 
   virtual ~MasterController();
 
+  /// Initialize the namespace and index partitions.
   Status init();
 
-  /**
-   * \brief Starts the Masterd RPC server.
-   */
+  /// Starts the Masterd RPC server.
   void start();
 
-  /**
-   * \brief Stops the masterd RPC server.
-   */
+  /// Stops the Masterd RPC server.
   void stop();
 
   /**
