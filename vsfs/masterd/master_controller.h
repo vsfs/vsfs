@@ -59,7 +59,15 @@ class ServerManager;
  */
 class MasterController {
  public:
+  /// Default constructor.
   MasterController();
+
+  /**
+   * \brief Constructs a MasterController with given directory.
+   *
+   * The namespace and index partitons will be stored in the 'basedir'.
+   */
+  explicit MasterController(const string& basedir);
 
   /**
    * \brief Constructs a MasterController using dependency injections.
@@ -71,16 +79,13 @@ class MasterController {
 
   virtual ~MasterController();
 
+  /// Initialize the namespace and index partitions.
   Status init();
 
-  /**
-   * \brief Starts the Masterd RPC server.
-   */
+  /// Starts the Masterd RPC server.
   void start();
 
-  /**
-   * \brief Stops the masterd RPC server.
-   */
+  /// Stops the Masterd RPC server.
   void stop();
 
   /**
@@ -113,6 +118,16 @@ class MasterController {
    */
   Status create_index(const RpcIndexCreateRequest &request,
                       RpcIndexLocation *index_location);
+
+
+  /**
+   * \brief Locates the index servers as well as the index roots for files.
+   * \param[in] lookup_request The request of index lookup.
+   * \param[out] results a list of RpcIndexLocation corresponding to every
+   * input file path.
+   */
+  Status locate_index(const RpcIndexLookupRequest &lookup_request,
+                      RpcIndexLocationList *results);
 
  private:
   FRIEND_TEST(MasterControllerTest, TestCreateIndex);
