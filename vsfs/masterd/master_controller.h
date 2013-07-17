@@ -103,6 +103,16 @@ class MasterController {
   Status create_index(const RpcIndexCreateRequest &request,
                       RpcIndexLocation *index_location);
 
+
+  /**
+   * \brief Locates the index servers as well as the index roots for files.
+   * \param[in] lookup_request The request of index lookup.
+   * \param[out] results a list of RpcIndexLocation corresponding to every
+   * input file path.
+   */
+  Status locate_index(const RpcIndexLookupRequest &lookup_request,
+                      RpcIndexLocationList *results);
+
  private:
   FRIEND_TEST(MasterControllerTest, TestCreateIndex);
 

@@ -32,6 +32,9 @@ class MasterController;
 
 /**
  * \brief The RPC server for Master Server.
+ *
+ * MasterServer the View (in MVC) of the master server. It handles the
+ * thrift RPC framework.
  */
 class MasterServer : public vsfs::MasterServerIf {
  public:
@@ -50,6 +53,12 @@ class MasterServer : public vsfs::MasterServerIf {
    * \brief Creates index in the master server and assign a IndexServer to it.
    */
   void create_index(RpcIndexLocation&, const RpcIndexCreateRequest&);
+
+  /**
+   * \brief Locate Index Servers.
+   */
+  void locate_index(RpcIndexLocationList& loc_list,  // NOLINT
+                    const RpcIndexLookupRequest& request);
 
  private:
   MasterController* controller_;

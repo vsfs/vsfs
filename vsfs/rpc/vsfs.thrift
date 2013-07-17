@@ -222,6 +222,10 @@ service MasterServer {
    */
   RpcIndexLocation create_index(1:RpcIndexCreateRequest index)
     throws (1:RpcInvalidOp ouch);
+
+  /// Locates index servers for files.
+  RpcIndexLocationList locate_index(1: RpcIndexLookupRequest lookup)
+	throws (1:RpcInvalidOp ouch);
 }
 
 /**
