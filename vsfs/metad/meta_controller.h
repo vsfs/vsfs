@@ -44,6 +44,11 @@ using vsfs::rpc::RpcClient;
 namespace vsfs {
 namespace metad {
 
+/**
+ * \brief MetaController the main control block of meta servers.
+ *
+ * It manages the mapping between file_id and file_path.
+ */
 class MetaController {
  public:
   typedef RpcClient<MasterServerClient> MasterClientType;
@@ -66,7 +71,7 @@ class MetaController {
    * \param[in] file_id The unique id of the file.
    * \param[in] file_path The path of the file.
    */
-  virtual Status insert(uint64_t file_id, const string &file_path);
+  virtual Status insert(int64_t file_id, const string &file_path);
 
   /**
    * \brief Insert a bunch of <file_id, file_path> pair.
@@ -77,14 +82,14 @@ class MetaController {
    * \brief Remove a record from the key-value storage.
    * \param[in] file_id The unique id of the file.
    */
-  virtual Status remove(uint64_t file_id);
+  virtual Status remove(int64_t file_id);
 
   /**
    * \brief Given a file_id, return the corresponding file_path.
    * \param[in] file_id The unique id of the file.
    * \param[out] The path of the file.
    */
-  virtual Status find(uint64_t file_id, string *file_path);
+  virtual Status find(int64_t file_id, string *file_path);
 
   /**
    * \brief Given multiple file_ids, return the corresponding file_paths.
@@ -120,7 +125,7 @@ class MetaController {
 
   condition_variable background_cv_;
 
-  mutex back_ground_mutex_;
+  mutex background_mutex_;
 };
 
 }  // namespace metad

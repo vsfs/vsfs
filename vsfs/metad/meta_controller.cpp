@@ -121,13 +121,17 @@ Status MetaController::join() {
   node_info.server_id = FLAGS_server_id;
 
   NodeAddressList replica_server_addresses;
-  master_->handler()->join_meta_server(replica_server_addresses, node_info);
+  try {
+    master_->handler()->join_meta_server(replica_server_addresses, node_info);
+  } catch(RpcInvalidOp ouch) {
+    return Status(ouch.what, ouch.why);
+  }
 
   // TODO(Ziling): join replica and LOG INFO
   return Status::OK;
 }
 
-Status MetaController::insert(uint64_t file_id, const string &file_path) {
+Status MetaController::insert(int64_t file_id, const string &file_path) {
   return manager_->insert(file_id, file_path);
 }
 
@@ -135,11 +139,11 @@ Status MetaController::insert(const RpcMetaDataList& metadata) {
   return manager_->insert(metadata);
 }
 
-Status MetaController::remove(uint64_t file_id) {
+Status MetaController::remove(int64_t file_id) {
   return manager_->remove(file_id);
 }
 
-Status MetaController::find(uint64_t file_id, string *file_path) {
+Status MetaController::find(int64_t file_id, string *file_path) {
   return manager_->find(file_id, file_path);
 }
 
