@@ -216,6 +216,13 @@ service MasterServer {
   RpcNodeAddressList join_index_server(1:RpcNodeInfo info);
 
   /**
+   * \brief A meta server joins the hash ring.
+   * \return RpcNodeAddressList a list of replica servers for this meta
+   * server.
+   */
+  RpcNodeAddressList join_meta_server(1:RpcNodeInfo info);
+
+  /**
    * \brief Creates an index and assign it to a IndexServer in the hash
    * ring.
    * \return the address of IndexServer to manages this index.

@@ -46,8 +46,11 @@ class MasterServer : public vsfs::MasterServerIf {
 
   ~MasterServer();
 
-  void join_index_server(RpcNodeAddressList& _return,  // NOLINT
+  void join_index_server(RpcNodeAddressList& results,  // NOLINT
                          const RpcNodeInfo& info);
+
+  void join_meta_server(RpcNodeAddressList& results,  // NOLINT
+                        const RpcNodeInfo& info);
 
   /**
    * \brief Creates index in the master server and assign a IndexServer to it.

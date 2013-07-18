@@ -42,9 +42,17 @@ MasterServer::MasterServer(MasterController *ctrl) : controller_(ctrl) {
 MasterServer::~MasterServer() {
 }
 
-void MasterServer::join_index_server(RpcNodeAddressList& _return,  // NOLINT
+void MasterServer::join_index_server(RpcNodeAddressList& results,  // NOLINT
                                      const RpcNodeInfo& info) {
-  Status status = controller_->join_index_server(info, &_return);
+  Status status = controller_->join_index_server(info, &results);
+  if (!status.ok()) {
+    throw ThriftUtils::StatusToRpcInvalidOp(status);
+  }
+}
+
+void MasterServer::join_meta_server(RpcNodeAddressList& results,  // NOLINT
+                                    const RpcNodeInfo& info) {
+  Status status = controller_->join_meta_server(info, &results);
   if (!status.ok()) {
     throw ThriftUtils::StatusToRpcInvalidOp(status);
   }
