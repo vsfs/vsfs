@@ -55,6 +55,11 @@ class MetaController {
 
   explicit MetaController(const string &basedir);
 
+  MetaController(const string &basedir, const string &host, int port);
+
+  MetaController(const string &basedir, const string &host, int port,
+                 MasterClientType *master);
+
   virtual ~MetaController();
 
   /// Start this server.

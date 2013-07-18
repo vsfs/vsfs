@@ -64,6 +64,20 @@ MetaController::MetaController(const string &basedir)
       master_(new MasterClientType(FLAGS_master_addr, FLAGS_master_port)) {
 }
 
+MetaController::MetaController(const string &basedir, const string &host,
+                               int port)
+  : host_(host), port_(port), base_dir_(basedir),
+    manager_(new MetaManager(basedir)),
+    master_(new MasterClientType(FLAGS_master_addr, FLAGS_master_port)) {
+}
+
+MetaController::MetaController(const string &basedir, const string &host,
+                               int port, MasterClientType *master)
+  : host_(host), port_(port), base_dir_(basedir),
+    manager_(new MetaManager(basedir)),
+    master_(master) {
+}
+
 MetaController::~MetaController() {
   stop();
 }
