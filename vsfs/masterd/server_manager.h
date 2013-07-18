@@ -33,6 +33,7 @@ using vsfs::NodeInfo;
 
 namespace vsfs {
 namespace masterd {
+
 /**
  * \class ServerManager "vsfs/masterd/server_manager.h"
  * \brief It manages all the servers on a consistent hashing ring,

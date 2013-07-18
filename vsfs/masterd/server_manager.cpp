@@ -85,8 +85,7 @@ Status ServerManager::remove(HashValueType pos) {
   return ring_.remove(pos);
 }
 
-Status ServerManager::get(HashValueType path_hash,
-                               NodeInfo* node) {
+Status ServerManager::get(HashValueType path_hash, NodeInfo* node) {
   CHECK_NOTNULL(node);
   // TODO(Ziling): use rw-lock to improve performance.
   MutexGuard guard(lock_);
