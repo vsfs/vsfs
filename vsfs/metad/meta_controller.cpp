@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <boost/asio/ip/host_name.hpp>
 #include <boost/shared_ptr.hpp>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
@@ -122,12 +123,7 @@ Status MetaController::join() {
   NodeInfo node_info;
 
   if (host_.empty()) {
-    char host_buffer[HOST_NAME_MAX];
-    int ret = gethostname(host_buffer, HOST_NAME_MAX);
-    if (ret) {
-      return Status(ret, strerror(ret));
-    }
-    node_info.address.host = host_buffer;
+    node_info.address.host = boost::asio::ip::host_name();
   } else {
     node_info.address.host = host_;
   }
