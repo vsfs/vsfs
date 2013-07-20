@@ -17,7 +17,9 @@
 #ifndef VSFS_MASTERD_NAMESPACE_H_
 #define VSFS_MASTERD_NAMESPACE_H_
 
+#include <boost/bimap/bimap.hpp>
 #include <boost/utility.hpp>
+#include <sys/stat.h>
 #include <map>
 #include <memory>
 #include <mutex>  // NOLINT
@@ -28,6 +30,7 @@
 #include "vsfs/common/types.h"
 #include "vsfs/common/leveldb_store.h"
 
+using std::map;
 using std::mutex;
 using std::string;
 using std::unique_ptr;
@@ -76,22 +79,39 @@ class Namespace : boost::noncopyable {
    * \param[out] oid the new created file ID for this file.
    * \return Status::OK if success.
    */
-  Status create(const string &path, ObjectId *oid);
+  Status create(const string &path, int flags, int mode, uid_t uid,
+                gid_t gid, ObjectId *oid);
 
   /**
    * \brief Remove a file.
    */
   Status remove(const string &path);
 
-  Status create_dir(const string &path);
+  Status mkdir(const string &path, mode_t mode, uid_t uid, gid_t gid);
 
-  Status listdir(const string &path, vector<string>* paths);
+  Status readdir(const string &path, vector<string>* results);  // NOLINT
 
  private:
   /// The persistent storage to store the namespace.
   unique_ptr<LevelDBStore> store_;
 
+  struct FileMetadata {
+    uint32_t mode;
+    uint32_t gid;
+    uint32_t uid;
+    uint64_t size;  // size should put into object store.
+    double atime;
+    double ctime;
+    double mtime;
+    // mutex?
+  };
+
+  /// The namespace !!!
+  map<string, FileMetadata> metadata_map_;
+
   unordered_map<ObjectId, string> id_to_path_map_;
+
+  ObjectId next_obj_id_;
 
   mutex mutex_;
 };
