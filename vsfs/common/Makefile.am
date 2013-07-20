@@ -16,7 +16,9 @@ libvsfs_common_a_SOURCES = \
   mock_key_value_store.h \
   mock_leveldb_store.h \
   posix_path.h posix_path.cpp \
-  thread.h
+  test_leveldb_store.h test_leveldb_store.cpp \
+  thread.h \
+  types.h
 
 log_types.h: log.thrift
 	thrift --gen cpp -out . $<
