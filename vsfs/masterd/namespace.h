@@ -21,6 +21,7 @@
 #include <boost/utility.hpp>
 #include <sys/stat.h>
 #include <map>
+#include <set>
 #include <memory>
 #include <mutex>  // NOLINT
 #include <string>
@@ -32,6 +33,7 @@
 
 using std::map;
 using std::mutex;
+using std::set;
 using std::string;
 using std::unique_ptr;
 using std::unordered_map;
@@ -89,13 +91,17 @@ class Namespace : boost::noncopyable {
 
   Status mkdir(const string &path, mode_t mode, uid_t uid, gid_t gid);
 
+  Status rmdir(const string &path);
+
   Status readdir(const string &path, vector<string>* results);  // NOLINT
 
  private:
   /// The persistent storage to store the namespace.
   unique_ptr<LevelDBStore> store_;
 
-  struct FileMetadata {
+  struct Metadata {
+    string full_path;
+    ObjectId object_id;
     uint32_t mode;
     uint32_t gid;
     uint32_t uid;
@@ -106,9 +112,20 @@ class Namespace : boost::noncopyable {
     // mutex?
   };
 
-  /// The namespace !!!
-  map<string, FileMetadata> metadata_map_;
+  /// Maintains the directory relationship with its sub files/dirs.
+  struct Directory {
+    set<string> subfiles;
+  };
 
+  /// Dir path to the directory structure.
+  typedef unordered_map<string, Directory> DirectoryMap;
+
+  DirectoryMap directories_;
+
+  /// The namespace !!!
+  unordered_map<string, Metadata> metadata_map_;
+
+  /// A reversed map for fast lookup from object id to the file path.
   unordered_map<ObjectId, string> id_to_path_map_;
 
   ObjectId next_obj_id_;

@@ -26,6 +26,7 @@
 
 using vobla::Clock;
 using vobla::contain_key;
+using vobla::find_or_null;
 
 namespace vsfs {
 namespace masterd {
@@ -56,6 +57,8 @@ Status Namespace::file_path(ObjectId oid, string *path) {
 
 Status Namespace::mkdir(
     const string &path, mode_t mode, uid_t uid, gid_t gid) {
+  // TODO(eddyxu): check privilige first.
+
   MutexGuard guard(mutex_);
   // Master server does not check the existence of the parent directory. The
   // client need to check the responsibilty of the parent directory.
@@ -70,17 +73,33 @@ Status Namespace::mkdir(
   meta.atime = now;
   meta.ctime = now;
   meta.mtime = now;
+
+  directories_.emplace(DirectoryMap::value_type(path, Directory()));
+  return Status::OK;
+}
+
+Status Namespace::rmdir(const string &path) {
+  MutexGuard guard(mutex_);
+  auto dir = find_or_null(directories_, path);
+  if (!dir) {
+    return Status(-ENOENT, strerror(ENOENT));
+  }
+  if (!dir->subfiles.empty()) {
+    return Status(-ENOTEMPTY, strerror(ENOTEMPTY));
+  }
+  metadata_map_.erase(path);
+  directories_.erase(path);
   return Status::OK;
 }
 
 Status Namespace::readdir(const string &path, vector<string>* results) {  // NOLINT
   CHECK_NOTNULL(results);
-  string prefix = path + "/";
   MutexGuard guard(mutex_);
-  auto it = metadata_map_.lower_bound(path);
-  if (it == metadata_map_.end() || it->first != path) {
+  auto dir = find_or_null(directories_, path);
+  if (!dir) {
     return Status(-ENOENT, strerror(ENOENT));
   }
+  results->assign(dir->subfiles.begin(), dir->subfiles.end());
   return Status::OK;
 }
 
