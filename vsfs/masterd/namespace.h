@@ -88,6 +88,7 @@ class Namespace : boost::noncopyable {
   Status listdir(const string &path, vector<string>* paths);
 
  private:
+  /// The persistent storage to store the namespace.
   unique_ptr<LevelDBStore> store_;
 
   unordered_map<ObjectId, string> id_to_path_map_;

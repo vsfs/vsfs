@@ -47,6 +47,5 @@ Status Namespace::file_path(ObjectId oid, string *path) {
   return Status::OK;
 }
 
-
 }  // namespace masterd
 }  // namespace vsfs
