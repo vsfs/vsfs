@@ -19,8 +19,6 @@ libvsfs_masterd_a_SOURCES = \
   masterd_constants.h \
   masterd_types.cpp \
   masterd_types.h \
-  namespace.cpp \
-  namespace.h \
   partition_manager.cpp \
   partition_manager.h \
   server_manager.cpp \
