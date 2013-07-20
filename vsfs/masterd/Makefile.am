@@ -15,6 +15,8 @@ libvsfs_masterd_a_SOURCES = \
   master_controller.h \
   master_server.cpp \
   master_server.h \
+  namespace.h \
+  namespace.cpp \
   masterd_constants.cpp \
   masterd_constants.h \
   masterd_types.cpp \
