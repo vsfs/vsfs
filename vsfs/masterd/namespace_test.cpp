@@ -26,6 +26,10 @@ using std::unique_ptr;
 namespace vsfs {
 namespace masterd {
 
+/**
+ * \class NamespaceTest
+ * \brief Unit tests for the unified namespace.
+ */
 class NamespaceTest : public ::testing::Test {
  protected:
   void SetUp() {
@@ -48,6 +52,8 @@ TEST_F(NamespaceTest, CreateFile) {
   string actual_path;
   EXPECT_TRUE(test_ns_->file_path(obj, &actual_path).ok());
   EXPECT_EQ(path, actual_path);
+
+  EXPECT_FALSE(test_ns_->create(path, 0x666, 100, 200, &obj).ok());
 }
 
 TEST_F(NamespaceTest, TestMakeDirs) {

@@ -44,7 +44,21 @@ Namespace::~Namespace() {
 }
 
 Status Namespace::init() {
+  auto status = store_->open();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to initialize namespace: can not init leveldb store."
+               << status.message();
+    return status;
+  }
+  // TODO(eddyxu): load all metadata from the leveldb.
   return Status::OK;
+}
+
+bool Namespace::exists(const string &path) const {
+  // Since it will only be called in distributed environment, the
+  // inconsistency caused by the simultaneously updates is acceptable.
+  // Therefore no lock is needed here.
+  return contain_key(metadata_map_, path);
 }
 
 Status Namespace::file_path(ObjectId oid, string *path) {
@@ -101,10 +115,23 @@ Status Namespace::create(const string &path, int mode, uid_t uid,
   return Status::OK;
 }
 
+Status Namespace::remove(const string &path) {
+  MutexGuard guard(mutex_);
+  if (!contain_key(metadata_map_, path)) {
+    return Status(-ENOENT, strerror(ENOENT));
+  }
+  auto& meta = metadata_map_[path];
+  auto obj = meta.object_id;
+  CHECK(!contain_key_and_value(id_to_path_map_, obj, path))
+      << "The object ID and path pair has already existed: ("
+      <<  obj << ", " << path << ")";
+  metadata_map_.erase(path);
+  id_to_path_map_.erase(obj);
+  return Status::OK;
+}
+
 Status Namespace::mkdir(
     const string &path, mode_t mode, uid_t uid, gid_t gid) {
-  // TODO(eddyxu): check privilige first.
-
   MutexGuard guard(mutex_);
   // Master server does not check the existence of the parent directory. The
   // client need to check the responsibilty of the parent directory.
@@ -135,6 +162,19 @@ Status Namespace::rmdir(const string &path) {
   }
   metadata_map_.erase(path);
   directories_.erase(path);
+  return Status::OK;
+}
+
+Status Namespace::add_subfile(const string &parent, const string &subfile) {
+  MutexGuard guard(mutex_);
+  auto dir = find_or_null(directories_, parent);
+  if (!dir) {
+    return Status(-ENOENT, strerror(ENOENT));
+  }
+  if (dir->subfiles.count(subfile) > 0) {
+    return Status(-EEXIST, strerror(EEXIST));
+  }
+  dir->subfiles.insert(subfile);
   return Status::OK;
 }
 

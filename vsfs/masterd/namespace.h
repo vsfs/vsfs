@@ -60,7 +60,7 @@ class Namespace : boost::noncopyable {
   Status init();
 
   /// Returns true if the path is existed.
-  bool exists(const string &path);
+  bool exists(const string &path) const;
 
   /// Finds the file id by the file path.
   Status file_id(const string &path, ObjectId *oid);
@@ -82,11 +82,18 @@ class Namespace : boost::noncopyable {
                 ObjectId *oid);
 
   /**
-   * \brief Remove a file.
+   * \brief Removes a file.
+   * \param path the full path of the deleting file.
    */
   Status remove(const string &path);
 
-  Status add_subfile(const string &parent, const string &subdir);
+  /**
+   * \brief Adds an file entry into the directory structure.
+   * \param parant the parent directory path.
+   * \param subfile the subfile filename, not including parent paths.
+   * \return Status::OK if success.
+   */
+  Status add_subfile(const string &parent, const string &subfile);
 
   Status mkdir(const string &path, mode_t mode, uid_t uid, gid_t gid);
 
