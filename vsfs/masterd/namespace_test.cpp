@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <errno.h>
 #include <gtest/gtest.h>
 #include <memory>
 #include <set>
@@ -50,7 +51,7 @@ TEST_F(NamespaceTest, CreateFile) {
   EXPECT_TRUE(test_ns_->create(path, 0x666, 100, 100, &obj).ok());
 
   ObjectId actual_obj;
-  EXPECT_TRUE(test_ns_->file_id(path, &actual_obj).ok());
+  EXPECT_TRUE(test_ns_->object_id(path, &actual_obj).ok());
   EXPECT_EQ(obj, actual_obj);
 
   string actual_path;
@@ -70,13 +71,26 @@ TEST_F(NamespaceTest, RemoveFile) {
 
   EXPECT_TRUE(test_ns_->remove("/foo").ok());
   EXPECT_FALSE(test_ns_->file_path(obj, &actual_path).ok());
-  EXPECT_FALSE(test_ns_->file_id("/foo", &obj).ok());
+  EXPECT_FALSE(test_ns_->object_id("/foo", &obj).ok());
 }
 
 TEST_F(NamespaceTest, TestMakeDirs) {
   EXPECT_TRUE(test_ns_->mkdir("/", 0x666, 100, 100).ok());
   EXPECT_TRUE(test_ns_->mkdir("/foo/bar", 0x666, 100, 100).ok());
   EXPECT_FALSE(test_ns_->mkdir("/foo/bar", 0x666, 100, 100).ok());
+}
+
+TEST_F(NamespaceTest, TestRemoveDirs) {
+  EXPECT_FALSE(test_ns_->rmdir("/foo").ok());
+
+  test_ns_->mkdir("/foo", 0x666, 100, 100);
+  EXPECT_TRUE(test_ns_->rmdir("/foo").ok());
+
+  test_ns_->mkdir("/foo", 0x666, 100, 100);
+  test_ns_->add_subfile("/foo", "bar");
+  // The directory is not empty.
+  auto status = test_ns_->rmdir("/foo");
+  EXPECT_EQ(-ENOTEMPTY, status.error());
 }
 
 TEST_F(NamespaceTest, TestAddSubFiles) {

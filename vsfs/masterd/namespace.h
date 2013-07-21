@@ -19,15 +19,14 @@
 
 #include <boost/utility.hpp>
 #include <sys/stat.h>
-#include <set>
 #include <memory>
 #include <mutex>  // NOLINT
+#include <set>
 #include <string>
 #include <unordered_map>  // NOLINT
 #include <vector>
 #include "vobla/status.h"
 #include "vsfs/common/types.h"
-#include "vsfs/common/leveldb_store.h"
 
 using std::mutex;
 using std::set;
@@ -38,6 +37,10 @@ using std::vector;
 using vobla::Status;
 
 namespace vsfs {
+
+class LevelDBStore;
+class RpcFileInfo;
+
 namespace masterd {
 
 /**
@@ -62,8 +65,13 @@ class Namespace : boost::noncopyable {
   /// Returns true if the path is existed.
   bool exists(const string &path) const;
 
-  /// Finds the file id by the file path.
-  Status file_id(const string &path, ObjectId *oid);
+  /**
+   * \brief Finds the object id by the file path.
+   *
+   * An object ID is the global unique ID in the system, which is similar to
+   * the inode number in local file system or FID in Lustre.
+   */
+  Status object_id(const string &path, ObjectId *oid);
 
   /// Finds the file path by the given file id.
   Status file_path(ObjectId oid, string *path);
@@ -71,6 +79,13 @@ class Namespace : boost::noncopyable {
   /// Finds files in batch by the given file IDs.
   Status find_files(const vector<ObjectId>& file_ids,
                     vector<string>* paths);
+
+  /**
+   * \brief Access the attributes of a file or directory.
+   * \param[in] path the full path of the targeted file.
+   * \param[out] info filled with the metadata of file.
+   */
+  Status getattr(const string &path, RpcFileInfo *info);
 
   /**
    * \brief Creates a file and returns its file id.
@@ -102,6 +117,12 @@ class Namespace : boost::noncopyable {
   Status readdir(const string &path, vector<string>* results);  // NOLINT
 
  private:
+  /**
+   * \brief Calculate object id from the file path.
+   * \note the caller needs to hold the mutex_.
+   */
+  ObjectId get_object_id(const string &path);
+
   /// The persistent storage to store the namespace.
   unique_ptr<LevelDBStore> store_;
 

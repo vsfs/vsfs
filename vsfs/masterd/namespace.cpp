@@ -22,9 +22,11 @@
 #include "vobla/clock.h"
 #include "vobla/map_util.h"
 #include "vsfs/common/hash_util.h"
+#include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/common/types.h"
 #include "vsfs/masterd/namespace.h"
+#include "vsfs/rpc/vsfs_types.h"
 
 using vobla::Clock;
 using vobla::contain_key;
@@ -72,7 +74,7 @@ Status Namespace::file_path(ObjectId oid, string *path) {
   return Status::OK;
 }
 
-Status Namespace::file_id(const string &path, ObjectId *oid) {
+Status Namespace::object_id(const string &path, ObjectId *oid) {
   CHECK_NOTNULL(oid);
   MutexGuard guard(mutex_);
   auto it = metadata_map_.find(path);
@@ -80,6 +82,24 @@ Status Namespace::file_id(const string &path, ObjectId *oid) {
     return Status(-ENOENT, strerror(ENOENT));
   }
   *oid = it->second.object_id;
+  return Status::OK;
+}
+
+Status Namespace::getattr(const string &path, RpcFileInfo *info) {
+  CHECK_NOTNULL(info);
+  MutexGuard guard(mutex_);
+  auto meta = find_or_null(metadata_map_, path);
+  if (!meta) {
+    return Status(-ENOENT, strerror(ENOENT));
+  }
+  info->id = meta->object_id;
+  info->uid = meta->uid;
+  info->gid = meta->gid;
+  info->mode = meta->mode;
+  info->size = meta->size;
+  info->atime = meta->atime;
+  info->ctime = meta->ctime;
+  info->mtime = meta->mtime;
   return Status::OK;
 }
 
@@ -98,20 +118,13 @@ Status Namespace::create(const string &path, int mode, uid_t uid,
   meta.atime = now;
   meta.ctime = now;
   meta.mtime = now;
+  meta.object_id = get_object_id(path);
 
-  // Obtain an new object id.
-  FilePathHashType hash_value = HashUtil::file_path_to_hash(path);
-
-  // Object id is the first 16 bits from hash value and the last 48 bits from
-  // the assigned obj id.
-  ObjectId obj_id = (hash_value & 0xFF000000) + (next_obj_id_ & 0x00FFFFFF);
-  meta.object_id = obj_id;
-  next_obj_id_++;
-  CHECK(!contain_key_and_value(id_to_path_map_, obj_id, path))
+  CHECK(!contain_key_and_value(id_to_path_map_, meta.object_id, path))
       << "The object ID and path pair has already existed: ("
-      <<  obj_id << ", " << path << ")";
-  id_to_path_map_[obj_id] = path;
-  *oid = obj_id;
+      << meta.object_id << ", " << path << ")";
+  id_to_path_map_[meta.object_id] = path;
+  *oid = meta.object_id;
   return Status::OK;
 }
 
@@ -188,6 +201,16 @@ Status Namespace::readdir(const string &path, vector<string>* results) {  // NOL
   }
   results->assign(dir->subfiles.begin(), dir->subfiles.end());
   return Status::OK;
+}
+
+ObjectId Namespace::get_object_id(const string &path) {
+  FilePathHashType hash_value = HashUtil::file_path_to_hash(path);
+
+  // Object id is the first 16 bits from hash value and the last 48 bits from
+  // the assigned obj id.
+  ObjectId obj_id = (hash_value & 0xFF000000) + (next_obj_id_ & 0x00FFFFFF);
+  next_obj_id_++;
+  return obj_id;
 }
 
 }  // namespace masterd
