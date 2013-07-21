@@ -106,7 +106,6 @@ class Namespace : boost::noncopyable {
   unique_ptr<LevelDBStore> store_;
 
   struct Metadata {
-    string full_path;
     ObjectId object_id;
     uint32_t mode;
     uint32_t gid;
