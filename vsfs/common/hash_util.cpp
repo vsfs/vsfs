@@ -25,7 +25,7 @@ using vobla::MD5Digest;
 
 namespace vsfs {
 
-HashUtil::FilePathHashType HashUtil::file_path_to_hash(const string &path) {
+FilePathHashType HashUtil::file_path_to_hash(const string &path) {
   FilePathHashType ret;
   // TODO(lxu): add a flag to switch hash function.
   MD5Digest hash_value(path);
