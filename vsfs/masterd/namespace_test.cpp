@@ -16,12 +16,16 @@
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <set>
 #include <string>
+#include <vector>
 #include "vsfs/common/test_leveldb_store.h"
 #include "vsfs/masterd/namespace.h"
 
+using std::set;
 using std::string;
 using std::unique_ptr;
+using std::vector;
 
 namespace vsfs {
 namespace masterd {
@@ -72,6 +76,21 @@ TEST_F(NamespaceTest, RemoveFile) {
 TEST_F(NamespaceTest, TestMakeDirs) {
   EXPECT_TRUE(test_ns_->mkdir("/", 0x666, 100, 100).ok());
   EXPECT_TRUE(test_ns_->mkdir("/foo/bar", 0x666, 100, 100).ok());
+  EXPECT_FALSE(test_ns_->mkdir("/foo/bar", 0x666, 100, 100).ok());
+}
+
+TEST_F(NamespaceTest, TestAddSubFiles) {
+  EXPECT_FALSE(test_ns_->add_subfile("/foo", "bar").ok());
+
+  test_ns_->mkdir("/foo", 0x666, 100, 100);
+  EXPECT_TRUE(test_ns_->add_subfile("/foo", "bar").ok());
+  EXPECT_TRUE(test_ns_->add_subfile("/foo", "zoo").ok());
+  EXPECT_FALSE(test_ns_->add_subfile("/foo", "bar").ok());
+
+  vector<string> subfiles;
+  EXPECT_TRUE(test_ns_->readdir("/foo", &subfiles).ok());
+  EXPECT_EQ("bar", subfiles[0]);
+  EXPECT_EQ("zoo", subfiles[1]);
 }
 
 }  // namespace masterd

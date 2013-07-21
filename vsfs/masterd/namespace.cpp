@@ -146,6 +146,7 @@ Status Namespace::mkdir(
   meta.atime = now;
   meta.ctime = now;
   meta.mtime = now;
+  meta.object_id = 0;  // No object for directory.
 
   directories_.emplace(DirectoryMap::value_type(path, Directory()));
   return Status::OK;
