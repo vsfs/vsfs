@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.61])
 AC_INIT([vsfs], [0.0.1], [eddyxu@gmail.com])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([color-tests parallel-tests])
 AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIR([m4])

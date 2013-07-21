@@ -22,6 +22,7 @@ Makefile.in
 *.gcno
 *.gcda
 *_test
+*.log
 
 *.pb.h
 *.pb.cc

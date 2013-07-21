@@ -27,7 +27,6 @@ exception RpcInvalidOp {
 struct RpcFileInfo {
   1: i64 id,
   2: string path,
-  3: string uri,
   4: i64 uid,
   5: i64 gid,
   6: i64 mode,
