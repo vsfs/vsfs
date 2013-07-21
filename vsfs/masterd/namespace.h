@@ -81,13 +81,15 @@ class Namespace : boost::noncopyable {
    * \param[out] oid the new created file ID for this file.
    * \return Status::OK if success.
    */
-  Status create(const string &path, int flags, int mode, uid_t uid,
-                gid_t gid, ObjectId *oid);
+  Status create(const string &path, int mode, uid_t uid, gid_t gid,
+                ObjectId *oid);
 
   /**
    * \brief Remove a file.
    */
   Status remove(const string &path);
+
+  Status add_subfile(const string &parent, const string &subdir);
 
   Status mkdir(const string &path, mode_t mode, uid_t uid, gid_t gid);
 

@@ -16,9 +16,11 @@
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <string>
 #include "vsfs/common/test_leveldb_store.h"
 #include "vsfs/masterd/namespace.h"
 
+using std::string;
 using std::unique_ptr;
 
 namespace vsfs {
@@ -31,13 +33,26 @@ class NamespaceTest : public ::testing::Test {
     test_ns_.reset(new Namespace(test_store));
   }
 
-  void TearDown() {
-  }
-
   unique_ptr<Namespace> test_ns_;
 };
 
+TEST_F(NamespaceTest, CreateFile) {
+  ObjectId obj;
+  string path = "/foo/bar";
+  EXPECT_TRUE(test_ns_->create(path, 0x666, 100, 100, &obj).ok());
+
+  ObjectId actual_obj;
+  EXPECT_TRUE(test_ns_->file_id(path, &actual_obj).ok());
+  EXPECT_EQ(obj, actual_obj);
+
+  string actual_path;
+  EXPECT_TRUE(test_ns_->file_path(obj, &actual_path).ok());
+  EXPECT_EQ(path, actual_path);
+}
+
 TEST_F(NamespaceTest, TestMakeDirs) {
+  EXPECT_TRUE(test_ns_->mkdir("/", 0x666, 100, 100).ok());
+  EXPECT_TRUE(test_ns_->mkdir("/foo/bar", 0x666, 100, 100).ok());
 }
 
 }  // namespace masterd

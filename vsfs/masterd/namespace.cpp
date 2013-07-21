@@ -21,11 +21,14 @@
 #include <string>
 #include "vobla/clock.h"
 #include "vobla/map_util.h"
+#include "vsfs/common/hash_util.h"
 #include "vsfs/common/thread.h"
+#include "vsfs/common/types.h"
 #include "vsfs/masterd/namespace.h"
 
 using vobla::Clock;
 using vobla::contain_key;
+using vobla::contain_key_and_value;
 using vobla::find_or_null;
 
 namespace vsfs {
@@ -52,6 +55,49 @@ Status Namespace::file_path(ObjectId oid, string *path) {
     return Status(-ENOENT, "The object ID does not exist.");
   }
   *path = it->second;
+  return Status::OK;
+}
+
+Status Namespace::file_id(const string &path, ObjectId *oid) {
+  CHECK_NOTNULL(oid);
+  MutexGuard guard(mutex_);
+  auto it = metadata_map_.find(path);
+  if (it == metadata_map_.end()) {
+    return Status(-ENOENT, strerror(ENOENT));
+  }
+  *oid = it->second.object_id;
+  return Status::OK;
+}
+
+Status Namespace::create(const string &path, int mode, uid_t uid,
+                         gid_t gid, ObjectId *oid) {
+  CHECK_NOTNULL(oid);
+  MutexGuard guard(mutex_);
+  if (contain_key(metadata_map_, path)) {
+    return Status(-EEXIST, strerror(EEXIST));
+  }
+  auto& meta = metadata_map_[path];
+  meta.mode = mode & S_IFREG;
+  meta.gid = gid;
+  meta.uid = uid;
+  double now = Clock::real_clock()->now();
+  meta.atime = now;
+  meta.ctime = now;
+  meta.mtime = now;
+
+  // Obtain an new object id.
+  FilePathHashType hash_value = HashUtil::file_path_to_hash(path);
+
+  // Object id is the first 16 bits from hash value and the last 48 bits from
+  // the assigned obj id.
+  ObjectId obj_id = (hash_value & 0xFF000000) + (next_obj_id_ & 0x00FFFFFF);
+  meta.object_id = obj_id;
+  next_obj_id_++;
+  CHECK(!contain_key_and_value(id_to_path_map_, obj_id, path))
+      << "The object ID and path pair has already existed: ("
+      <<  obj_id << ", " << path << ")";
+  id_to_path_map_[obj_id] = path;
+  *oid = obj_id;
   return Status::OK;
 }
 

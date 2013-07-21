@@ -39,6 +39,7 @@ masterd_LDADD = \
 TESTS = \
   index_namespace_test \
   master_controller_test \
+  namespace_test \
   partition_manager_test \
   server_manager_test
 
@@ -48,5 +49,6 @@ LDADD = libvsfs-masterd.a $(masterd_LDADD) \
 
 index_namespace_test_SOURCES = index_namespace_test.cpp
 master_controller_test_SOURCES = master_controller_test.cpp mock_index_namespace.h
+namespace_test_SOURCES = namespace_test.cpp
 partition_manager_test_SOURCES = partition_manager_test.cpp
 server_manager_test_SOURCES = server_manager_test.cpp
