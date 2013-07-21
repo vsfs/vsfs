@@ -122,8 +122,8 @@ Status Namespace::remove(const string &path) {
   }
   auto& meta = metadata_map_[path];
   auto obj = meta.object_id;
-  CHECK(!contain_key_and_value(id_to_path_map_, obj, path))
-      << "The object ID and path pair has already existed: ("
+  CHECK(contain_key_and_value(id_to_path_map_, obj, path))
+      << "The object ID and path pair dose not exist: ("
       <<  obj << ", " << path << ")";
   metadata_map_.erase(path);
   id_to_path_map_.erase(obj);
