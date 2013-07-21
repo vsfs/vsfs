@@ -17,10 +17,8 @@
 #ifndef VSFS_MASTERD_NAMESPACE_H_
 #define VSFS_MASTERD_NAMESPACE_H_
 
-#include <boost/bimap/bimap.hpp>
 #include <boost/utility.hpp>
 #include <sys/stat.h>
-#include <map>
 #include <set>
 #include <memory>
 #include <mutex>  // NOLINT
@@ -31,7 +29,6 @@
 #include "vsfs/common/types.h"
 #include "vsfs/common/leveldb_store.h"
 
-using std::map;
 using std::mutex;
 using std::set;
 using std::string;

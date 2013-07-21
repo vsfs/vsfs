@@ -15,8 +15,8 @@
  */
 
 #include <errno.h>
-#include <sys/stat.h>
 #include <glog/logging.h>
+#include <sys/stat.h>
 #include <cstring>
 #include <string>
 #include "vobla/clock.h"
