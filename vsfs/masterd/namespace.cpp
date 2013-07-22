@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <boost/filesystem.hpp>
 #include <errno.h>
 #include <glog/logging.h>
@@ -55,7 +56,31 @@ Status Namespace::init() {
                << status.message();
     return status;
   }
+  MutexGuard guard(mutex_);
   // TODO(eddyxu): load all metadata from the leveldb.
+  for (auto record : *store_) {
+    // TODO(eddyxu): use leveldb prefix scan to eliminates the necessary of
+    // if..else check.
+    auto key = record.first;
+    if (boost::starts_with(key, "/")) {  // metadata record.
+      FileMetadata metadata;
+      if (!ThriftUtils::deserialize(record.second, &metadata)) {
+        return Status(-1, "The metadata db is corrupted.");
+      }
+      metadata_map_[key] = metadata;
+      id_to_path_map_[metadata.object_id] = key;
+    } else if (boost::starts_with(key, "dir:")) {  // directory mapping.
+      string fullpath = key.substr(4);
+      auto path = fs::path(fullpath);
+      auto parent = path.parent_path().string();
+      auto filename = path.filename().string();
+      CHECK(directories_.count(parent));
+      directories_[parent].subfiles.insert(filename);
+    } else if (boost::starts_with(key, "meta:")) {  // system-wide metadata
+    } else {
+      return Status(-1, "The metadata db is corrupted.");
+    }
+  }
   return Status::OK;
 }
 
