@@ -104,12 +104,17 @@ class Namespace : boost::noncopyable {
   Status remove(const string &path);
 
   /**
-   * \brief Adds an file entry into the directory structure.
+   * \brief Adds a file entry into the directory structure.
    * \param parant the parent directory path.
    * \param subfile the subfile filename, not including parent paths.
    * \return Status::OK if success.
    */
   Status add_subfile(const string &parent, const string &subfile);
+
+  /**
+   * \brief Removes a file entry from the given directory structure.
+   */
+  Status remove_subfile(const string &parent, const string &subfile);
 
   Status mkdir(const string &path, mode_t mode, uid_t uid, gid_t gid);
 

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <boost/filesystem.hpp>
 #include <errno.h>
 #include <glog/logging.h>
 #include <sys/stat.h>
@@ -33,6 +34,7 @@ using vobla::Clock;
 using vobla::contain_key;
 using vobla::contain_key_and_value;
 using vobla::find_or_null;
+namespace fs = boost::filesystem;
 
 namespace vsfs {
 namespace masterd {
@@ -204,6 +206,14 @@ Status Namespace::rmdir(const string &path) {
   return Status::OK;
 }
 
+namespace {
+
+string directory_map_key(const string& path) {
+  return string("dir:") + path;
+}
+
+}
+
 Status Namespace::add_subfile(const string &parent, const string &subfile) {
   MutexGuard guard(mutex_);
   auto dir = find_or_null(directories_, parent);
@@ -213,7 +223,38 @@ Status Namespace::add_subfile(const string &parent, const string &subfile) {
   if (dir->subfiles.count(subfile) > 0) {
     return Status(-EEXIST, strerror(EEXIST));
   }
+  auto fullpath = (fs::path(parent) / subfile).string();
+  string value;  // just an empty payload.
+  string key = directory_map_key(fullpath);
+  auto status = store_->put(key, value);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to put subfile into persisent store: " << fullpath
+               << " : " << status.message();
+    return status;
+  }
   dir->subfiles.insert(subfile);
+
+  return Status::OK;
+}
+
+Status Namespace::remove_subfile(const string &parent, const string &subfile) {
+  MutexGuard guard(mutex_);
+  auto dir = find_or_null(directories_, parent);
+  if (!dir) {
+    return Status(-ENOENT, strerror(ENOENT));
+  }
+  if (dir->subfiles.count(subfile) > 0) {
+    return Status(-ENOENT, strerror(ENOENT));
+  }
+  auto fullpath = (fs::path(parent) / subfile).string();
+  auto key = directory_map_key(key, value);
+  auto status = store_->remove(key);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to remove subfile from persisent store: " << fullpath
+               << " : " << status.message();
+    return status;
+  }
+  dir->subfiles.erase(subfile);
   return Status::OK;
 }
 
