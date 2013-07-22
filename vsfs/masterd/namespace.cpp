@@ -68,12 +68,17 @@ Status Namespace::init() {
         return Status(-1, "The metadata db is corrupted.");
       }
       metadata_map_[key] = metadata;
-      id_to_path_map_[metadata.object_id] = key;
+      if (S_ISDIR(metadata.mode)) {
+        directories_.emplace(DirectoryMap::value_type(key, Directory()));
+      } else {
+        id_to_path_map_[metadata.object_id] = key;
+      }
     } else if (boost::starts_with(key, "dir:")) {  // directory mapping.
       string fullpath = key.substr(4);
       auto path = fs::path(fullpath);
       auto parent = path.parent_path().string();
       auto filename = path.filename().string();
+
       CHECK(directories_.count(parent));
       directories_[parent].subfiles.insert(filename);
     } else if (boost::starts_with(key, "meta:")) {  // system-wide metadata
@@ -139,7 +144,7 @@ Status Namespace::create(const string &path, int mode, uid_t uid,
     return Status(-EEXIST, strerror(EEXIST));
   }
   auto& meta = metadata_map_[path];
-  meta.mode = mode & S_IFREG;
+  meta.mode = mode | S_IFREG;
   meta.gid = gid;
   meta.uid = uid;
   double now = Clock::real_clock()->now();
@@ -191,7 +196,7 @@ Status Namespace::mkdir(
     return Status(-EEXIST, strerror(EEXIST));
   }
   auto& meta = metadata_map_[path];
-  meta.mode = mode & S_IFDIR;
+  meta.mode = mode | S_IFDIR;
   meta.gid = gid;
   meta.uid = uid;
   double now = Clock::real_clock()->now();

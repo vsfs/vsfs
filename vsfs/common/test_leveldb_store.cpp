@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
+#include <map>
 #include <string>
 #include "vsfs/common/test_leveldb_store.h"
 
 namespace vsfs {
+
+TestLevelDBStore::TestLevelDBStore(const map<string, string>& other)
+    : store_(other) {
+}
 
 Status TestLevelDBStore::get(const string& key, string* value) {
   auto it = store_.find(key);
@@ -44,6 +49,10 @@ TestLevelDBStore::iterator TestLevelDBStore::begin() {
 
 TestLevelDBStore::iterator TestLevelDBStore::end() {
   return LevelDBStoreIterator(store_.end());
+}
+
+const map<string, string>& TestLevelDBStore::store() const {
+  return store_;
 }
 
 }  // namespace vsfs
