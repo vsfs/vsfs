@@ -247,7 +247,7 @@ Status Namespace::remove_subfile(const string &parent, const string &subfile) {
     return Status(-ENOENT, strerror(ENOENT));
   }
   auto fullpath = (fs::path(parent) / subfile).string();
-  auto key = directory_map_key(key, value);
+  auto key = directory_map_key(fullpath);
   auto status = store_->remove(key);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to remove subfile from persisent store: " << fullpath
