@@ -151,9 +151,8 @@ TEST_F(NamespaceTest, TestInitialize) {
 
   subfiles.clear();
   EXPECT_TRUE(new_ns.readdir("/foo", &subfiles).ok());
-  EXPECT_EQ(51u, subfiles.size());  // test0..test49 and bar
   set<string> expected_files;
-  for (int i = 0; i < 50; i++) {
+  for (int i = 0; i < 50; i++) {   // test0..test49 + bar
     expected_files.insert("test" + std::to_string(i));
   }
   expected_files.insert("bar");
@@ -162,9 +161,8 @@ TEST_F(NamespaceTest, TestInitialize) {
 
   subfiles.clear();
   EXPECT_TRUE(new_ns.readdir("/foo/bar", &subfiles).ok());
-  EXPECT_EQ(50u, subfiles.size());  // test0..test49 and bar
   expected_files.clear();
-  for (int i = 0; i < 50; i++) {
+  for (int i = 0; i < 50; i++) {  // bla0..bla49
     expected_files.insert("bla" + std::to_string(i));
   }
   actual_files.clear();
