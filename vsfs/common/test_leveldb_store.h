@@ -63,6 +63,10 @@ class TestLevelDBStore : public LevelDBStore {
 
   Status remove(const string& key);
 
+  iterator begin();
+
+  iterator end();
+
  private:
   map<string, string> store_;
 };

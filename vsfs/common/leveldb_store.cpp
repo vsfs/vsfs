@@ -15,11 +15,14 @@
  */
 
 #include <glog/logging.h>
+#include <map>
 #include <string>
 #include "vsfs/common/leveldb_store.h"
 
 using leveldb::DB;
 using leveldb::Iterator;
+using std::map;
+using std::string;
 
 namespace vsfs {
 
@@ -32,30 +35,52 @@ LevelDBStore::LevelDBStoreIterator::LevelDBStoreIterator(
   iter_->SeekToFirst();
 }
 
+LevelDBStore::LevelDBStoreIterator::LevelDBStoreIterator(
+    map<string, string>::iterator iter) : test_iter_(iter) {
+}
+
 void LevelDBStore::LevelDBStoreIterator::increment() {
-  if (iter_->Valid()) {
-    iter_->Next();
+  if (iter_) {
+    if (iter_->Valid()) {
+      iter_->Next();
+    }
+  } else {
+    ++test_iter_;
   }
 }
 
 void LevelDBStore::LevelDBStoreIterator::decrement() {
-  if (iter_->Valid()) {
-    iter_->Prev();
+  if (iter_) {
+    if (iter_->Valid()) {
+      iter_->Prev();
+    }
+  } else {
+    ++test_iter_;
   }
 }
 
 LevelDBStore::LevelDBStoreIterator::reference
 LevelDBStore::LevelDBStoreIterator::dereference() const {
-  CHECK(iter_->Valid());
-  // TODO(eddyxu): these const_cast(s) are very ugly..
-  const_cast<value_type*>(&key_and_value_)->first = iter_->key().ToString();
-  const_cast<value_type*>(&key_and_value_)->second = iter_->value().ToString();
+  if (iter_) {
+    CHECK(iter_->Valid());
+    // TODO(eddyxu): these const_cast(s) are very ugly..
+    const_cast<value_type*>(&key_and_value_)->first = iter_->key().ToString();
+    const_cast<value_type*>(&key_and_value_)->second =
+        iter_->value().ToString();
+  } else {
+    const_cast<value_type*>(&key_and_value_)->first = test_iter_->first;
+    const_cast<value_type*>(&key_and_value_)->second = test_iter_->second;
+  }
   return const_cast<value_type&>(key_and_value_);
 }
 
 bool LevelDBStore::LevelDBStoreIterator::equal(
     LevelDBStoreIterator const& other) const {
-  return (!iter_->Valid()) && (!other.iter_->Valid());
+  if (iter_) {
+    return (!iter_->Valid()) && (!other.iter_->Valid());
+  } else {
+    return test_iter_ == other.test_iter_;
+  }
 }
 
 LevelDBStore::LevelDBStore(const string &path) : db_path_(path) {

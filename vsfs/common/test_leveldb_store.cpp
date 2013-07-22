@@ -38,4 +38,12 @@ Status TestLevelDBStore::remove(const string& key) {
   return Status::OK;
 }
 
+TestLevelDBStore::iterator TestLevelDBStore::begin() {
+  return LevelDBStoreIterator(store_.begin());
+}
+
+TestLevelDBStore::iterator TestLevelDBStore::end() {
+  return LevelDBStoreIterator(store_.end());
+}
+
 }  // namespace vsfs

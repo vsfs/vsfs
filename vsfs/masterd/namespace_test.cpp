@@ -40,6 +40,7 @@ class NamespaceTest : public ::testing::Test {
   void SetUp() {
     auto test_store = new TestLevelDBStore;
     test_ns_.reset(new Namespace(test_store));
+    test_ns_->init();
   }
 
   unique_ptr<Namespace> test_ns_;
