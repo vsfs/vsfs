@@ -10,10 +10,10 @@ CLEANFILES=*.gcno *.gcov *.gcda
 
 noinst_LIBRARIES = libvsfs-indexd.a
 libvsfs_indexd_a_SOURCES = \
-	index_manager.h index_manager.cpp
-#	index_server.h index_server.cpp \
-#	index_server_handler.h index_server_handler.cpp \
-#       index_server_interface.h
+	index_manager.h index_manager.cpp \
+	index_controller.h index_controller.cpp \
+        index_controller_interface.h \
+	index_server.h index_server.cpp
 
 #indexd_SOURCES = indexd.cpp
 #indexd_LDADD = \
