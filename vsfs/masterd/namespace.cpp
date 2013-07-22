@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/filesystem.hpp>
 #include <errno.h>
 #include <glog/logging.h>
 #include <sys/stat.h>
@@ -27,11 +29,13 @@
 #include "vsfs/common/types.h"
 #include "vsfs/masterd/namespace.h"
 #include "vsfs/rpc/vsfs_types.h"
+#include "vsfs/rpc/thrift_utils.h"
 
 using vobla::Clock;
 using vobla::contain_key;
 using vobla::contain_key_and_value;
 using vobla::find_or_null;
+namespace fs = boost::filesystem;
 
 namespace vsfs {
 namespace masterd {
@@ -52,7 +56,36 @@ Status Namespace::init() {
                << status.message();
     return status;
   }
+  MutexGuard guard(mutex_);
   // TODO(eddyxu): load all metadata from the leveldb.
+  for (auto record : *store_) {
+    // TODO(eddyxu): use leveldb prefix scan to eliminates the necessary of
+    // if..else check.
+    auto key = record.first;
+    if (boost::starts_with(key, "/")) {  // metadata record.
+      FileMetadata metadata;
+      if (!ThriftUtils::deserialize(record.second, &metadata)) {
+        return Status(-1, "The metadata db is corrupted.");
+      }
+      metadata_map_[key] = metadata;
+      if (S_ISDIR(metadata.mode)) {
+        directories_.emplace(DirectoryMap::value_type(key, Directory()));
+      } else {
+        id_to_path_map_[metadata.object_id] = key;
+      }
+    } else if (boost::starts_with(key, "dir:")) {  // directory mapping.
+      string fullpath = key.substr(4);
+      auto path = fs::path(fullpath);
+      auto parent = path.parent_path().string();
+      auto filename = path.filename().string();
+
+      CHECK(directories_.count(parent));
+      directories_[parent].subfiles.insert(filename);
+    } else if (boost::starts_with(key, "meta:")) {  // system-wide metadata
+    } else {
+      return Status(-1, "The metadata db is corrupted.");
+    }
+  }
   return Status::OK;
 }
 
@@ -111,7 +144,7 @@ Status Namespace::create(const string &path, int mode, uid_t uid,
     return Status(-EEXIST, strerror(EEXIST));
   }
   auto& meta = metadata_map_[path];
-  meta.mode = mode & S_IFREG;
+  meta.mode = mode | S_IFREG;
   meta.gid = gid;
   meta.uid = uid;
   double now = Clock::real_clock()->now();
@@ -125,13 +158,24 @@ Status Namespace::create(const string &path, int mode, uid_t uid,
       << meta.object_id << ", " << path << ")";
   id_to_path_map_[meta.object_id] = path;
   *oid = meta.object_id;
-  return Status::OK;
+
+  auto status = store_metadata(path, meta);
+  if (!status.ok()) {
+    metadata_map_.erase(path);
+    id_to_path_map_.erase(meta.object_id);
+  }
+  return status;
 }
 
 Status Namespace::remove(const string &path) {
   MutexGuard guard(mutex_);
   if (!contain_key(metadata_map_, path)) {
     return Status(-ENOENT, strerror(ENOENT));
+  }
+  auto status = store_->remove(path);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to remove path from leveldb: " << status.message();
+    return status;
   }
   auto& meta = metadata_map_[path];
   auto obj = meta.object_id;
@@ -152,7 +196,7 @@ Status Namespace::mkdir(
     return Status(-EEXIST, strerror(EEXIST));
   }
   auto& meta = metadata_map_[path];
-  meta.mode = mode & S_IFDIR;
+  meta.mode = mode | S_IFDIR;
   meta.gid = gid;
   meta.uid = uid;
   double now = Clock::real_clock()->now();
@@ -162,6 +206,13 @@ Status Namespace::mkdir(
   meta.object_id = 0;  // No object for directory.
 
   directories_.emplace(DirectoryMap::value_type(path, Directory()));
+
+  auto status = store_metadata(path, meta);
+  if (!status.ok()) {
+    metadata_map_.erase(path);
+    directories_.erase(path);
+    return status;
+  }
   return Status::OK;
 }
 
@@ -174,9 +225,23 @@ Status Namespace::rmdir(const string &path) {
   if (!dir->subfiles.empty()) {
     return Status(-ENOTEMPTY, strerror(ENOTEMPTY));
   }
+  auto status = store_->remove(path);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to rmdir from leveldb: " << status.message();
+    return status;
+  }
+
   metadata_map_.erase(path);
   directories_.erase(path);
   return Status::OK;
+}
+
+namespace {
+
+string directory_map_key(const string& path) {
+  return string("dir:") + path;
+}
+
 }
 
 Status Namespace::add_subfile(const string &parent, const string &subfile) {
@@ -188,7 +253,38 @@ Status Namespace::add_subfile(const string &parent, const string &subfile) {
   if (dir->subfiles.count(subfile) > 0) {
     return Status(-EEXIST, strerror(EEXIST));
   }
+  auto fullpath = (fs::path(parent) / subfile).string();
+  string value;  // just an empty payload.
+  string key = directory_map_key(fullpath);
+  auto status = store_->put(key, value);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to put subfile into persisent store: " << fullpath
+               << " : " << status.message();
+    return status;
+  }
   dir->subfiles.insert(subfile);
+
+  return Status::OK;
+}
+
+Status Namespace::remove_subfile(const string &parent, const string &subfile) {
+  MutexGuard guard(mutex_);
+  auto dir = find_or_null(directories_, parent);
+  if (!dir) {
+    return Status(-ENOENT, strerror(ENOENT));
+  }
+  if (dir->subfiles.count(subfile) > 0) {
+    return Status(-ENOENT, strerror(ENOENT));
+  }
+  auto fullpath = (fs::path(parent) / subfile).string();
+  auto key = directory_map_key(fullpath);
+  auto status = store_->remove(key);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to remove subfile from persisent store: " << fullpath
+               << " : " << status.message();
+    return status;
+  }
+  dir->subfiles.erase(subfile);
   return Status::OK;
 }
 
@@ -211,6 +307,12 @@ ObjectId Namespace::get_object_id(const string &path) {
   ObjectId obj_id = (hash_value & 0xFF000000) + (next_obj_id_ & 0x00FFFFFF);
   next_obj_id_++;
   return obj_id;
+}
+
+Status Namespace::store_metadata(const string &path,
+                                 const FileMetadata& metadata) {
+  auto meta_buf = ThriftUtils::serialize(metadata);
+  return store_->put(path, meta_buf);
 }
 
 }  // namespace masterd

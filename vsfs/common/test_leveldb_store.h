@@ -49,6 +49,9 @@ class TestLevelDBStore : public LevelDBStore {
   /// Constructs a test leveldb store in RAM.
   TestLevelDBStore() = default;
 
+  /// Constructs a test leveldb store with initialized values.
+  TestLevelDBStore(const map<string, string>& other);
+
   ~TestLevelDBStore() = default;
 
   /// Open a testing LevelDB, always success.
@@ -62,6 +65,12 @@ class TestLevelDBStore : public LevelDBStore {
   Status put(const string& key, const string &value);
 
   Status remove(const string& key);
+
+  iterator begin();
+
+  iterator end();
+
+  const map<string, string>& store() const;
 
  private:
   map<string, string> store_;

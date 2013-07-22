@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
+#include <map>
 #include <string>
 #include "vsfs/common/test_leveldb_store.h"
 
 namespace vsfs {
+
+TestLevelDBStore::TestLevelDBStore(const map<string, string>& other)
+    : store_(other) {
+}
 
 Status TestLevelDBStore::get(const string& key, string* value) {
   auto it = store_.find(key);
@@ -36,6 +41,18 @@ Status TestLevelDBStore::put(const string& key, const string &value) {
 Status TestLevelDBStore::remove(const string& key) {
   store_.erase(key);
   return Status::OK;
+}
+
+TestLevelDBStore::iterator TestLevelDBStore::begin() {
+  return LevelDBStoreIterator(store_.begin());
+}
+
+TestLevelDBStore::iterator TestLevelDBStore::end() {
+  return LevelDBStoreIterator(store_.end());
+}
+
+const map<string, string>& TestLevelDBStore::store() const {
+  return store_;
 }
 
 }  // namespace vsfs
