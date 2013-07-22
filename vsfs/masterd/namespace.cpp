@@ -27,6 +27,7 @@
 #include "vsfs/common/types.h"
 #include "vsfs/masterd/namespace.h"
 #include "vsfs/rpc/vsfs_types.h"
+#include "vsfs/rpc/thrift_utils.h"
 
 using vobla::Clock;
 using vobla::contain_key;
@@ -125,13 +126,24 @@ Status Namespace::create(const string &path, int mode, uid_t uid,
       << meta.object_id << ", " << path << ")";
   id_to_path_map_[meta.object_id] = path;
   *oid = meta.object_id;
-  return Status::OK;
+
+  auto status = store_metadata(path, meta);
+  if (!status.ok()) {
+    metadata_map_.erase(path);
+    id_to_path_map_.erase(meta.object_id);
+  }
+  return status;
 }
 
 Status Namespace::remove(const string &path) {
   MutexGuard guard(mutex_);
   if (!contain_key(metadata_map_, path)) {
     return Status(-ENOENT, strerror(ENOENT));
+  }
+  auto status = store_->remove(path);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to remove path from leveldb: " << status.message();
+    return status;
   }
   auto& meta = metadata_map_[path];
   auto obj = meta.object_id;
@@ -162,6 +174,13 @@ Status Namespace::mkdir(
   meta.object_id = 0;  // No object for directory.
 
   directories_.emplace(DirectoryMap::value_type(path, Directory()));
+
+  auto status = store_metadata(path, meta);
+  if (!status.ok()) {
+    metadata_map_.erase(path);
+    directories_.erase(path);
+    return status;
+  }
   return Status::OK;
 }
 
@@ -174,6 +193,12 @@ Status Namespace::rmdir(const string &path) {
   if (!dir->subfiles.empty()) {
     return Status(-ENOTEMPTY, strerror(ENOTEMPTY));
   }
+  auto status = store_->remove(path);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to rmdir from leveldb: " << status.message();
+    return status;
+  }
+
   metadata_map_.erase(path);
   directories_.erase(path);
   return Status::OK;
@@ -211,6 +236,12 @@ ObjectId Namespace::get_object_id(const string &path) {
   ObjectId obj_id = (hash_value & 0xFF000000) + (next_obj_id_ & 0x00FFFFFF);
   next_obj_id_++;
   return obj_id;
+}
+
+Status Namespace::store_metadata(const string &path,
+                                 const FileMetadata& metadata) {
+  auto meta_buf = ThriftUtils::serialize(metadata);
+  return store_->put(path, meta_buf);
 }
 
 }  // namespace masterd
