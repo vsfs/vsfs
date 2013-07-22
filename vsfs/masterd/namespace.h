@@ -27,6 +27,7 @@
 #include <vector>
 #include "vobla/status.h"
 #include "vsfs/common/types.h"
+#include "vsfs/masterd/masterd_types.h"
 
 using std::mutex;
 using std::set;
@@ -103,12 +104,17 @@ class Namespace : boost::noncopyable {
   Status remove(const string &path);
 
   /**
-   * \brief Adds an file entry into the directory structure.
+   * \brief Adds a file entry into the directory structure.
    * \param parant the parent directory path.
    * \param subfile the subfile filename, not including parent paths.
    * \return Status::OK if success.
    */
   Status add_subfile(const string &parent, const string &subfile);
+
+  /**
+   * \brief Removes a file entry from the given directory structure.
+   */
+  Status remove_subfile(const string &parent, const string &subfile);
 
   Status mkdir(const string &path, mode_t mode, uid_t uid, gid_t gid);
 
@@ -123,20 +129,11 @@ class Namespace : boost::noncopyable {
    */
   ObjectId get_object_id(const string &path);
 
+  /// Stores file/dir metadata into LevelDBStore.
+  Status store_metadata(const string &path, const FileMetadata& metadata);
+
   /// The persistent storage to store the namespace.
   unique_ptr<LevelDBStore> store_;
-
-  struct Metadata {
-    ObjectId object_id;
-    uint32_t mode;
-    uint32_t gid;
-    uint32_t uid;
-    uint64_t size;  // size should put into object store.
-    double atime;
-    double ctime;
-    double mtime;
-    // mutex?
-  };
 
   /// Maintains the directory relationship with its sub files/dirs.
   struct Directory {
@@ -149,7 +146,7 @@ class Namespace : boost::noncopyable {
   DirectoryMap directories_;
 
   /// The namespace !!!
-  unordered_map<string, Metadata> metadata_map_;
+  unordered_map<string, FileMetadata> metadata_map_;
 
   /// A reversed map for fast lookup from object id to the file path.
   unordered_map<ObjectId, string> id_to_path_map_;

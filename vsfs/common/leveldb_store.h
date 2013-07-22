@@ -19,6 +19,7 @@
 
 #include <boost/iterator/iterator_facade.hpp>
 #include <leveldb/db.h>
+#include <map>
 #include <memory>
 #include <string>
 #include <utility>
@@ -26,8 +27,9 @@
 #include "vobla/status.h"
 #include "vsfs/common/key_value_store.h"
 
-using std::unique_ptr;
+using std::map;
 using std::string;
+using std::unique_ptr;
 using vobla::Status;
 
 namespace leveldb {
@@ -57,6 +59,9 @@ class LevelDBStore  : public KeyValueStore {
 
     explicit LevelDBStoreIterator(leveldb::Iterator* iter);
 
+    /// Used in the test case.
+    explicit LevelDBStoreIterator(map<string, string>::iterator iter);
+
     /// ++i
     void increment();
 
@@ -77,6 +82,8 @@ class LevelDBStore  : public KeyValueStore {
 
    private:
     unique_ptr<leveldb::Iterator> iter_;
+
+    map<string, string>::iterator test_iter_;
 
     /// A local copy of key and value on the current iterator position.
     value_type key_and_value_;
@@ -111,10 +118,10 @@ class LevelDBStore  : public KeyValueStore {
    * the value in the DB. You should only use the iterator for the sake of
    * scanning the store.
    */
-  iterator begin();
+  virtual iterator begin();
 
   /// Returns an iterator rerfering to the past-the-end element in the DB.
-  iterator end();
+  virtual iterator end();
 
  protected:
   LevelDBStore() = default;

@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#include <boost/filesystem.hpp>
 #include <errno.h>
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
 #include <set>
@@ -23,10 +25,12 @@
 #include "vsfs/common/test_leveldb_store.h"
 #include "vsfs/masterd/namespace.h"
 
+using ::testing::ContainerEq;
 using std::set;
 using std::string;
 using std::unique_ptr;
 using std::vector;
+namespace fs = boost::filesystem;
 
 namespace vsfs {
 namespace masterd {
@@ -38,10 +42,29 @@ namespace masterd {
 class NamespaceTest : public ::testing::Test {
  protected:
   void SetUp() {
-    auto test_store = new TestLevelDBStore;
-    test_ns_.reset(new Namespace(test_store));
+    test_store_ = new TestLevelDBStore;
+    test_ns_.reset(new Namespace(test_store_));
   }
 
+  /// Creates a file and add it to its parent directory's subfiles.
+  void create_file(const string &path) {
+    ObjectId obj;
+    test_ns_->create(path, 0x666, 100, 100, &obj);
+    auto fullpath = fs::path(path);
+    test_ns_->add_subfile(fullpath.parent_path().string(),
+                          fullpath.filename().string());
+  }
+
+  void create_dir(const string &path) {
+    test_ns_->mkdir(path, 0x066, 100, 100);
+    if (path != "/") {
+      auto fullpath = fs::path(path);
+      test_ns_->add_subfile(fullpath.parent_path().string(),
+                            fullpath.filename().string());
+    }
+  }
+
+  TestLevelDBStore* test_store_;
   unique_ptr<Namespace> test_ns_;
 };
 
@@ -105,6 +128,46 @@ TEST_F(NamespaceTest, TestAddSubFiles) {
   EXPECT_TRUE(test_ns_->readdir("/foo", &subfiles).ok());
   EXPECT_EQ("bar", subfiles[0]);
   EXPECT_EQ("zoo", subfiles[1]);
+}
+
+TEST_F(NamespaceTest, TestInitialize) {
+  create_dir("/");
+  create_dir("/foo");
+  create_dir("/foo/bar");
+  for (int i = 0; i < 50; i++) {
+    create_file(string("/foo/test") + std::to_string(i));
+  }
+  for (int i = 0; i < 50; i++) {
+    create_file(string("/foo/bar/bla") + std::to_string(i));
+  }
+
+  TestLevelDBStore* new_store = new TestLevelDBStore(test_store_->store());
+  Namespace new_ns(new_store);
+  EXPECT_TRUE(new_ns.init().ok());
+
+  vector<string> subfiles;
+  EXPECT_TRUE(new_ns.readdir("/", &subfiles).ok());
+  EXPECT_EQ("foo", subfiles[0]);
+
+  subfiles.clear();
+  EXPECT_TRUE(new_ns.readdir("/foo", &subfiles).ok());
+  set<string> expected_files;
+  for (int i = 0; i < 50; i++) {   // test0..test49 + bar
+    expected_files.insert("test" + std::to_string(i));
+  }
+  expected_files.insert("bar");
+  set<string> actual_files(subfiles.begin(), subfiles.end());
+  EXPECT_THAT(actual_files, ContainerEq(expected_files));
+
+  subfiles.clear();
+  EXPECT_TRUE(new_ns.readdir("/foo/bar", &subfiles).ok());
+  expected_files.clear();
+  for (int i = 0; i < 50; i++) {  // bla0..bla49
+    expected_files.insert("bla" + std::to_string(i));
+  }
+  actual_files.clear();
+  actual_files.insert(subfiles.begin(), subfiles.end());
+  EXPECT_THAT(actual_files, ContainerEq(expected_files));
 }
 
 }  // namespace masterd

@@ -18,6 +18,20 @@
 namespace cpp vsfs.masterd
 namespace py vsfs.masterd
 
+/**
+ * The metadata entry stored in the namespace.
+ */
+struct FileMetadata {
+  1: i64 object_id,
+  2: i32 mode,
+  3: i32 gid,
+  4: i32 uid,
+  5: i64 size,
+  6: double atime,
+  7: double ctime,
+  8: double mtime,
+}
+
 struct IndexNamespaceNode {
   1: string path,
   2: set<string> names,
