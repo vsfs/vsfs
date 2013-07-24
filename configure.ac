@@ -95,7 +95,6 @@ AC_CONFIG_FILES([Makefile
 				 vsfs/index/Makefile
 				 vsfs/indexd/Makefile
 				 vsfs/masterd/Makefile
-				 vsfs/metad/Makefile
 				 vsfs/query/Makefile
 				 vsfs/rpc/Makefile
 		         vsfs/Makefile

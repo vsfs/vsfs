@@ -57,11 +57,6 @@ void MasterServer::join_index_server(RpcNodeAddressList& results,  // NOLINT
   check_status(controller_->join_index_server(info, &results));
 }
 
-void MasterServer::join_meta_server(RpcNodeAddressList& results,  // NOLINT
-                                    const RpcNodeInfo& info) {
-  check_status(controller_->join_meta_server(info, &results));
-}
-
 void MasterServer::mkdir(const string& path, const RpcFileInfo& info) {
   check_status(controller_->mkdir(path, info.mode, info.uid, info.gid));
 }
