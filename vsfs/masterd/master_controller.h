@@ -46,6 +46,7 @@ class IndexInfo;
 namespace masterd {
 
 class IndexNamespaceInterface;
+class Namespace;
 class PartitionManagerInterface;
 class ServerManager;
 
@@ -110,6 +111,12 @@ class MasterController {
    */
   Status join_meta_server(const NodeInfo &node, RpcNodeAddressList *replicas);
 
+  Status mkdir(const string& path, mode_t mode, uid_t uid, gid_t gid);
+
+  Status rmdir(const string& path);
+
+  Status readdir(const string& path, vector<string>* subfiles);  // NOLINT
+
   /**
    * \brief Creates an File Index and returns the index server locations.
    * \param[in] request the index creation request.
@@ -140,7 +147,13 @@ class MasterController {
 
   unique_ptr<ServerManager> index_server_manager_;
 
+  unique_ptr<ServerManager> master_server_manager_;
+
   unique_ptr<ServerManager> meta_server_manager_;
+
+  unique_ptr<Namespace> namespace_;
+
+  bool is_config_node_;
 
   DISALLOW_COPY_AND_ASSIGN(MasterController);
 };

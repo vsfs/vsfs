@@ -222,6 +222,17 @@ service MasterServer {
   RpcNodeAddressList join_meta_server(1:RpcNodeInfo info);
 
   /**
+   * \brief Makes a new directory.
+   */
+  void mkdir(1:string path, 2:RpcFileInfo info) throws (1:RpcInvalidOp ouch);
+
+  /// Removes a directory.
+  void rmdir(1:string path) throws (1:RpcInvalidOp ouch);
+
+  /// Reads a directory.
+  RpcFileList readdir(1:string path) throws (1:RpcInvalidOp ouch);
+
+  /**
    * \brief Creates an index and assign it to a IndexServer in the hash
    * ring.
    * \return the address of IndexServer to manages this index.
