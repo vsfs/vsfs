@@ -221,8 +221,12 @@ service MasterServer {
    */
   RpcNodeAddressList join_meta_server(1:RpcNodeInfo info);
 
+  /**
+   * \brief Makes a new directory.
+   */
   void mkdir(1:string path, 2:RpcFileInfo info) throws (1:RpcInvalidOp ouch);
 
+  /// Removes a directory.
   void rmdir(1:string path) throws (1:RpcInvalidOp ouch);
 
   /**
