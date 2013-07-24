@@ -28,12 +28,13 @@
 #include "vsfs/common/hash_util.h"
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/index/index_info.h"
-#include "vsfs/masterd/partition_manager.h"
 #include "vsfs/masterd/index_namespace.h"
 #include "vsfs/masterd/master_controller.h"
+#include "vsfs/masterd/master_server.h"
+#include "vsfs/masterd/namespace.h"
+#include "vsfs/masterd/partition_manager.h"
 #include "vsfs/masterd/server_manager.h"
 #include "vsfs/rpc/MasterServer.h"
-#include "vsfs/masterd/master_server.h"
 
 namespace fs = boost::filesystem;
 using apache::thrift::concurrency::PosixThreadFactory;
@@ -48,6 +49,7 @@ using vsfs::index::IndexInfo;
 
 DEFINE_int32(port, 9876, "Sets the listening port.");
 DEFINE_string(dir, ".", "Sets the directory to store metadata.");
+DEFINE_bool(configsrv, false, "Sets this node as configure node.");
 
 namespace vsfs {
 namespace masterd {

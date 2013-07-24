@@ -46,6 +46,7 @@ class IndexInfo;
 namespace masterd {
 
 class IndexNamespaceInterface;
+class Namespace;
 class PartitionManagerInterface;
 class ServerManager;
 
@@ -140,7 +141,13 @@ class MasterController {
 
   unique_ptr<ServerManager> index_server_manager_;
 
+  unique_ptr<ServerManager> master_server_manager_;
+
   unique_ptr<ServerManager> meta_server_manager_;
+
+  unique_ptr<Namespace> namespace_;
+
+  bool is_config_node_;
 
   DISALLOW_COPY_AND_ASSIGN(MasterController);
 };
