@@ -215,13 +215,6 @@ service MasterServer {
   RpcNodeAddressList join_index_server(1:RpcNodeInfo info);
 
   /**
-   * \brief A meta server joins the hash ring.
-   * \return RpcNodeAddressList a list of replica servers for this meta
-   * server.
-   */
-  RpcNodeAddressList join_meta_server(1:RpcNodeInfo info);
-
-  /**
    * \brief Makes a new directory.
    */
   void mkdir(1:string path, 2:RpcFileInfo info) throws (1:RpcInvalidOp ouch);
@@ -300,20 +293,4 @@ service IndexServer {
    */
   void join_taker_node_index_partition(1:RpcIndexInfo idx_info, 2:i64 sep)
 	throws (1:RpcInvalidOp ouch);
-}
-
-/**
- * Metadata server.
- */
-service MetaServer {
-  void insert(1:RpcMetaDataList metadata) throws (1:RpcInvalidOp ouch);
-
-  void remove(1:i64 file_id) throws (1:RpcInvalidOp ouch);
-
-  string find(1:i64 file_id) throws (1:RpcInvalidOp ouch);
-
-  /**
-   * \brief Search by the given file_ids, return a list of file_paths.
-   */
-  list<string> search(1:list<i64> file_ids);
 }
