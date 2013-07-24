@@ -65,8 +65,12 @@ string get_full_index_path(const string &root, const string &name) {
 MasterController::MasterController() : MasterController(FLAGS_dir) {
 }
 
-MasterController::MasterController(const string& basedir)
-    : index_server_manager_(new ServerManager) {
+MasterController::MasterController(const string& basedir) {
+  if (FLAGS_configsrv) {
+    index_server_manager_.reset(new ServerManager);
+    master_server_manager_.reset(new ServerManager);
+  }
+
   string abs_basedir = fs::absolute(basedir).string();
   index_partition_manager_.reset(new PartitionManager(
           abs_basedir + "/partition_map.db"));
@@ -76,8 +80,11 @@ MasterController::MasterController(const string& basedir)
 
 MasterController::MasterController(IndexNamespaceInterface* idx_ns,
                                    PartitionManagerInterface* pm)
-    : index_namespace_(idx_ns), index_partition_manager_(pm),
-    index_server_manager_(new ServerManager) {
+    : index_namespace_(idx_ns), index_partition_manager_(pm) {
+  if (FLAGS_configsrv) {
+    index_server_manager_.reset(new ServerManager);
+    master_server_manager_.reset(new ServerManager);
+  }
 }
 
 MasterController::~MasterController() {
@@ -160,6 +167,29 @@ Status MasterController::join_meta_server(const NodeInfo &node,
     replicas->emplace_back(node.address);
   }
   return status;
+}
+
+namespace {
+
+bool is_valid_path(const string& path) {
+  return fs::path(path).is_absolute();
+}
+
+}
+
+Status MasterController::mkdir(const string& path, mode_t mode,
+                               uid_t uid, gid_t gid) {
+  if (!is_valid_path(path)) {
+    return Status(-1, "The path must be absolute path.");
+  }
+  return namespace_->mkdir(path, mode, uid, gid);
+}
+
+Status MasterController::rmdir(const string& path) {
+  if (!is_valid_path(path)) {
+    return Status(-1, "The path must be absolute path.");
+  }
+  return namespace_->rmdir(path);
 }
 
 Status MasterController::create_index(const RpcIndexCreateRequest &request,

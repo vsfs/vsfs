@@ -58,6 +58,20 @@ void MasterServer::join_meta_server(RpcNodeAddressList& results,  // NOLINT
   }
 }
 
+void MasterServer::mkdir(const string& path, const RpcFileInfo& info) {
+  auto status = controller_->mkdir(path, info.mode, info.uid, info.gid);
+  if (!status.ok()) {
+    throw ThriftUtils::StatusToRpcInvalidOp(status);
+  }
+}
+
+void MasterServer::rmdir(const string& path) {
+  auto status = controller_->rmdir(path);
+  if (!status.ok()) {
+    throw ThriftUtils::StatusToRpcInvalidOp(status);
+  }
+}
+
 void MasterServer::create_index(RpcIndexLocation& location,  // NOLINT
                                 const RpcIndexCreateRequest& request) {
   Status status = controller_->create_index(request, &location);

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -43,6 +44,7 @@ using std::vector;
 using vobla::Status;
 using vsfs::index::IndexInfo;
 
+DECLARE_bool(configsrv);
 
 namespace vsfs {
 namespace masterd {
@@ -55,6 +57,7 @@ static const int64_t kPartitonSize =
 class MasterControllerTest : public ::testing::Test {
  protected:
   void SetUp() {
+    FLAGS_configsrv = true;
     tmpdir_.reset(new vobla::TemporaryDirectory);
     // controller_ manages to delete index_namespace and partition_manager.
     controller_.reset(new MasterController(tmpdir_->path()));

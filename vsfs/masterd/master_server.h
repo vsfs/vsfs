@@ -52,6 +52,10 @@ class MasterServer : public vsfs::MasterServerIf {
   void join_meta_server(RpcNodeAddressList& results,  // NOLINT
                         const RpcNodeInfo& info);
 
+  void mkdir(const string& path, const RpcFileInfo& info);
+
+  void rmdir(const string& path);
+
   /**
    * \brief Creates index in the master server and assign a IndexServer to it.
    */

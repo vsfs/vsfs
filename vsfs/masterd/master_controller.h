@@ -111,6 +111,10 @@ class MasterController {
    */
   Status join_meta_server(const NodeInfo &node, RpcNodeAddressList *replicas);
 
+  Status mkdir(const string& path, mode_t mode, uid_t uid, gid_t gid);
+
+  Status rmdir(const string& path);
+
   /**
    * \brief Creates an File Index and returns the index server locations.
    * \param[in] request the index creation request.

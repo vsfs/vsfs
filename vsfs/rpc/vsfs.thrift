@@ -221,6 +221,10 @@ service MasterServer {
    */
   RpcNodeAddressList join_meta_server(1:RpcNodeInfo info);
 
+  void mkdir(1:string path, 2:RpcFileInfo info) throws (1:RpcInvalidOp ouch);
+
+  void rmdir(1:string path) throws (1:RpcInvalidOp ouch);
+
   /**
    * \brief Creates an index and assign it to a IndexServer in the hash
    * ring.
