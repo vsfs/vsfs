@@ -229,6 +229,9 @@ service MasterServer {
   /// Removes a directory.
   void rmdir(1:string path) throws (1:RpcInvalidOp ouch);
 
+  /// Reads a directory.
+  RpcFileList readdir(1:string path) throws (1:RpcInvalidOp ouch);
+
   /**
    * \brief Creates an index and assign it to a IndexServer in the hash
    * ring.

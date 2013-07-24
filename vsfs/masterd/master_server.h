@@ -56,6 +56,8 @@ class MasterServer : public vsfs::MasterServerIf {
 
   void rmdir(const string& path);
 
+  void readdir(RpcFileList& _return, const std::string& path);  // NOLINT
+
   /**
    * \brief Creates index in the master server and assign a IndexServer to it.
    */
