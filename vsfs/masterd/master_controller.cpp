@@ -147,28 +147,6 @@ Status MasterController::join_index_server(const NodeInfo &node,
   return status;
 }
 
-Status MasterController::join_meta_server(const NodeInfo &node,
-                                          RpcNodeAddressList *replicas) {
-  CHECK_NOTNULL(replicas);
-  LOG(INFO) << "MetaServer: " << node.address.host
-            << ": " << node.address.port
-            << " is trying to join the cluster.";
-  Status status = meta_server_manager_->add(node);
-  if (!status.ok()) {
-    LOG(ERROR) << "MasterController::join_meta_server: "
-               << status.message();
-    return status;
-  }
-
-  const size_t kNumReplicaServers = 2;
-  auto replica_servers = meta_server_manager_->get_replica_servers(
-      node, kNumReplicaServers);
-  for (const auto& node : replica_servers) {
-    replicas->emplace_back(node.address);
-  }
-  return status;
-}
-
 namespace {
 
 bool is_valid_path(const string& path) {
