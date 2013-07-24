@@ -172,12 +172,16 @@ Status Namespace::remove(const string &path) {
   if (!contain_key(metadata_map_, path)) {
     return Status(-ENOENT, strerror(ENOENT));
   }
+  auto& meta = metadata_map_[path];
+  if (S_ISDIR(meta.mode)) {
+    return Status(-EISDIR, strerror(EISDIR));
+  }
+
   auto status = store_->remove(path);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to remove path from leveldb: " << status.message();
     return status;
   }
-  auto& meta = metadata_map_[path];
   auto obj = meta.object_id;
   CHECK(contain_key_and_value(id_to_path_map_, obj, path))
       << "The object ID and path pair dose not exist: ("
