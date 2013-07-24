@@ -116,10 +116,13 @@ class Namespace : boost::noncopyable {
    */
   Status remove_subfile(const string &parent, const string &subfile);
 
+  /// Creates a new directory.
   Status mkdir(const string &path, mode_t mode, uid_t uid, gid_t gid);
 
+  /// Removes a directory.
   Status rmdir(const string &path);
 
+  /// Read all sub files.
   Status readdir(const string &path, vector<string>* results);  // NOLINT
 
  private:

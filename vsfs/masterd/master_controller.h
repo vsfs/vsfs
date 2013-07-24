@@ -115,6 +115,8 @@ class MasterController {
 
   Status rmdir(const string& path);
 
+  Status readdir(const string& path, vector<string>* subfiles);  // NOLINT
+
   /**
    * \brief Creates an File Index and returns the index server locations.
    * \param[in] request the index creation request.

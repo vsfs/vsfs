@@ -192,6 +192,14 @@ Status MasterController::rmdir(const string& path) {
   return namespace_->rmdir(path);
 }
 
+Status MasterController::readdir(const string& path,  // NOLINT
+                                 vector<string>* subfiles) {
+  if (!is_valid_path(path)) {
+    return Status(-1, "The path must be absolute path.");
+  }
+  return namespace_->readdir(path, subfiles);
+}
+
 Status MasterController::create_index(const RpcIndexCreateRequest &request,
                                       RpcIndexLocation *index_location) {
   CHECK_NOTNULL(index_location);
