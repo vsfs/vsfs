@@ -76,6 +76,8 @@ MasterController::MasterController(const string& basedir) {
           abs_basedir + "/partition_map.db"));
   index_namespace_.reset(new IndexNamespace(
           abs_basedir + "/namespace.primer.db"));
+  namespace_.reset(new Namespace(
+          abs_basedir + "/namespace.db"));
 }
 
 MasterController::MasterController(IndexNamespaceInterface* idx_ns,
@@ -96,6 +98,13 @@ Status MasterController::init() {
     return status;
   }
   status = index_partition_manager_->init();
+  if (!status.ok()) {
+    return status;
+  }
+  status = namespace_->init();
+  if (!status.ok()) {
+    return status;
+  }
   return status;
 }
 
