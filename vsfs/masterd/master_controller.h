@@ -104,6 +104,16 @@ class MasterController {
 
   Status rmdir(const string& path);
 
+  /**
+   * \brief Adds a file name into a directory structure.
+   * \param parent the path of parent directory.
+   * \param subfile the filename of the inserted file.
+   *
+   * \note It does not guarentee the atomic of file creating operation, which
+   * should be taking cared by the client.
+   */
+  Status add_subfile(const string& parent, const string& subfile);
+
   Status readdir(const string& path, vector<string>* subfiles);  // NOLINT
 
   /**
