@@ -76,6 +76,8 @@ MasterController::MasterController(const string& basedir) {
           abs_basedir + "/partition_map.db"));
   index_namespace_.reset(new IndexNamespace(
           abs_basedir + "/namespace.primer.db"));
+  namespace_.reset(new Namespace(
+          abs_basedir + "/namespace.db"));
 }
 
 MasterController::MasterController(IndexNamespaceInterface* idx_ns,
@@ -96,6 +98,13 @@ Status MasterController::init() {
     return status;
   }
   status = index_partition_manager_->init();
+  if (!status.ok()) {
+    return status;
+  }
+  status = namespace_->init();
+  if (!status.ok()) {
+    return status;
+  }
   return status;
 }
 
@@ -168,6 +177,14 @@ Status MasterController::rmdir(const string& path) {
     return Status(-1, "The path must be absolute path.");
   }
   return namespace_->rmdir(path);
+}
+
+Status MasterController::add_subfile(const string& parent,
+                                     const string& subfile) {
+  if (!is_valid_path(parent)) {
+    return Status(-1, "The path must be absolute path.");
+  }
+  return namespace_->add_subfile(parent, subfile);
 }
 
 Status MasterController::readdir(const string& path,  // NOLINT

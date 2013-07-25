@@ -115,6 +115,30 @@ class MasterControllerTest : public ::testing::Test {
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
 };
 
+TEST_F(MasterControllerTest, TestDirectoryOps) {
+  EXPECT_FALSE(controller_->mkdir("abc-efg", 0x555, 100, 200).ok());
+  EXPECT_TRUE(controller_->mkdir("/foo", 0x555, 100, 100).ok());
+
+  EXPECT_FALSE(controller_->rmdir("test").ok());
+  EXPECT_FALSE(controller_->rmdir("/").ok());
+  EXPECT_FALSE(controller_->rmdir("/bar").ok());
+  EXPECT_TRUE(controller_->rmdir("/foo").ok());
+}
+
+TEST_F(MasterControllerTest, TestReadDir) {
+  vector<string> files;
+  EXPECT_FALSE(controller_->readdir("/foo", &files).ok());
+
+  controller_->mkdir("/foo", 0x755, 100, 100);
+  controller_->mkdir("/foo/bar", 0x755, 100, 100);
+  controller_->add_subfile("/foo", "bar");
+  for (int i = 0; i < 20; i++) {
+    controller_->add_subfile("/foo", "data" + to_string(i));
+  }
+  EXPECT_TRUE(controller_->readdir("/foo", &files).ok());
+  EXPECT_EQ(21u, files.size());
+}
+
 TEST_F(MasterControllerTest, TestCreateIndex) {
   join_index_servers(3);
 
