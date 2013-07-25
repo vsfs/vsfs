@@ -225,6 +225,9 @@ service MasterServer {
   /// Reads a directory.
   RpcFileList readdir(1:string path) throws (1:RpcInvalidOp ouch);
 
+  void add_subfile(1:string parent, 2:string subfile)
+	throws (1:RpcInvalidOp ouch);
+
   /**
    * \brief Creates an index and assign it to a IndexServer in the hash
    * ring.

@@ -65,6 +65,10 @@ void MasterServer::rmdir(const string& path) {
   check_status(controller_->rmdir(path));
 }
 
+void MasterServer::add_subfile(const string& parent, const string& subfile) {
+  check_status(controller_->add_subfile(parent, subfile));
+}
+
 void MasterServer::readdir(RpcFileList& subfiles, const string& path) {  // NOLINT
   check_status(controller_->readdir(path, &subfiles));
 }

@@ -179,6 +179,14 @@ Status MasterController::rmdir(const string& path) {
   return namespace_->rmdir(path);
 }
 
+Status MasterController::add_subfile(const string& parent,
+                                     const string& subfile) {
+  if (!is_valid_path(parent)) {
+    return Status(-1, "The path must be absolute path.");
+  }
+  return namespace_->add_subfile(parent, subfile);
+}
+
 Status MasterController::readdir(const string& path,  // NOLINT
                                  vector<string>* subfiles) {
   if (!is_valid_path(path)) {
