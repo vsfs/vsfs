@@ -108,6 +108,9 @@ class MasterController {
    * \brief Adds a file name into a directory structure.
    * \param parent the path of parent directory.
    * \param subfile the filename of the inserted file.
+   *
+   * \note It does not guarentee the atomic of file creating operation, which
+   * should be taking cared by the client.
    */
   Status add_subfile(const string& parent, const string& subfile);
 
