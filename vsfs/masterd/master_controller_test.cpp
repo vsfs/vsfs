@@ -44,7 +44,7 @@ using std::vector;
 using vobla::Status;
 using vsfs::index::IndexInfo;
 
-DECLARE_bool(configsrv);
+DECLARE_bool(primary);
 
 namespace vsfs {
 namespace masterd {
@@ -57,7 +57,7 @@ static const int64_t kPartitonSize =
 class MasterControllerTest : public ::testing::Test {
  protected:
   void SetUp() {
-    FLAGS_configsrv = true;
+    FLAGS_primary = true;
     tmpdir_.reset(new vobla::TemporaryDirectory);
     // controller_ manages to delete index_namespace and partition_manager.
     controller_.reset(new MasterController(tmpdir_->path()));

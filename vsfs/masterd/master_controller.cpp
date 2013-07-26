@@ -49,7 +49,7 @@ using vsfs::index::IndexInfo;
 
 DEFINE_int32(port, 9876, "Sets the listening port.");
 DEFINE_string(dir, ".", "Sets the directory to store metadata.");
-DEFINE_bool(configsrv, false, "Sets this node as configure node.");
+DEFINE_bool(primary, false, "Sets this node as primary master node.");
 
 namespace vsfs {
 namespace masterd {
@@ -66,7 +66,7 @@ MasterController::MasterController() : MasterController(FLAGS_dir) {
 }
 
 MasterController::MasterController(const string& basedir) {
-  if (FLAGS_configsrv) {
+  if (FLAGS_primary) {
     index_server_manager_.reset(new ServerManager);
     master_server_manager_.reset(new ServerManager);
   }
@@ -83,7 +83,7 @@ MasterController::MasterController(const string& basedir) {
 MasterController::MasterController(IndexNamespaceInterface* idx_ns,
                                    PartitionManagerInterface* pm)
     : index_namespace_(idx_ns), index_partition_manager_(pm) {
-  if (FLAGS_configsrv) {
+  if (FLAGS_primary) {
     index_server_manager_.reset(new ServerManager);
     master_server_manager_.reset(new ServerManager);
   }

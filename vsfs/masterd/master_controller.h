@@ -165,7 +165,8 @@ class MasterController {
 
   unique_ptr<Namespace> namespace_;
 
-  bool is_config_node_;
+  /// Sets to true if this master is a primary node.
+  bool is_primary_node_;
 
   DISALLOW_COPY_AND_ASSIGN(MasterController);
 };
