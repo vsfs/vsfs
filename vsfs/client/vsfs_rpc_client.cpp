@@ -24,18 +24,14 @@ using apache::thrift::transport::TTransportException;
 using std::string;
 using vobla::Status;
 
+DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
+             "VSFS client can use.");
+
 namespace vsfs {
 namespace client {
 
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
-    : index_server_client_factory_(new IndexServerClientFactory),
-      host_(host), port_(port),
-      thread_pool_(FLAGS_vsfs_client_num_thread) {
-}
-
-VSFSRpcClient::VSFSRpcClient(MasterClientType *master,
-    IndexServerClientFactory* index_factory)
-    : master_client_(master), index_server_client_factory_(index_factory),
+    : host_(host), port_(port),
       thread_pool_(FLAGS_vsfs_client_num_thread) {
 }
 

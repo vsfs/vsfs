@@ -17,6 +17,7 @@
 #ifndef VSFS_CLIENT_VSFS_RPC_CLIENT_H_
 #define VSFS_CLIENT_VSFS_RPC_CLIENT_H_
 
+#include <boost/shared_ptr.hpp>
 #include <transport/TBufferTransports.h>
 #include <memory>
 #include <string>
@@ -85,6 +86,11 @@ class VSFSRpcClient : public VSFSClient {
   Status open(const string &path, int flag);
 
  private:
+  typedef rpc::RpcClient<IndexServerClient, TFramedTransport> IndexClientType;
+
+  boost::shared_ptr<IndexClientType> create_index_client(
+      const string& host, int port);
+
   unique_ptr<MasterClientType> master_client_;
 
   std::mutex master_lock_;
