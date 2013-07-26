@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <boost/asio/ip/host_name.hpp>
 #include <boost/filesystem.hpp>
 #include <concurrency/PosixThreadFactory.h>
 #include <concurrency/ThreadManager.h>
@@ -48,8 +49,6 @@ using std::string;
 using vsfs::index::IndexInfo;
 
 DEFINE_int32(port, 9876, "Sets the listening port.");
-DEFINE_string(dir, ".", "Sets the directory to store metadata.");
-DEFINE_bool(configsrv, false, "Sets this node as configure node.");
 
 namespace vsfs {
 namespace masterd {
@@ -62,13 +61,16 @@ string get_full_index_path(const string &root, const string &name) {
 
 }
 
-MasterController::MasterController() : MasterController(FLAGS_dir) {
-}
-
-MasterController::MasterController(const string& basedir) {
-  if (FLAGS_configsrv) {
+MasterController::MasterController(bool primary, const string& basedir)
+    : is_primary_node_(primary) {
+  // TODO(eddyxu): merge the primary node code in all constructors.
+  if (is_primary_node_) {
     index_server_manager_.reset(new ServerManager);
     master_server_manager_.reset(new ServerManager);
+    NodeInfo self;
+    self.address.host = boost::asio::ip::host_name();
+    self.address.port = FLAGS_port;
+    master_server_manager_->add(self);
   }
 
   string abs_basedir = fs::absolute(basedir).string();
@@ -80,12 +82,18 @@ MasterController::MasterController(const string& basedir) {
           abs_basedir + "/namespace.db"));
 }
 
-MasterController::MasterController(IndexNamespaceInterface* idx_ns,
-                                   PartitionManagerInterface* pm)
-    : index_namespace_(idx_ns), index_partition_manager_(pm) {
-  if (FLAGS_configsrv) {
+MasterController::MasterController(
+    bool primary, IndexNamespaceInterface* idx_ns,
+    PartitionManagerInterface* pm)
+    : is_primary_node_(primary), index_namespace_(idx_ns),
+      index_partition_manager_(pm) {
+  if (is_primary_node_) {
     index_server_manager_.reset(new ServerManager);
     master_server_manager_.reset(new ServerManager);
+    NodeInfo self;
+    self.address.host = boost::asio::ip::host_name();
+    self.address.port = FLAGS_port;
+    master_server_manager_->add(self);
   }
 }
 
@@ -122,9 +130,17 @@ void MasterController::start() {
   server_.reset(new TNonblockingServer(processor, protocol_factory,
                                        FLAGS_port, thread_manager));
 
-  LOG(INFO) << "Master server is starting...";
+  if (is_primary_node_) {
+    LOG(INFO) << "Primary master server is starting...";
+  } else {
+    LOG(INFO) << "Master server is starting...";
+  }
   server_->serve();
-  LOG(INFO) << "Master server quits...";
+  if (is_primary_node_) {
+    LOG(INFO) << "Primary master server quits...";
+  } else {
+    LOG(INFO) << "Master server quits...";
+  }
 }
 
 void MasterController::stop() {
@@ -132,6 +148,19 @@ void MasterController::stop() {
     LOG(INFO) << "Shutting master server down...";
     server_->stop();
   }
+}
+
+Status MasterController::join_master_server(const NodeInfo& node) {
+  if (!is_primary_node_) {
+    return Status(-1, "Attempt to join a non-primary master node.");
+  }
+  LOG(INFO) << "MasterServer: " << node.address.host << ":" << node.address.port
+            << " is trying to join the cluster.";
+  auto status = master_server_manager_->add(node);
+  if (!status.ok()) {
+    LOG(ERROR) << "MasterController::join_master_server: " << status.message();
+  }
+  return status;
 }
 
 Status MasterController::join_index_server(const NodeInfo &node,
@@ -142,8 +171,7 @@ Status MasterController::join_index_server(const NodeInfo &node,
             << " is trying to join the cluster.";
   Status status = index_server_manager_->add(node);
   if (!status.ok()) {
-    LOG(ERROR) << "MasterController::join_index_server: "
-               << status.message();
+    LOG(ERROR) << "MasterController::join_index_server: " << status.message();
     return status;
   }
 
