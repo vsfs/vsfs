@@ -12,7 +12,7 @@ namespace cpp vsfs
 namespace py vsfs
 namespace java vsfs
 
-typedef i64 RpcFileId
+typedef i64 RpcObjectId
 typedef list<string> RpcFileList
 typedef list<string> RpcKeywordList
 typedef string RpcRawData
@@ -228,6 +228,21 @@ service MasterServer {
   void add_subfile(1:string parent, 2:string subfile)
 	throws (1:RpcInvalidOp ouch);
 
+  void remove_subfile(1:string parent, 2:string subfile)
+    throws (1:RpcInvalidOp ouch);
+
+  /// Creates a file and returns its object ID.
+  RpcObjectId create(1:string path, 2:i64 mode, 3:i64 uid, 4:i64 gid)
+    throws (1:RpcInvalidOp ouch);
+
+  /// Removes a file.
+  void remove(1:string path)
+    throws (1:RpcInvalidOp ouch);
+
+  /// Access the attributes of a file or a directory.
+  RpcFileInfo getattr(1:string path)
+    throws (1:RpcInvalidOp ouch);
+
   /**
    * \brief Creates an index and assign it to a IndexServer in the hash
    * ring.
@@ -260,7 +275,7 @@ service IndexServer {
 
   void update(1:RpcIndexUpdate updates) throws (1:RpcInvalidOp ouch);
 
-  list<RpcFileId> search(1:RpcComplexQuery query)
+  list<RpcObjectId> search(1:RpcComplexQuery query)
 	throws (1:RpcInvalidOp ouch);
 
   /**
