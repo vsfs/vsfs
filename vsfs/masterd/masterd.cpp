@@ -27,7 +27,9 @@ using vsfs::masterd::MasterController;
 using std::string;
 
 DEFINE_bool(daemon, false, "Runs in daemon mode.");
+DEFINE_bool(primary, false, "Sets this node as primary master node.");
 DEFINE_string(pidfile, "", "Sets the pid file.");
+DEFINE_string(dir, ".", "Sets the directory to store metadata.");
 
 unique_ptr<MasterController> controller;
 
@@ -60,7 +62,7 @@ int main(int argc, char *argv[]) {
     fclose(pidfp);
   }
 
-  controller.reset(new MasterController);
+  controller.reset(new MasterController(FLAGS_primary, FLAGS_dir));
   controller->start();
   return 0;
 }
