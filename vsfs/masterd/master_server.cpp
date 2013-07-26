@@ -69,8 +69,32 @@ void MasterServer::add_subfile(const string& parent, const string& subfile) {
   check_status(controller_->add_subfile(parent, subfile));
 }
 
+void MasterServer::remove_subfile(const string& parent, const string& subfile) {
+  check_status(controller_->remove_subfile(parent, subfile));
+}
+
 void MasterServer::readdir(RpcFileList& subfiles, const string& path) {  // NOLINT
   check_status(controller_->readdir(path, &subfiles));
+}
+
+RpcObjectId MasterServer::create(const string& path, const int64_t mode,
+                                 const int64_t uid, const int64_t gid) {
+  RpcObjectId tmp = 0;
+  check_status(controller_->create(path, mode, uid, gid, &tmp));
+  return tmp;
+}
+
+void MasterServer::remove(const string& path) {
+  check_status(controller_->remove(path));
+}
+
+void MasterServer::getattr(RpcFileInfo& info, const string& path) {  // NOLINT
+  check_status(controller_->getattr(path, &info));
+}
+
+void MasterServer::find_files(RpcFileList& files,  // NOLINT
+                              const RpcObjectList& objects) {
+  check_status(controller_->find_files(objects, &files));
 }
 
 void MasterServer::create_index(RpcIndexLocation& location,  // NOLINT
