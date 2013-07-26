@@ -92,6 +92,12 @@ class MasterController : boost::noncopyable {
   void stop();
 
   /**
+   * \brief A MasterServer asks to join the consistent ring.
+   * \note There is no replica server needed for master node (for now).
+   */
+  Status join_master_server(const NodeInfo& node);
+
+  /**
    * \brief Lets an IndexServer join the consistent hash ring, and
    * send the address of its replica machines back to it.
    *
