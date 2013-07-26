@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <algorithm>
 #include <memory>
 #include <set>
 #include <string>
@@ -26,8 +27,10 @@
 #include "vsfs/masterd/namespace.h"
 
 using ::testing::ContainerEq;
+using ::testing::Contains;
 using std::set;
 using std::string;
+using std::to_string;
 using std::unique_ptr;
 using std::vector;
 namespace fs = boost::filesystem;
@@ -167,6 +170,31 @@ TEST_F(NamespaceTest, TestInitialize) {
   }
   actual_files.clear();
   actual_files.insert(subfiles.begin(), subfiles.end());
+  EXPECT_THAT(actual_files, ContainerEq(expected_files));
+}
+
+TEST_F(NamespaceTest, TestFindFiles) {
+  vector<string> expected_files;
+  vector<ObjectId> object_ids;
+  for (int i = 0; i < 10; i++) {
+    string path = "/test" + to_string(i);
+    ObjectId oid;
+    EXPECT_TRUE(test_ns_->create(path, 0x666, 100, 100, &oid).ok());
+    EXPECT_EQ(0, std::count(object_ids.begin(), object_ids.end(), oid));
+    object_ids.push_back(oid);
+    expected_files.push_back(path);
+  }
+
+  // Appends a few non-existed hash values.
+  for (ObjectId i = 1; i < 10; i++) {
+    if (std::count(object_ids.begin(), object_ids.end(), i)) {
+      object_ids.emplace_back(i);
+      expected_files.emplace_back("");
+    }
+  }
+
+  vector<string> actual_files;
+  EXPECT_TRUE(test_ns_->find_files(object_ids, &actual_files).ok());
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
 }
 

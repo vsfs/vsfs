@@ -107,6 +107,21 @@ Status Namespace::file_path(ObjectId oid, string *path) {
   return Status::OK;
 }
 
+Status Namespace::find_files(const vector<ObjectId>& object_ids,
+                             vector<string>* paths) {
+  CHECK_NOTNULL(paths);
+  MutexGuard guard(mutex_);
+  for (auto object_id : object_ids) {
+    auto it = id_to_path_map_.find(object_id);
+    if (it == id_to_path_map_.end()) {
+      paths->emplace_back("");
+    } else {
+      paths->emplace_back(it->second);
+    }
+  }
+  return Status::OK;
+}
+
 Status Namespace::object_id(const string &path, ObjectId *oid) {
   CHECK_NOTNULL(oid);
   MutexGuard guard(mutex_);
