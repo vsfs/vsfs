@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "vsfs/common/types.h"
 #include "vobla/macros.h"
 #include "vobla/status.h"
 #include "vsfs/rpc/vsfs_types.h"
@@ -114,7 +115,21 @@ class MasterController {
    */
   Status add_subfile(const string& parent, const string& subfile);
 
+  Status remove_subfile(const string& parent, const string& subfile);
+
   Status readdir(const string& path, vector<string>* subfiles);  // NOLINT
+
+  /// Creates a new file and sets its metadata.
+  Status create(const string& path, int mode, uid_t uid, gid_t gid,
+                ObjectId* oid);
+
+  /// Removes a file if exists.
+  Status remove(const string& path);
+
+  /// Gets the attribute of a file / dir / index.
+  Status getattr(const string &path, RpcFileInfo *info);
+
+  Status find_files(const vector<ObjectId>& objects, vector<string>* files);
 
   /**
    * \brief Creates an File Index and returns the index server locations.

@@ -78,7 +78,7 @@ class Namespace : boost::noncopyable {
   Status file_path(ObjectId oid, string *path);
 
   /// Finds files in batch by the given file IDs.
-  Status find_files(const vector<ObjectId>& file_ids,
+  Status find_files(const vector<ObjectId>& object_ids,
                     vector<string>* paths);
 
   /**

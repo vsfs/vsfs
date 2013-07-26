@@ -173,9 +173,6 @@ Status MasterController::mkdir(const string& path, mode_t mode,
 }
 
 Status MasterController::rmdir(const string& path) {
-  if (!is_valid_path(path)) {
-    return Status(-1, "The path must be absolute path.");
-  }
   return namespace_->rmdir(path);
 }
 
@@ -187,12 +184,41 @@ Status MasterController::add_subfile(const string& parent,
   return namespace_->add_subfile(parent, subfile);
 }
 
+Status MasterController::remove_subfile(const string& parent,
+                                        const string& subfile) {
+  return namespace_->remove_subfile(parent, subfile);
+}
+
 Status MasterController::readdir(const string& path,  // NOLINT
                                  vector<string>* subfiles) {
   if (!is_valid_path(path)) {
     return Status(-1, "The path must be absolute path.");
   }
   return namespace_->readdir(path, subfiles);
+}
+
+Status MasterController::create(const string &path, int mode, uid_t uid,
+                                gid_t gid, ObjectId *oid) {
+  if (!is_valid_path(path)) {
+    return Status(-1, "The path must be absolute path.");
+  }
+  return namespace_->create(path, mode, uid, gid, oid);
+}
+
+Status MasterController::remove(const string& path) {
+  // It does not need to check the validation of the 'path', because the
+  // invalidate path does not exist in the namespace as well.
+  return namespace_->remove(path);
+}
+
+Status MasterController::getattr(const string &path, RpcFileInfo *info) {
+  // Same to "remove", we do not need to check the validataion of path.
+  return namespace_->getattr(path, info);
+}
+
+Status MasterController::find_files(const vector<ObjectId>& objects,
+                                    vector<string>* files) {
+  return namespace_->find_files(objects, files);
 }
 
 Status MasterController::create_index(const RpcIndexCreateRequest &request,
