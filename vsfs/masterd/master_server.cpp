@@ -92,6 +92,11 @@ void MasterServer::getattr(RpcFileInfo& info, const string& path) {  // NOLINT
   check_status(controller_->getattr(path, &info));
 }
 
+void MasterServer::find_files(RpcFileList& files,  // NOLINT
+                              const RpcObjectList& objects) {
+  check_status(controller_->find_files(objects, &files));
+}
+
 void MasterServer::create_index(RpcIndexLocation& location,  // NOLINT
                                 const RpcIndexCreateRequest& request) {
   check_status(controller_->create_index(request, &location));

@@ -13,6 +13,7 @@ namespace py vsfs
 namespace java vsfs
 
 typedef i64 RpcObjectId
+typedef list<RpcObjectId> RpcObjectList
 typedef list<string> RpcFileList
 typedef list<string> RpcKeywordList
 typedef string RpcRawData
@@ -242,6 +243,9 @@ service MasterServer {
   /// Access the attributes of a file or a directory.
   RpcFileInfo getattr(1:string path)
     throws (1:RpcInvalidOp ouch);
+
+  /// Returns a list of file paths.
+  RpcFileList find_files(1:RpcObjectList objects) throws (1:RpcInvalidOp ouch);
 
   /**
    * \brief Creates an index and assign it to a IndexServer in the hash

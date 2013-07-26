@@ -129,6 +129,8 @@ class MasterController {
   /// Gets the attribute of a file / dir / index.
   Status getattr(const string &path, RpcFileInfo *info);
 
+  Status find_files(const vector<ObjectId>& objects, vector<string>* files);
+
   /**
    * \brief Creates an File Index and returns the index server locations.
    * \param[in] request the index creation request.

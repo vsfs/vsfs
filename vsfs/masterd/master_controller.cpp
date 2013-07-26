@@ -216,6 +216,11 @@ Status MasterController::getattr(const string &path, RpcFileInfo *info) {
   return namespace_->getattr(path, info);
 }
 
+Status MasterController::find_files(const vector<ObjectId>& objects,
+                                    vector<string>* files) {
+  return namespace_->find_files(objects, files);
+}
+
 Status MasterController::create_index(const RpcIndexCreateRequest &request,
                                       RpcIndexLocation *index_location) {
   CHECK_NOTNULL(index_location);

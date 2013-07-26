@@ -66,6 +66,8 @@ class MasterServer : public vsfs::MasterServerIf {
 
   void getattr(RpcFileInfo& info, const string& path);  // NOLINT
 
+  void find_files(RpcFileList& files, const RpcObjectList& objects);  // NOLINT
+
   /**
    * \brief Creates index in the master server and assign a IndexServer to it.
    */
