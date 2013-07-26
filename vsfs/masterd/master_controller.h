@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include "vsfs/common/types.h"
 #include "vobla/macros.h"
 #include "vobla/status.h"
 #include "vsfs/rpc/vsfs_types.h"
@@ -46,6 +47,7 @@ class IndexInfo;
 namespace masterd {
 
 class IndexNamespaceInterface;
+class Namespace;
 class PartitionManagerInterface;
 class ServerManager;
 
@@ -99,16 +101,35 @@ class MasterController {
    */
   Status join_index_server(const NodeInfo &node, RpcNodeAddressList *replicas);
 
+  Status mkdir(const string& path, mode_t mode, uid_t uid, gid_t gid);
+
+  Status rmdir(const string& path);
+
   /**
-   * \brief Lets an MetaServer join the consistent hash ring, and
-   * send the address of its replica machines back to it.
+   * \brief Adds a file name into a directory structure.
+   * \param parent the path of parent directory.
+   * \param subfile the filename of the inserted file.
    *
-   * \param node The node information of the joining index server.
-   * \param replicas A node address vector that is filled with the addresses
-   * for the replica servers.
-   * \return Status::OK if success.
+   * \note It does not guarentee the atomic of file creating operation, which
+   * should be taking cared by the client.
    */
-  Status join_meta_server(const NodeInfo &node, RpcNodeAddressList *replicas);
+  Status add_subfile(const string& parent, const string& subfile);
+
+  Status remove_subfile(const string& parent, const string& subfile);
+
+  Status readdir(const string& path, vector<string>* subfiles);  // NOLINT
+
+  /// Creates a new file and sets its metadata.
+  Status create(const string& path, int mode, uid_t uid, gid_t gid,
+                ObjectId* oid);
+
+  /// Removes a file if exists.
+  Status remove(const string& path);
+
+  /// Gets the attribute of a file / dir / index.
+  Status getattr(const string &path, RpcFileInfo *info);
+
+  Status find_files(const vector<ObjectId>& objects, vector<string>* files);
 
   /**
    * \brief Creates an File Index and returns the index server locations.
@@ -140,7 +161,11 @@ class MasterController {
 
   unique_ptr<ServerManager> index_server_manager_;
 
-  unique_ptr<ServerManager> meta_server_manager_;
+  unique_ptr<ServerManager> master_server_manager_;
+
+  unique_ptr<Namespace> namespace_;
+
+  bool is_config_node_;
 
   DISALLOW_COPY_AND_ASSIGN(MasterController);
 };

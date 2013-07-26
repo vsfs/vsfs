@@ -9,7 +9,6 @@ BUILT_SOURCES = vsfs_constants.h testdata/test_constants.h
 libvsfs_rpc_a_SOURCES = \
   IndexServer.h IndexServer.cpp \
   MasterServer.h MasterServer.cpp \
-  MetaServer.h MetaServer.cpp \
   rpc_client.h \
   thrift_utils.h thrift_utils.cpp \
   vsfs_constants.h vsfs_constants.cpp \

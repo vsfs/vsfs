@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.61])
 AC_INIT([vsfs], [0.0.1], [eddyxu@gmail.com])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([color-tests parallel-tests])
 AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
 AC_CONFIG_MACRO_DIR([m4])
@@ -90,11 +90,11 @@ AC_SUBST(LIBS, "$LIBS -lvobla")
 
 AC_CONFIG_FILES([Makefile
 				 contrib/vsfs.spec
+				 vsfs/client/Makefile
 				 vsfs/common/Makefile
 				 vsfs/index/Makefile
 				 vsfs/indexd/Makefile
 				 vsfs/masterd/Makefile
-				 vsfs/metad/Makefile
 				 vsfs/query/Makefile
 				 vsfs/rpc/Makefile
 		         vsfs/Makefile

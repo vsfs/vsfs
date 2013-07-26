@@ -26,6 +26,7 @@
 namespace vsfs {
 
 typedef int64_t ObjectId;
+typedef int64_t FilePathHashType;
 
 }  // namespace vsfs
 

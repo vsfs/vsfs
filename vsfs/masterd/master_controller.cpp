@@ -28,12 +28,13 @@
 #include "vsfs/common/hash_util.h"
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/index/index_info.h"
-#include "vsfs/masterd/partition_manager.h"
 #include "vsfs/masterd/index_namespace.h"
 #include "vsfs/masterd/master_controller.h"
+#include "vsfs/masterd/master_server.h"
+#include "vsfs/masterd/namespace.h"
+#include "vsfs/masterd/partition_manager.h"
 #include "vsfs/masterd/server_manager.h"
 #include "vsfs/rpc/MasterServer.h"
-#include "vsfs/masterd/master_server.h"
 
 namespace fs = boost::filesystem;
 using apache::thrift::concurrency::PosixThreadFactory;
@@ -48,6 +49,7 @@ using vsfs::index::IndexInfo;
 
 DEFINE_int32(port, 9876, "Sets the listening port.");
 DEFINE_string(dir, ".", "Sets the directory to store metadata.");
+DEFINE_bool(configsrv, false, "Sets this node as configure node.");
 
 namespace vsfs {
 namespace masterd {
@@ -63,19 +65,28 @@ string get_full_index_path(const string &root, const string &name) {
 MasterController::MasterController() : MasterController(FLAGS_dir) {
 }
 
-MasterController::MasterController(const string& basedir)
-    : index_server_manager_(new ServerManager) {
+MasterController::MasterController(const string& basedir) {
+  if (FLAGS_configsrv) {
+    index_server_manager_.reset(new ServerManager);
+    master_server_manager_.reset(new ServerManager);
+  }
+
   string abs_basedir = fs::absolute(basedir).string();
   index_partition_manager_.reset(new PartitionManager(
           abs_basedir + "/partition_map.db"));
   index_namespace_.reset(new IndexNamespace(
           abs_basedir + "/namespace.primer.db"));
+  namespace_.reset(new Namespace(
+          abs_basedir + "/namespace.db"));
 }
 
 MasterController::MasterController(IndexNamespaceInterface* idx_ns,
                                    PartitionManagerInterface* pm)
-    : index_namespace_(idx_ns), index_partition_manager_(pm),
-    index_server_manager_(new ServerManager) {
+    : index_namespace_(idx_ns), index_partition_manager_(pm) {
+  if (FLAGS_configsrv) {
+    index_server_manager_.reset(new ServerManager);
+    master_server_manager_.reset(new ServerManager);
+  }
 }
 
 MasterController::~MasterController() {
@@ -87,6 +98,13 @@ Status MasterController::init() {
     return status;
   }
   status = index_partition_manager_->init();
+  if (!status.ok()) {
+    return status;
+  }
+  status = namespace_->init();
+  if (!status.ok()) {
+    return status;
+  }
   return status;
 }
 
@@ -138,26 +156,69 @@ Status MasterController::join_index_server(const NodeInfo &node,
   return status;
 }
 
-Status MasterController::join_meta_server(const NodeInfo &node,
-                                          RpcNodeAddressList *replicas) {
-  CHECK_NOTNULL(replicas);
-  LOG(INFO) << "MetaServer: " << node.address.host
-            << ": " << node.address.port
-            << " is trying to join the cluster.";
-  Status status = meta_server_manager_->add(node);
-  if (!status.ok()) {
-    LOG(ERROR) << "MasterController::join_meta_server: "
-               << status.message();
-    return status;
-  }
+namespace {
 
-  const size_t kNumReplicaServers = 2;
-  auto replica_servers = meta_server_manager_->get_replica_servers(
-      node, kNumReplicaServers);
-  for (const auto& node : replica_servers) {
-    replicas->emplace_back(node.address);
+bool is_valid_path(const string& path) {
+  return fs::path(path).is_absolute();
+}
+
+}
+
+Status MasterController::mkdir(const string& path, mode_t mode,
+                               uid_t uid, gid_t gid) {
+  if (!is_valid_path(path)) {
+    return Status(-1, "The path must be absolute path.");
   }
-  return status;
+  return namespace_->mkdir(path, mode, uid, gid);
+}
+
+Status MasterController::rmdir(const string& path) {
+  return namespace_->rmdir(path);
+}
+
+Status MasterController::add_subfile(const string& parent,
+                                     const string& subfile) {
+  if (!is_valid_path(parent)) {
+    return Status(-1, "The path must be absolute path.");
+  }
+  return namespace_->add_subfile(parent, subfile);
+}
+
+Status MasterController::remove_subfile(const string& parent,
+                                        const string& subfile) {
+  return namespace_->remove_subfile(parent, subfile);
+}
+
+Status MasterController::readdir(const string& path,  // NOLINT
+                                 vector<string>* subfiles) {
+  if (!is_valid_path(path)) {
+    return Status(-1, "The path must be absolute path.");
+  }
+  return namespace_->readdir(path, subfiles);
+}
+
+Status MasterController::create(const string &path, int mode, uid_t uid,
+                                gid_t gid, ObjectId *oid) {
+  if (!is_valid_path(path)) {
+    return Status(-1, "The path must be absolute path.");
+  }
+  return namespace_->create(path, mode, uid, gid, oid);
+}
+
+Status MasterController::remove(const string& path) {
+  // It does not need to check the validation of the 'path', because the
+  // invalidate path does not exist in the namespace as well.
+  return namespace_->remove(path);
+}
+
+Status MasterController::getattr(const string &path, RpcFileInfo *info) {
+  // Same to "remove", we do not need to check the validataion of path.
+  return namespace_->getattr(path, info);
+}
+
+Status MasterController::find_files(const vector<ObjectId>& objects,
+                                    vector<string>* files) {
+  return namespace_->find_files(objects, files);
 }
 
 Status MasterController::create_index(const RpcIndexCreateRequest &request,

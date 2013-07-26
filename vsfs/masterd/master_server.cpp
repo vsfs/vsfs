@@ -36,6 +36,16 @@ using index::IndexInfo;
 
 namespace masterd {
 
+namespace {
+
+void check_status(const Status& status) {
+  if (!status.ok()) {
+    throw ThriftUtils::StatusToRpcInvalidOp(status);
+  }
+}
+
+}  // anonymous namespace
+
 MasterServer::MasterServer(MasterController *ctrl) : controller_(ctrl) {
 }
 
@@ -44,34 +54,57 @@ MasterServer::~MasterServer() {
 
 void MasterServer::join_index_server(RpcNodeAddressList& results,  // NOLINT
                                      const RpcNodeInfo& info) {
-  Status status = controller_->join_index_server(info, &results);
-  if (!status.ok()) {
-    throw ThriftUtils::StatusToRpcInvalidOp(status);
-  }
+  check_status(controller_->join_index_server(info, &results));
 }
 
-void MasterServer::join_meta_server(RpcNodeAddressList& results,  // NOLINT
-                                    const RpcNodeInfo& info) {
-  Status status = controller_->join_meta_server(info, &results);
-  if (!status.ok()) {
-    throw ThriftUtils::StatusToRpcInvalidOp(status);
-  }
+void MasterServer::mkdir(const string& path, const RpcFileInfo& info) {
+  check_status(controller_->mkdir(path, info.mode, info.uid, info.gid));
+}
+
+void MasterServer::rmdir(const string& path) {
+  check_status(controller_->rmdir(path));
+}
+
+void MasterServer::add_subfile(const string& parent, const string& subfile) {
+  check_status(controller_->add_subfile(parent, subfile));
+}
+
+void MasterServer::remove_subfile(const string& parent, const string& subfile) {
+  check_status(controller_->remove_subfile(parent, subfile));
+}
+
+void MasterServer::readdir(RpcFileList& subfiles, const string& path) {  // NOLINT
+  check_status(controller_->readdir(path, &subfiles));
+}
+
+RpcObjectId MasterServer::create(const string& path, const int64_t mode,
+                                 const int64_t uid, const int64_t gid) {
+  RpcObjectId tmp = 0;
+  check_status(controller_->create(path, mode, uid, gid, &tmp));
+  return tmp;
+}
+
+void MasterServer::remove(const string& path) {
+  check_status(controller_->remove(path));
+}
+
+void MasterServer::getattr(RpcFileInfo& info, const string& path) {  // NOLINT
+  check_status(controller_->getattr(path, &info));
+}
+
+void MasterServer::find_files(RpcFileList& files,  // NOLINT
+                              const RpcObjectList& objects) {
+  check_status(controller_->find_files(objects, &files));
 }
 
 void MasterServer::create_index(RpcIndexLocation& location,  // NOLINT
                                 const RpcIndexCreateRequest& request) {
-  Status status = controller_->create_index(request, &location);
-  if (!status.ok()) {
-    throw ThriftUtils::StatusToRpcInvalidOp(status);
-  }
+  check_status(controller_->create_index(request, &location));
 }
 
 void MasterServer::locate_index(RpcIndexLocationList& loc_list,  // NOLINT
                                 const RpcIndexLookupRequest& request) {
-  auto status = controller_->locate_index(request, &loc_list);
-  if (!status.ok()) {
-    throw ThriftUtils::StatusToRpcInvalidOp(status);
-  }
+  check_status(controller_->locate_index(request, &loc_list));
 }
 
 }  // namespace masterd

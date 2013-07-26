@@ -12,7 +12,8 @@ namespace cpp vsfs
 namespace py vsfs
 namespace java vsfs
 
-typedef i64 RpcFileId
+typedef i64 RpcObjectId
+typedef list<RpcObjectId> RpcObjectList
 typedef list<string> RpcFileList
 typedef list<string> RpcKeywordList
 typedef string RpcRawData
@@ -27,7 +28,6 @@ exception RpcInvalidOp {
 struct RpcFileInfo {
   1: i64 id,
   2: string path,
-  3: string uri,
   4: i64 uid,
   5: i64 gid,
   6: i64 mode,
@@ -216,11 +216,36 @@ service MasterServer {
   RpcNodeAddressList join_index_server(1:RpcNodeInfo info);
 
   /**
-   * \brief A meta server joins the hash ring.
-   * \return RpcNodeAddressList a list of replica servers for this meta
-   * server.
+   * \brief Makes a new directory.
    */
-  RpcNodeAddressList join_meta_server(1:RpcNodeInfo info);
+  void mkdir(1:string path, 2:RpcFileInfo info) throws (1:RpcInvalidOp ouch);
+
+  /// Removes a directory.
+  void rmdir(1:string path) throws (1:RpcInvalidOp ouch);
+
+  /// Reads a directory.
+  RpcFileList readdir(1:string path) throws (1:RpcInvalidOp ouch);
+
+  void add_subfile(1:string parent, 2:string subfile)
+	throws (1:RpcInvalidOp ouch);
+
+  void remove_subfile(1:string parent, 2:string subfile)
+    throws (1:RpcInvalidOp ouch);
+
+  /// Creates a file and returns its object ID.
+  RpcObjectId create(1:string path, 2:i64 mode, 3:i64 uid, 4:i64 gid)
+    throws (1:RpcInvalidOp ouch);
+
+  /// Removes a file.
+  void remove(1:string path)
+    throws (1:RpcInvalidOp ouch);
+
+  /// Access the attributes of a file or a directory.
+  RpcFileInfo getattr(1:string path)
+    throws (1:RpcInvalidOp ouch);
+
+  /// Returns a list of file paths.
+  RpcFileList find_files(1:RpcObjectList objects) throws (1:RpcInvalidOp ouch);
 
   /**
    * \brief Creates an index and assign it to a IndexServer in the hash
@@ -254,7 +279,7 @@ service IndexServer {
 
   void update(1:RpcIndexUpdate updates) throws (1:RpcInvalidOp ouch);
 
-  list<RpcFileId> search(1:RpcComplexQuery query)
+  list<RpcObjectId> search(1:RpcComplexQuery query)
 	throws (1:RpcInvalidOp ouch);
 
   /**
@@ -290,20 +315,4 @@ service IndexServer {
    */
   /* void join_taker_node_index_partition(1:RpcIndexInfo idx_info, 2:i64 sep)
 	throws (1:RpcInvalidOp ouch); */
-}
-
-/**
- * Metadata server.
- */
-service MetaServer {
-  void insert(1:RpcMetaDataList metadata) throws (1:RpcInvalidOp ouch);
-
-  void remove(1:i64 file_id) throws (1:RpcInvalidOp ouch);
-
-  string find(1:i64 file_id) throws (1:RpcInvalidOp ouch);
-
-  /**
-   * \brief Search by the given file_ids, return a list of file_paths.
-   */
-  list<string> search(1:list<i64> file_ids);
 }

@@ -19,6 +19,7 @@
 
 #include <cstdint>
 #include <string>
+#include "vsfs/common/types.h"
 #include "vobla/macros.h"
 
 using std::string;
@@ -27,8 +28,6 @@ namespace vsfs {
 
 class HashUtil {
  public:
-  typedef uint64_t FilePathHashType;
-
   static FilePathHashType file_path_to_hash(const string &path);
 
  private:
