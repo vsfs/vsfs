@@ -48,8 +48,6 @@ using std::string;
 using vsfs::index::IndexInfo;
 
 DEFINE_int32(port, 9876, "Sets the listening port.");
-DEFINE_string(dir, ".", "Sets the directory to store metadata.");
-DEFINE_bool(primary, false, "Sets this node as primary master node.");
 
 namespace vsfs {
 namespace masterd {
@@ -62,11 +60,9 @@ string get_full_index_path(const string &root, const string &name) {
 
 }
 
-MasterController::MasterController() : MasterController(FLAGS_dir) {
-}
-
-MasterController::MasterController(const string& basedir) {
-  if (FLAGS_primary) {
+MasterController::MasterController(bool primary, const string& basedir)
+    : is_primary_node_(primary) {
+  if (is_primary_node_) {
     index_server_manager_.reset(new ServerManager);
     master_server_manager_.reset(new ServerManager);
   }
@@ -80,10 +76,12 @@ MasterController::MasterController(const string& basedir) {
           abs_basedir + "/namespace.db"));
 }
 
-MasterController::MasterController(IndexNamespaceInterface* idx_ns,
-                                   PartitionManagerInterface* pm)
-    : index_namespace_(idx_ns), index_partition_manager_(pm) {
-  if (FLAGS_primary) {
+MasterController::MasterController(
+    bool primary, IndexNamespaceInterface* idx_ns,
+    PartitionManagerInterface* pm)
+    : is_primary_node_(primary), index_namespace_(idx_ns),
+      index_partition_manager_(pm) {
+  if (is_primary_node_) {
     index_server_manager_.reset(new ServerManager);
     master_server_manager_.reset(new ServerManager);
   }

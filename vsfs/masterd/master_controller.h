@@ -17,6 +17,7 @@
 #ifndef VSFS_MASTERD_MASTER_CONTROLLER_H_
 #define VSFS_MASTERD_MASTER_CONTROLLER_H_
 
+#include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <gtest/gtest_prod.h>
 #include <memory>
@@ -59,24 +60,24 @@ class ServerManager;
  *  - Index server -> Its IP address (addr:port)
  *  - Index Info -> Index Name
  */
-class MasterController {
+class MasterController : boost::noncopyable {
  public:
   /// Default constructor.
-  MasterController();
+  MasterController() = delete;
 
   /**
    * \brief Constructs a MasterController with given directory.
-   *
-   * The namespace and index partitons will be stored in the 'basedir'.
+   * \param primary Sets it to true if this masterd is the primary masterd.
+   * \param basedir the basedir to store metadata.
    */
-  explicit MasterController(const string& basedir);
+  explicit MasterController(bool primary, const string& basedir);
 
   /**
    * \brief Constructs a MasterController using dependency injections.
    *
    * It must be used by tests.
    */
-  MasterController(IndexNamespaceInterface* idx_ns,
+  MasterController(bool primary, IndexNamespaceInterface* idx_ns,
                    PartitionManagerInterface* pm);
 
   virtual ~MasterController();
@@ -155,20 +156,18 @@ class MasterController {
 
   shared_ptr<TServer> server_;
 
+  /// Sets to true if this master is a primary node.
+  bool is_primary_node_;
+
   unique_ptr<IndexNamespaceInterface> index_namespace_;
 
   unique_ptr<PartitionManagerInterface> index_partition_manager_;
 
-  unique_ptr<ServerManager> index_server_manager_;
-
   unique_ptr<ServerManager> master_server_manager_;
 
+  unique_ptr<ServerManager> index_server_manager_;
+
   unique_ptr<Namespace> namespace_;
-
-  /// Sets to true if this master is a primary node.
-  bool is_primary_node_;
-
-  DISALLOW_COPY_AND_ASSIGN(MasterController);
 };
 
 }  // namespace masterd

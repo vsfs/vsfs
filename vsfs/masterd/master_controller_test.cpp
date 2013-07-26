@@ -44,8 +44,6 @@ using std::vector;
 using vobla::Status;
 using vsfs::index::IndexInfo;
 
-DECLARE_bool(primary);
-
 namespace vsfs {
 namespace masterd {
 
@@ -57,10 +55,9 @@ static const int64_t kPartitonSize =
 class MasterControllerTest : public ::testing::Test {
  protected:
   void SetUp() {
-    FLAGS_primary = true;
     tmpdir_.reset(new vobla::TemporaryDirectory);
     // controller_ manages to delete index_namespace and partition_manager.
-    controller_.reset(new MasterController(tmpdir_->path()));
+    controller_.reset(new MasterController(true, tmpdir_->path()));
     ASSERT_TRUE(controller_->init().ok());
   }
 
@@ -72,8 +69,8 @@ class MasterControllerTest : public ::testing::Test {
   void reset_mock_controller() {
     index_namespace_ = new MockIndexNamespace;
     partition_manager_ = new MockPartitionManager;
-    controller_.reset(new MasterController(index_namespace_,
-                                           partition_manager_));
+    controller_.reset(new MasterController(
+        true, index_namespace_, partition_manager_));
   }
 
   /// Evenly divide the C.H ring into 'num_index_servers' segements and let
