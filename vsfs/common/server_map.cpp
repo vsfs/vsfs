@@ -18,28 +18,29 @@
 #include <algorithm>
 #include <cstdlib>
 #include <limits>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
 #include "vobla/range.h"
 #include "vsfs/common/thread.h"
-#include "vsfs/masterd/server_manager.h"
+#include "vsfs/common/server_map.h"
 
+using std::map;
 using std::string;
 using std::vector;
 using vobla::append_keys_from_map;
 using vobla::Range;
 
 namespace vsfs {
-namespace masterd {
 
-ServerManager::ServerManager() {
+ServerMap::ServerMap() {
 }
 
-ServerManager::~ServerManager() {
+ServerMap::~ServerMap() {
 }
 
-Status ServerManager::add(const NodeInfo& node) {
+Status ServerMap::add(const NodeInfo& node) {
   MutexGuard guard(lock_);
   HashValueType pos = 0;
   if (ring_.empty()) {
@@ -68,7 +69,7 @@ Status ServerManager::add(const NodeInfo& node) {
   return ring_.insert(pos, node);
 }
 
-Status ServerManager::add(HashValueType pos, const NodeInfo& node) {
+Status ServerMap::add(HashValueType pos, const NodeInfo& node) {
   MutexGuard guard(lock_);
   if (ring_.has_key(pos)) {
     return Status(-EEXIST, "This position is already used.");
@@ -76,7 +77,7 @@ Status ServerManager::add(HashValueType pos, const NodeInfo& node) {
   return ring_.insert(pos, node);
 }
 
-Status ServerManager::remove(HashValueType pos) {
+Status ServerMap::remove(HashValueType pos) {
   MutexGuard guard(lock_);
   // TODO(ziling): remove the record in redirection_map.
   if (!ring_.has_key(pos)) {
@@ -85,18 +86,18 @@ Status ServerManager::remove(HashValueType pos) {
   return ring_.remove(pos);
 }
 
-Status ServerManager::get(HashValueType path_hash, NodeInfo* node) {
+Status ServerMap::get(HashValueType path_hash, NodeInfo* node) {
   CHECK_NOTNULL(node);
   // TODO(Ziling): use rw-lock to improve performance.
   MutexGuard guard(lock_);
   Status status = ring_.get(path_hash, node);
   if (!status.ok()) {
-    return Status(-ENOENT, "Can't find any Index Server.");
+    return Status(-ENOENT, "Can't find any Server.");
   }
   return Status::OK;
 }
 
-vector<NodeInfo> ServerManager::get_replica_servers(
+vector<NodeInfo> ServerMap::get_replica_servers(
     const NodeInfo& node, size_t num_replicas) {
   vector<NodeInfo> retval;
   size_t actual_num_replicas = std::min(num_replicas, ring_.num_nodes() - 1);
@@ -111,12 +112,12 @@ vector<NodeInfo> ServerManager::get_replica_servers(
   return retval;
 }
 
-size_t ServerManager::num_nodes() {
+size_t ServerMap::num_nodes() {
   MutexGuard guard(lock_);
   return ring_.num_nodes();
 }
 
-vector<ServerManager::HashValueType> ServerManager::get_partitions() {
+vector<HashValueType> ServerMap::get_partitions() {
   vector<HashValueType> partitions;
   MutexGuard lock(lock_);
   if (!ring_.empty()) {
@@ -125,5 +126,15 @@ vector<ServerManager::HashValueType> ServerManager::get_partitions() {
   return partitions;
 }
 
-}  // namespace masterd
+map<HashValueType, NodeInfo> ServerMap::get_ch_ring_as_map() {
+  map<HashValueType, NodeInfo> result;
+  MutexGuard guard(lock_);
+  auto it = ring_.begin();
+  auto num_nodes = ring_.num_nodes();
+  for (size_t i = 0; i < num_nodes; ++i, ++it) {
+    result[it->first] = it->second;
+  }
+  return result;
+}
+
 }  // namespace vsfs

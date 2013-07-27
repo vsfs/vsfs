@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-#ifndef VSFS_MASTERD_SERVER_MANAGER_H_
-#define VSFS_MASTERD_SERVER_MANAGER_H_
+#ifndef VSFS_COMMON_SERVER_MAP_H_
+#define VSFS_COMMON_SERVER_MAP_H_
 
+#include <boost/utility.hpp>
+#include <map>
 #include <mutex>
 #include <string>
 #include <vector>
 #include "vobla/consistent_hash_map.h"
-#include "vobla/macros.h"
 #include "vobla/status.h"
+#include "vsfs/common/types.h"
 #include "vsfs/rpc/vsfs_types.h"
 
+using std::map;
 using std::mutex;
 using std::string;
 using std::vector;
@@ -32,22 +35,18 @@ using vobla::Status;
 using vsfs::NodeInfo;
 
 namespace vsfs {
-namespace masterd {
 
 /**
- * \class ServerManager "vsfs/masterd/server_manager.h"
+ * \class ServerMap "vsfs/common/server_map.h"
  * \brief It manages all the servers on a consistent hashing ring,
- *
  * \note This class is thread-safe.
  */
-class ServerManager {
+class ServerMap : boost::noncopyable {
  public:
-  typedef int64_t HashValueType;
-
   /// Default constructor.
-  ServerManager();
+  ServerMap();
 
-  virtual ~ServerManager();
+  virtual ~ServerMap();
 
   /**
    * \brief add a node at a random position on the ring.
@@ -67,10 +66,9 @@ class ServerManager {
   Status remove(HashValueType pos);
 
   /**
-   * \brief Given a hash of the partitioned index's path, get the
-   * corresponding Server based on the position of the hash in
-   * the hash ring.
-   * \param [in] path_hash the hash value of the path of the index partition.
+   * \brief Given a hash of the path, get the corresponding Server based on the
+   * position of the hash in the hash ring.
+   * \param [in] path_hash the hash value of the path of the target.
    * \param [out] node the Node's information.
    */
   Status get(HashValueType path_hash, NodeInfo* node); // NOLINT
@@ -101,20 +99,21 @@ class ServerManager {
    */
   // Status get_succ_server(const NodeInfo& this_node, NodeInfo* succ_node);
 
- private:
-  // const unsigned int replicas_;
+  /**
+   * \brief Obtain a full copy of Consistent Hashing Ring and stores it in a
+   * std::map.
+   */
+  map<HashValueType, NodeInfo> get_ch_ring_as_map();
 
+ private:
   // TODO(Ziling): make the key type SHA1 in the future.
   /// Mapping from partitioned file path to NodeInfo.
   vobla::ConsistentHashMap<HashValueType, NodeInfo> ring_;
 
   /// Global lock on ring_.
   mutex lock_;
-
-  DISALLOW_COPY_AND_ASSIGN(ServerManager);
 };
 
-}  // namespace masterd
 }  // namespace vsfs
 
-#endif  // VSFS_MASTERD_SERVER_MANAGER_H_
+#endif  // VSFS_COMMON_SERVER_MAP_H_

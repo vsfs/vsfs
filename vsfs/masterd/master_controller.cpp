@@ -28,13 +28,13 @@
 #include <vector>
 #include "vsfs/common/hash_util.h"
 #include "vsfs/common/leveldb_store.h"
+#include "vsfs/common/server_map.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/masterd/index_namespace.h"
 #include "vsfs/masterd/master_controller.h"
 #include "vsfs/masterd/master_server.h"
 #include "vsfs/masterd/namespace.h"
 #include "vsfs/masterd/partition_manager.h"
-#include "vsfs/masterd/server_manager.h"
 #include "vsfs/rpc/MasterServer.h"
 
 namespace fs = boost::filesystem;
@@ -65,8 +65,8 @@ MasterController::MasterController(bool primary, const string& basedir)
     : is_primary_node_(primary) {
   // TODO(eddyxu): merge the primary node code in all constructors.
   if (is_primary_node_) {
-    index_server_manager_.reset(new ServerManager);
-    master_server_manager_.reset(new ServerManager);
+    index_server_manager_.reset(new ServerMap);
+    master_server_manager_.reset(new ServerMap);
     NodeInfo self;
     self.address.host = boost::asio::ip::host_name();
     self.address.port = FLAGS_port;
@@ -88,8 +88,8 @@ MasterController::MasterController(
     : is_primary_node_(primary), index_namespace_(idx_ns),
       index_partition_manager_(pm) {
   if (is_primary_node_) {
-    index_server_manager_.reset(new ServerManager);
-    master_server_manager_.reset(new ServerManager);
+    index_server_manager_.reset(new ServerMap);
+    master_server_manager_.reset(new ServerMap);
     NodeInfo self;
     self.address.host = boost::asio::ip::host_name();
     self.address.port = FLAGS_port;
@@ -161,6 +161,15 @@ Status MasterController::join_master_server(const NodeInfo& node) {
     LOG(ERROR) << "MasterController::join_master_server: " << status.message();
   }
   return status;
+}
+
+RpcConsistentHashRing MasterController::get_all_masters() {
+  RpcConsistentHashRing ring;
+  auto ch_ring_map = master_server_manager_->get_ch_ring_as_map();
+  for (const auto& sep_and_node : ch_ring_map) {
+    ring[sep_and_node.first] = sep_and_node.second.address;
+  }
+  return ring;
 }
 
 Status MasterController::join_index_server(const NodeInfo &node,

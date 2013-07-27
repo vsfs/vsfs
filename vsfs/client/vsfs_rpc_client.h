@@ -17,6 +17,7 @@
 #ifndef VSFS_CLIENT_VSFS_RPC_CLIENT_H_
 #define VSFS_CLIENT_VSFS_RPC_CLIENT_H_
 
+#include <boost/shared_ptr.hpp>
 #include <transport/TBufferTransports.h>
 #include <memory>
 #include <string>
@@ -24,9 +25,9 @@
 #include <mutex>
 #include "vobla/thread_pool.h"
 #include "vsfs/client/vsfs_client.h"
+#include "vsfs/common/server_map.h"
 #include "vsfs/rpc/IndexServer.h"
 #include "vsfs/rpc/MasterServer.h"
-#include "vsfs/rpc/MetaServer.h"
 #include "vsfs/rpc/rpc_client.h"
 
 using std::string;
@@ -74,7 +75,10 @@ class VSFSRpcClient : public VSFSClient {
 
   Status init();
 
-  /// Connects to the MasterNode with its host name and port number.
+  /**
+   * \brief connects to the primary MasterNode and obtains the master node
+   * map.
+   */
   Status connect(const string &host, int port);
 
   /// Disconnects from the MasterNode.
@@ -85,7 +89,14 @@ class VSFSRpcClient : public VSFSClient {
   Status open(const string &path, int flag);
 
  private:
+  typedef rpc::RpcClient<IndexServerClient, TFramedTransport> IndexClientType;
+
+  boost::shared_ptr<IndexClientType> create_index_client(
+      const string& host, int port);
+
   unique_ptr<MasterClientType> master_client_;
+
+  ServerMap master_map_;
 
   std::mutex master_lock_;
 

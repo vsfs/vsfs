@@ -49,6 +49,10 @@ class MasterServer : public vsfs::MasterServerIf {
   void join_index_server(RpcNodeAddressList& results,  // NOLINT
                          const RpcNodeInfo& info);
 
+  void join_master_server(const RpcNodeInfo& info);
+
+  void get_all_masters(RpcConsistentHashRing& ring);  // NOLINT
+
   void mkdir(const string& path, const RpcFileInfo& info);
 
   void rmdir(const string& path);

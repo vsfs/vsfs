@@ -18,16 +18,6 @@ libvsfs_client_a_SOURCES = \
 			   vsfs_client.h \
 			   vsfs_rpc_client.cpp vsfs_rpc_client.h
 
-TESTS = \
-	vsfs_rpc_client_test
+TESTS =
 
 check_PROGRAMS = $(TESTS)
-
-vsfs_rpc_client_test_SOURCES = vsfs_rpc_client_test.cpp
-vsfs_rpc_client_test_LDADD = \
-			     libvsfs-client.a \
-			     ../index/libvsfs-index.a \
-			     ../rpc/libvsfs-rpc.a \
-			     ../common/libvsfs-common.a \
-			     $(libthrift_LIBS) -lthriftnb \
-			     -lgtest -lgtest_main -lgmock
