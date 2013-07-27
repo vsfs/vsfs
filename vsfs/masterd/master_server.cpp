@@ -62,6 +62,7 @@ void MasterServer::join_master_server(const RpcNodeInfo& info) {
 }
 
 void MasterServer::get_all_masters(RpcConsistentHashRing& ring) {  // NOLINT
+  ring = controller_->get_all_masters();
 }
 
 void MasterServer::mkdir(const string& path, const RpcFileInfo& info) {

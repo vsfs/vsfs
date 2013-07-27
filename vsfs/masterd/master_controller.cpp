@@ -163,6 +163,15 @@ Status MasterController::join_master_server(const NodeInfo& node) {
   return status;
 }
 
+RpcConsistentHashRing MasterController::get_all_masters() {
+  RpcConsistentHashRing ring;
+  auto ch_ring_map = master_server_manager_->get_ch_ring_as_map();
+  for (const auto& sep_and_node : ch_ring_map) {
+    ring[sep_and_node.first] = sep_and_node.second.address;
+  }
+  return ring;
+}
+
 Status MasterController::join_index_server(const NodeInfo &node,
                                            RpcNodeAddressList *replicas) {
   CHECK_NOTNULL(replicas);
