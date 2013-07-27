@@ -17,6 +17,7 @@
 #ifndef VSFS_MASTERD_MASTER_CONTROLLER_H_
 #define VSFS_MASTERD_MASTER_CONTROLLER_H_
 
+#include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <gtest/gtest_prod.h>
 #include <memory>
@@ -40,6 +41,8 @@ using vobla::Status;
 
 namespace vsfs {
 
+class ServerMap;
+
 namespace index {
 class IndexInfo;
 }
@@ -49,7 +52,6 @@ namespace masterd {
 class IndexNamespaceInterface;
 class Namespace;
 class PartitionManagerInterface;
-class ServerManager;
 
 /**
  * \brief MasterController the main control block of master server.
@@ -59,24 +61,24 @@ class ServerManager;
  *  - Index server -> Its IP address (addr:port)
  *  - Index Info -> Index Name
  */
-class MasterController {
+class MasterController : boost::noncopyable {
  public:
   /// Default constructor.
-  MasterController();
+  MasterController() = delete;
 
   /**
    * \brief Constructs a MasterController with given directory.
-   *
-   * The namespace and index partitons will be stored in the 'basedir'.
+   * \param primary Sets it to true if this masterd is the primary masterd.
+   * \param basedir the basedir to store metadata.
    */
-  explicit MasterController(const string& basedir);
+  explicit MasterController(bool primary, const string& basedir);
 
   /**
    * \brief Constructs a MasterController using dependency injections.
    *
    * It must be used by tests.
    */
-  MasterController(IndexNamespaceInterface* idx_ns,
+  MasterController(bool primary, IndexNamespaceInterface* idx_ns,
                    PartitionManagerInterface* pm);
 
   virtual ~MasterController();
@@ -91,6 +93,12 @@ class MasterController {
   void stop();
 
   /**
+   * \brief A MasterServer asks to join the consistent ring.
+   * \note There is no replica server needed for master node (for now).
+   */
+  Status join_master_server(const NodeInfo& node);
+
+  /**
    * \brief Lets an IndexServer join the consistent hash ring, and
    * send the address of its replica machines back to it.
    *
@@ -100,6 +108,9 @@ class MasterController {
    * \return Status::OK if success.
    */
   Status join_index_server(const NodeInfo &node, RpcNodeAddressList *replicas);
+
+  /// Returns all the master node address.
+  RpcConsistentHashRing get_all_masters();
 
   Status mkdir(const string& path, mode_t mode, uid_t uid, gid_t gid);
 
@@ -155,19 +166,18 @@ class MasterController {
 
   shared_ptr<TServer> server_;
 
+  /// Sets to true if this master is a primary node.
+  bool is_primary_node_;
+
   unique_ptr<IndexNamespaceInterface> index_namespace_;
 
   unique_ptr<PartitionManagerInterface> index_partition_manager_;
 
-  unique_ptr<ServerManager> index_server_manager_;
+  unique_ptr<ServerMap> master_server_manager_;
 
-  unique_ptr<ServerManager> master_server_manager_;
+  unique_ptr<ServerMap> index_server_manager_;
 
   unique_ptr<Namespace> namespace_;
-
-  bool is_config_node_;
-
-  DISALLOW_COPY_AND_ASSIGN(MasterController);
 };
 
 }  // namespace masterd

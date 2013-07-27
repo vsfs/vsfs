@@ -45,6 +45,7 @@ struct RpcNodeAddress {
 
 typedef list<RpcNodeAddress> RpcNodeAddressList
 typedef RpcNodeAddressList NodeAddressList
+typedef map<i64, RpcNodeAddress> RpcConsistentHashRing
 
 // The machine information of GroupNode.
 struct RpcNodeInfo {
@@ -131,6 +132,7 @@ struct RpcIndexLocation {
   3: required list<i64> file_ids
 }
 
+
 typedef list<RpcIndexLocation> RpcIndexLocationList
 
 /**
@@ -214,6 +216,9 @@ service MasterServer {
    * server.
    */
   RpcNodeAddressList join_index_server(1:RpcNodeInfo info);
+
+  /// Obtains the C.H ring of all masters.
+  RpcConsistentHashRing get_all_masters() throws (1:RpcInvalidOp ouch);
 
   /**
    * \brief Makes a new directory.

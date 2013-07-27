@@ -15,16 +15,14 @@ libvsfs_masterd_a_SOURCES = \
   master_controller.h \
   master_server.cpp \
   master_server.h \
-  namespace.h \
-  namespace.cpp \
   masterd_constants.cpp \
   masterd_constants.h \
   masterd_types.cpp \
   masterd_types.h \
+  namespace.cpp \
+  namespace.h \
   partition_manager.cpp \
-  partition_manager.h \
-  server_manager.cpp \
-  server_manager.h
+  partition_manager.h
 
 masterd_types.h: masterd.thrift
 	thrift --gen cpp -out . $<
@@ -40,8 +38,7 @@ TESTS = \
   index_namespace_test \
   master_controller_test \
   namespace_test \
-  partition_manager_test \
-  server_manager_test
+  partition_manager_test
 
 check_PROGRAMS = $(TESTS)
 LDADD = libvsfs-masterd.a $(masterd_LDADD) \
@@ -51,4 +48,3 @@ index_namespace_test_SOURCES = index_namespace_test.cpp
 master_controller_test_SOURCES = master_controller_test.cpp mock_index_namespace.h
 namespace_test_SOURCES = namespace_test.cpp
 partition_manager_test_SOURCES = partition_manager_test.cpp
-server_manager_test_SOURCES = server_manager_test.cpp
