@@ -25,6 +25,7 @@
 #include <mutex>
 #include "vobla/thread_pool.h"
 #include "vsfs/client/vsfs_client.h"
+#include "vsfs/common/server_map.h"
 #include "vsfs/rpc/IndexServer.h"
 #include "vsfs/rpc/MasterServer.h"
 #include "vsfs/rpc/rpc_client.h"
@@ -94,6 +95,8 @@ class VSFSRpcClient : public VSFSClient {
       const string& host, int port);
 
   unique_ptr<MasterClientType> master_client_;
+
+  ServerMap master_map_;
 
   std::mutex master_lock_;
 
