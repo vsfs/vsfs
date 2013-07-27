@@ -22,7 +22,7 @@
 #include <vector>
 #include "vobla/status.h"
 #include "vsfs/common/hash_util.h"
-#include "vsfs/masterd/server_manager.h"
+#include "vsfs/common/server_map.h"
 #include "vsfs/rpc/vsfs_types.h"
 
 using ::testing::ContainerEq;
@@ -34,24 +34,24 @@ using std::vector;
 namespace vsfs {
 namespace masterd {
 
-TEST(ServerManagerTest, TestAddIndexServer) {
-  ServerManager test_idx;
-  vector<int64_t> partitions;
+TEST(ServerMapTest, TestAddServer) {
+  ServerMap test_map;
+  vector<HashValueType> partitions;
   NodeInfo node1;
   NodeInfo node2;
   NodeInfo node3;
   NodeInfo node4;
-  EXPECT_TRUE(test_idx.add(node1).ok());
-  EXPECT_EQ(static_cast<size_t>(1), test_idx.num_nodes());
+  EXPECT_TRUE(test_map.add(node1).ok());
+  EXPECT_EQ(1u, test_map.num_nodes());
 
-  EXPECT_TRUE(test_idx.add(node2).ok());
-  EXPECT_EQ(static_cast<size_t>(2), test_idx.num_nodes());
-  EXPECT_TRUE(test_idx.add(node3).ok());
-  EXPECT_EQ(static_cast<size_t>(3), test_idx.num_nodes());
-  EXPECT_TRUE(test_idx.add(node4).ok());
-  EXPECT_EQ(static_cast<size_t>(4), test_idx.num_nodes());
+  EXPECT_TRUE(test_map.add(node2).ok());
+  EXPECT_EQ(2u, test_map.num_nodes());
+  EXPECT_TRUE(test_map.add(node3).ok());
+  EXPECT_EQ(3u, test_map.num_nodes());
+  EXPECT_TRUE(test_map.add(node4).ok());
+  EXPECT_EQ(4u, test_map.num_nodes());
 
-  partitions = test_idx.get_partitions();
+  partitions = test_map.get_partitions();
   EXPECT_EQ(4u, partitions.size());
   size_t range;
   for (size_t i = 0; i < partitions.size(); i++) {
@@ -64,19 +64,19 @@ TEST(ServerManagerTest, TestAddIndexServer) {
   }
 }
 
-TEST(ServerManagerTest, TestRemoveIndexServer) {
-  ServerManager test_idx;
+TEST(ServerMapTest, TestRemoveIndexServer) {
+  ServerMap test_map;
   NodeInfo node;
   node.address.host = "192.168.1.1";
   node.server_id = "node1";
-  EXPECT_TRUE(test_idx.add(0, node).ok());
-  EXPECT_EQ(static_cast<size_t>(1), test_idx.num_nodes());
-  EXPECT_TRUE(test_idx.remove(0).ok());
-  EXPECT_EQ(static_cast<size_t>(0), test_idx.num_nodes());
+  EXPECT_TRUE(test_map.add(0, node).ok());
+  EXPECT_EQ(static_cast<size_t>(1), test_map.num_nodes());
+  EXPECT_TRUE(test_map.remove(0).ok());
+  EXPECT_EQ(static_cast<size_t>(0), test_map.num_nodes());
 }
 
-TEST(ServerManagerTest, TestGetIndexServer) {
-  ServerManager test_idx;
+TEST(ServerMapTest, TestGetIndexServer) {
+  ServerMap test_map;
 
   NodeInfo node1;
   NodeInfo node2;
@@ -86,10 +86,10 @@ TEST(ServerManagerTest, TestGetIndexServer) {
   node2.server_id = "node2";
   node3.server_id = "node3";
   node4.server_id = "node4";
-  EXPECT_TRUE(test_idx.add(node1).ok());
-  EXPECT_TRUE(test_idx.add(node2).ok());
-  EXPECT_TRUE(test_idx.add(node3).ok());
-  EXPECT_TRUE(test_idx.add(node4).ok());
+  EXPECT_TRUE(test_map.add(node1).ok());
+  EXPECT_TRUE(test_map.add(node2).ok());
+  EXPECT_TRUE(test_map.add(node3).ok());
+  EXPECT_TRUE(test_map.add(node4).ok());
 
   int node1_count = 0;
   int node2_count = 0;
@@ -99,7 +99,7 @@ TEST(ServerManagerTest, TestGetIndexServer) {
   for (int i = 0; i < 2000; i++) {
     string path = "/tmp_data/test_data/" + std::to_string(i);
     int64_t file_id = HashUtil::file_path_to_hash(path);
-    EXPECT_TRUE(test_idx.get(file_id, &tmp).ok());
+    EXPECT_TRUE(test_map.get(file_id, &tmp).ok());
     if (tmp.server_id == "node1") {
       node1_count++;
     } else if (tmp.server_id == "node2") {
@@ -116,24 +116,24 @@ TEST(ServerManagerTest, TestGetIndexServer) {
   EXPECT_NEAR(node4_count, 500, 50);*/
 }
 
-TEST(ServerManagerTest, TestGetReplicaServers) {
-  ServerManager test_ism;
+TEST(ServerMapTest, TestGetReplicaServers) {
+  ServerMap test_map;
   for (int i = 0; i < 10; i++) {
     NodeInfo node;
     node.server_id = string("node") + to_string(i);
-    test_ism.add(i * 1000, node);
+    test_map.add(i * 1000, node);
   }
 
   NodeInfo node;
   node.server_id = string("node2");
-  auto replicas = test_ism.get_replica_servers(node, 2);
+  auto replicas = test_map.get_replica_servers(node, 2);
   EXPECT_EQ(2u, replicas.size());
   EXPECT_EQ("node3", replicas[0].server_id);
   EXPECT_EQ("node4", replicas[1].server_id);
 }
 
-TEST(ServerManagerTest, TestGetChRingAsMap) {
-  ServerManager test_sm;
+TEST(ServerMapTest, TestGetChRingAsMap) {
+  ServerMap test_sm;
   map<HashValueType, NodeInfo> expected_map;
   for (int i = 0; i < 10; i++) {
     NodeInfo node;

@@ -16,6 +16,7 @@ libvsfs_common_a_SOURCES = \
   mock_key_value_store.h \
   mock_leveldb_store.h \
   posix_path.h posix_path.cpp \
+  server_map.h server_map.cpp \
   test_leveldb_store.h test_leveldb_store.cpp \
   thread.h \
   types.h
@@ -27,7 +28,8 @@ TESTS = \
 	complex_query_test \
 	leveldb_store_test \
 	log_manager_test \
-	posix_path_test
+	posix_path_test \
+	server_map_test
 
 check_PROGRAMS = $(TESTS)
 
@@ -43,3 +45,4 @@ complex_query_test_SOURCES = complex_query.h complex_query.cpp \
 leveldb_store_test_SOURCES = leveldb_store_test.cpp
 log_manager_test_SOURCES = log_manager_test.cpp
 posix_path_test_SOURCES = posix_path.h posix_path.cpp posix_path_test.cpp
+server_map_test_SOURCES = server_map_test.cpp
