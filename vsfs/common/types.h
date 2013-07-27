@@ -16,17 +16,20 @@
 
 /**
  * \file types.h "vsfs/common/types.h"
- *
  * \brief Defines the common types used by all VSFS components.
  */
 
 #ifndef VSFS_COMMON_TYPES_H_
 #define VSFS_COMMON_TYPES_H_
 
+#include <cstdint>
+
 namespace vsfs {
 
 typedef int64_t ObjectId;
 typedef int64_t FilePathHashType;
+// TODO(eddyxu): Merge HashValueType and FilePathHashType together.
+typedef int64_t HashValueType;
 
 }  // namespace vsfs
 

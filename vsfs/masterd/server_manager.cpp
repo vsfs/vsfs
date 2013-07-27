@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <limits>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -25,6 +26,7 @@
 #include "vsfs/common/thread.h"
 #include "vsfs/masterd/server_manager.h"
 
+using std::map;
 using std::string;
 using std::vector;
 using vobla::append_keys_from_map;
@@ -116,13 +118,23 @@ size_t ServerManager::num_nodes() {
   return ring_.num_nodes();
 }
 
-vector<ServerManager::HashValueType> ServerManager::get_partitions() {
+vector<HashValueType> ServerManager::get_partitions() {
   vector<HashValueType> partitions;
   MutexGuard lock(lock_);
   if (!ring_.empty()) {
     partitions = ring_.get_partitions();
   }
   return partitions;
+}
+
+map<HashValueType, NodeInfo> ServerManager::get_ch_ring_as_map() {
+  map<HashValueType, NodeInfo> result;
+  MutexGuard guard(lock_);
+  auto it = ring_.begin();
+  for (size_t i = 0; i < ring_.num_nodes(); ++i) {
+    result[it->first] = it->second;
+  }
+  return result;
 }
 
 }  // namespace masterd

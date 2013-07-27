@@ -75,7 +75,10 @@ class VSFSRpcClient : public VSFSClient {
 
   Status init();
 
-  /// Connects to the MasterNode with its host name and port number.
+  /**
+   * \brief connects to the primary MasterNode and obtains the master node
+   * map.
+   */
   Status connect(const string &host, int port);
 
   /// Disconnects from the MasterNode.

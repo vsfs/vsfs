@@ -17,14 +17,17 @@
 #ifndef VSFS_MASTERD_SERVER_MANAGER_H_
 #define VSFS_MASTERD_SERVER_MANAGER_H_
 
+#include <map>
 #include <mutex>
 #include <string>
 #include <vector>
 #include "vobla/consistent_hash_map.h"
 #include "vobla/macros.h"
 #include "vobla/status.h"
+#include "vsfs/common/types.h"
 #include "vsfs/rpc/vsfs_types.h"
 
+using std::map;
 using std::mutex;
 using std::string;
 using std::vector;
@@ -42,8 +45,6 @@ namespace masterd {
  */
 class ServerManager {
  public:
-  typedef int64_t HashValueType;
-
   /// Default constructor.
   ServerManager();
 
@@ -100,6 +101,12 @@ class ServerManager {
    * It will add a new record in PathHashToNodeMap.
    */
   // Status get_succ_server(const NodeInfo& this_node, NodeInfo* succ_node);
+
+  /**
+   * \brief Obtain a full copy of Consistent Hashing Ring and stores it in a
+   * std::map.
+   */
+  map<HashValueType, NodeInfo> get_ch_ring_as_map();
 
  private:
   // const unsigned int replicas_;
