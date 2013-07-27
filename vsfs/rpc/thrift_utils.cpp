@@ -29,4 +29,10 @@ RpcInvalidOp ThriftUtils::StatusToRpcInvalidOp(const Status &status) {
   return invalid;
 }
 
+void ThriftUtils::CheckStatus(const vobla::Status& status) {
+  if (!status.ok()) {
+    throw ThriftUtils::StatusToRpcInvalidOp(status);
+  }
+}
+
 }  // namespace vsfs

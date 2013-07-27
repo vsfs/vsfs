@@ -81,6 +81,8 @@ class ThriftUtils {
    */
   static RpcInvalidOp StatusToRpcInvalidOp(const vobla::Status &status);
 
+  static void CheckStatus(const vobla::Status& status);
+
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ThriftUtils);
 };

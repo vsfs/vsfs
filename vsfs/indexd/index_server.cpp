@@ -38,14 +38,10 @@ void IndexServer::create_index(const RpcIndexCreateRequest &index) {
             << " name: " << index.name
             << " type: " << index.index_type
             << " key: " << index.key_type;
-  Status status = server_->create_index(index.root,
-                                        index.name,
-                                        index.index_type,
-                                        index.key_type);
-  if (!status.ok()) {
-    RpcInvalidOp ouch = ThriftUtils::StatusToRpcInvalidOp(status);
-    throw ouch;
-  }
+  ThriftUtils::CheckStatus(server_->create_index(index.root,
+                                                 index.name,
+                                                 index.index_type,
+                                                 index.key_type));
 }
 
 void IndexServer::remove_index(const RpcIndexName &name) {
@@ -55,29 +51,17 @@ void IndexServer::remove_index(const RpcIndexName &name) {
 }
 
 void IndexServer::update(const RpcIndexUpdate &updates) {
-  Status status = server_->update(updates);
-  if (!status.ok()) {
-    RpcInvalidOp ouch = ThriftUtils::StatusToRpcInvalidOp(status);
-    throw ouch;
-  }
+  ThriftUtils::CheckStatus(server_->update(updates));
 }
 
 void IndexServer::search(vector<int64_t>& results,  // NOLINT
-                                const RpcComplexQuery& query) {
-  Status status = server_->search(query, &results);
-  if (!status.ok()) {
-    RpcInvalidOp ouch = ThriftUtils::StatusToRpcInvalidOp(status);
-    throw ouch;
-  }
+                         const RpcComplexQuery& query) {
+  ThriftUtils::CheckStatus(server_->search(query, &results));
 }
 
 void IndexServer::info(RpcIndexInfo &info,  // NOLINT
-                              const RpcIndexInfoRequest &request) {
-  Status status = server_->info(request, &info);
-  if (!status.ok()) {
-    RpcInvalidOp ouch = ThriftUtils::StatusToRpcInvalidOp(status);
-    throw ouch;
-  }
+                       const RpcIndexInfoRequest &request) {
+  ThriftUtils::CheckStatus(server_->info(request, &info));
 }
 
 }  // namespace indexd
