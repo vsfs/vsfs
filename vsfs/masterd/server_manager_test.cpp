@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <limits>
+#include <map>
 #include <string>
 #include <vector>
 #include "vobla/status.h"
@@ -23,6 +25,8 @@
 #include "vsfs/masterd/server_manager.h"
 #include "vsfs/rpc/vsfs_types.h"
 
+using ::testing::ContainerEq;
+using std::map;
 using std::string;
 using std::to_string;
 using std::vector;
@@ -126,6 +130,20 @@ TEST(ServerManagerTest, TestGetReplicaServers) {
   EXPECT_EQ(2u, replicas.size());
   EXPECT_EQ("node3", replicas[0].server_id);
   EXPECT_EQ("node4", replicas[1].server_id);
+}
+
+TEST(ServerManagerTest, TestGetChRingAsMap) {
+  ServerManager test_sm;
+  map<HashValueType, NodeInfo> expected_map;
+  for (int i = 0; i < 10; i++) {
+    NodeInfo node;
+    node.server_id = string("node") + to_string(i);
+    test_sm.add(i * 1000, node);
+    expected_map[i * 1000] = node;
+  }
+
+  auto actual_map = test_sm.get_ch_ring_as_map();
+  EXPECT_THAT(actual_map, ContainerEq(expected_map));
 }
 
 }  // namespace masterd

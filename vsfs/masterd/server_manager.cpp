@@ -131,7 +131,8 @@ map<HashValueType, NodeInfo> ServerManager::get_ch_ring_as_map() {
   map<HashValueType, NodeInfo> result;
   MutexGuard guard(lock_);
   auto it = ring_.begin();
-  for (size_t i = 0; i < ring_.num_nodes(); ++i) {
+  auto num_nodes = ring_.num_nodes();
+  for (size_t i = 0; i < num_nodes; ++i, ++it) {
     result[it->first] = it->second;
   }
   return result;

@@ -27,7 +27,6 @@
 #include "vsfs/client/vsfs_client.h"
 #include "vsfs/rpc/IndexServer.h"
 #include "vsfs/rpc/MasterServer.h"
-#include "vsfs/rpc/MetaServer.h"
 #include "vsfs/rpc/rpc_client.h"
 
 using std::string;
