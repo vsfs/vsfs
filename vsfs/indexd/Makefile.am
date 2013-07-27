@@ -6,7 +6,7 @@
 AM_CPPFLAGS = @libthrift_CFLAGS@
 #SUBDIRS = . testing
 CLEANFILES=*.gcno *.gcov *.gcda
-#bin_PROGRAMS = indexd
+bin_PROGRAMS = indexd
 
 noinst_LIBRARIES = libvsfs-indexd.a
 libvsfs_indexd_a_SOURCES = \
@@ -15,14 +15,13 @@ libvsfs_indexd_a_SOURCES = \
         index_controller_interface.h \
 	index_server.h index_server.cpp
 
-#indexd_SOURCES = indexd.cpp
-#indexd_LDADD = \
-#	       libvsfs-index-server.a \
-#	       ../rpc/libvsfs-rpc.a \
-#	       ../index/libvsfs-index.a \
-#	       ../common/libvsfs-common.a \
-#	       @top_srcdir@/base/libbase.a \
-#	       @libthrift_LIBS@ -lthriftnb $(libprotobuf_LIBS)
+indexd_SOURCES = indexd.cpp
+indexd_LDADD = \
+	       libvsfs-indexd.a \
+	       ../rpc/libvsfs-rpc.a \
+	       ../index/libvsfs-index.a \
+	       ../common/libvsfs-common.a \
+	       @libthrift_LIBS@ -lthriftnb $(libprotobuf_LIBS)
 
 TESTS = \
 	index_manager_test
@@ -34,7 +33,6 @@ LDADD = \
 	libvsfs-indexd.a \
 	../rpc/libvsfs-rpc.a \
 	../index/libvsfs-index.a \
-	../common/libvsfs-common.a \
 	-lvobla -lgtest -lgmock -lgmock_main @libthrift_LIBS@
 
 index_manager_test_SOURCES = index_manager_test.cpp
