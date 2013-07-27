@@ -31,6 +31,7 @@
 #include "vobla/map_util.h"
 #include "vsfs/common/hash_util.h"
 #include "vsfs/common/thread.h"
+#include "vsfs/common/types.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/index/range_index.h"
 #include "vsfs/indexd/index_manager.h"
@@ -47,14 +48,15 @@ using std::unique_ptr;
 using std::vector;
 using vobla::contain_key;
 using vsfs::HashUtil;
+using vsfs::ObjectId;
 
-const int64_t kDefaultFlushLogSize = 8 * 1024 * 1024;  // 8MB.
+const uint64_t kDefaultFlushLogSize = 8 * 1024 * 1024;  // 8MB.
 const char kIndexFileExt[] = ".idx";
 const char kLogFileExt[] = ".log";
 
 DEFINE_bool(update_immediately, false,
             "Sets to true to immediately append index updates to indices.");
-DEFINE_int64(flush_log_size, kDefaultFlushLogSize,
+DEFINE_uint64(flush_log_size, kDefaultFlushLogSize,
               "Sets the size to flush log in bytes. (default: 8*1024*1024).");
 
 namespace vsfs {
@@ -160,7 +162,7 @@ Status IndexManager::RangeIndexWrapper::merge(TxnIdType txn_id) {
 }
 
 Status IndexManager::RangeIndexWrapper::search(
-    TxnIdType txn_id, const RpcRangeQuery &query, vector<int64_t> *results) {
+    TxnIdType txn_id, const RpcRangeQuery &query, vector<ObjectId> *results) {
   CHECK_NOTNULL(results);
   Status status = merge(txn_id);
   if (!status.ok()) {
@@ -234,7 +236,7 @@ IndexManager::~IndexManager() {
 }
 
 Status IndexManager::create(
-    int64_t txn_id, const string &root_path, const string &name,
+    uint64_t txn_id, const string &root_path, const string &name,
     int index_type, int key_type) {
   // Ignores transaction ID for now.
   (void) txn_id;
@@ -324,7 +326,7 @@ RangeIndexInterface* IndexManager::get_range_index(const string &index_path,
 }
 
 Status IndexManager::merge_log_to_index(const string &index_path,
-                                        int64_t txn_id) {
+                                        uint64_t txn_id) {
   MutexGuard lock(lock_);
   auto iter = range_index_map_.find(index_path);
   if (iter == range_index_map_.end()) {
@@ -361,7 +363,7 @@ Status IndexManager::update_single_index(
 }
 
 Status IndexManager::search(const RpcComplexQuery &query,
-                            vector<int64_t>* results) {
+                            vector<ObjectId>* results) {
   CHECK_NOTNULL(results);
   for (const auto& cq : query.range_queries) {
     // TODO(lxu): use thread pool to improve performance.
@@ -375,7 +377,7 @@ Status IndexManager::search(const RpcComplexQuery &query,
           range_index_map_[cq.index_path].get();
       CHECK_NOTNULL(index);
       Status status;
-      vector<int64_t> tmp;
+      vector<ObjectId> tmp;
       status = index->search(query.txn_id, cq, &tmp);
       if (!status.ok()) {
         LOG(ERROR) << "Failed to search on index: " << cq.index_path;
@@ -480,7 +482,7 @@ IndexInfo* IndexManager::get_index_info(const string &index_info_key) {
 }
 
 string IndexManager::get_index_file_base_path(const string &root_path) const {
-  int64_t index_hash = HashUtil::file_path_to_hash(root_path);
+  uint64_t index_hash = HashUtil::file_path_to_hash(root_path);
   return basedir_ + "/" + lexical_cast<string>(index_hash);
 }
 

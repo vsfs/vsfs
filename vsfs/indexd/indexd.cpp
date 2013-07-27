@@ -28,16 +28,17 @@ using std::string;
 using std::unique_ptr;
 using vsfs::indexd::IndexController;
 
-DEFINE_string(pidfile, "", "Sets the file to store the pid of this server.");
+DEFINE_string(pidfile, "",
+              "Sets the file to store the pid of this controller.");
 DEFINE_string(datadir, ".", "Sets the data directory for storing indices.");
 DEFINE_bool(daemon, false, "Run in daemon mode.");
 
-unique_ptr<IndexController> server;
+unique_ptr<IndexController> controller;
 
 void signal_handle(int sign) {
-  if (server) {
+  if (controller) {
     LOG(INFO) << "Shutting down IndexController...";
-    server->stop();
+    controller->stop();
   }
 }
 
@@ -63,8 +64,8 @@ int main(int argc, char *argv[]) {
   signal(SIGTERM, signal_handle);
   signal(SIGINT, signal_handle);
 
-  server.reset(new IndexController(FLAGS_datadir));
-  server->start();
+  controller.reset(new IndexController(FLAGS_datadir));
+  controller->start();
   LOG(INFO) << "Done";
   return 0;
 }

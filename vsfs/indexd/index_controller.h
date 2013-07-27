@@ -115,40 +115,6 @@ class IndexController : public IndexControllerInterface {
     return master_->handler();
   }
 
-  /**
-   * \brief Main index migration process.
-   */
-  // virtual Status migrate_index(const index::IndexInfo &idx_info);
-
-  /**
-   * \brief migrate a single index.
-   */
-  // virtual Status migrate(const RpcIndexMigrationData &data);
-
-  /**
-   * \brief forward the updates to taker node's log.
-   */
-  // virtual Status update_to_remote_log(const RpcIndexUpdate& updates);
-
-  /**
-   * \brief Ask taker node to join the server ring.
-   * This function should be called when there is a new server needs
-   * to join the cluster.
-   */
-  // virtual Status join_taker_node_server();
-
-  /**
-   * \brief Ask taker node to join the new index partition to master.
-   * This function should be called during index partition process.
-   */
-  /* virtual Status join_taker_node_index_partition(const RpcIndexInfo& idx_info,
-                                                 int64_t sep); */
-
-  /// Returns the connected replication machines.
-  // size_t num_replica_machines() const;
-
-  // string get_new_partition_name(const string &old_name, int64_t split_pos);
-
  private:
   FRIEND_TEST(IndexControllerTest, TestJoinRing);
 
@@ -159,8 +125,6 @@ class IndexController : public IndexControllerInterface {
 
   /// Running status.
   int status_;
-
-  // void background_migration();
 
   void background_task();
 
@@ -178,8 +142,6 @@ class IndexController : public IndexControllerInterface {
 
   string base_dir_;
 
-  // bool forward_data_;
-
   unique_ptr<IndexManager> manager_;
 
   /// A connection to the master.
@@ -187,49 +149,6 @@ class IndexController : public IndexControllerInterface {
 
   /// Thrift RPC server.
   shared_ptr<TServer> server_;
-
-  // typedef RpcClient<IndexServerClient> IndexServerClientType;
-
-  // vector<unique_ptr<IndexServerClientType>> replica_machines_;
-
-  typedef std::pair<int64_t, int64_t> FileIdRangeType;
-
-  // Status deserialize_data_into_index(const RpcIndexMigrationData &data);
-
-  // Status filter_and_forward_migration_updates(const RpcIndexUpdate &updates);
-
-  /**
-   * \brief Index Migration Management Table, support multiple index to
-   * migrate at the same time. (Each index can only have one migration).
-   */
-  /* struct RangeIndexMigrationRecord {
-    FileIdRangeType range;
-    NodeInfo taker_node;
-    unique_ptr<IndexControllerClientType> connection;
-  };
-
-  unordered_map<string, unique_ptr<RangeIndexMigrationRecord>> migration_map_;
-
-  void add_migration_record(const string &root_path, const string &name,
-                            int64_t split_pos, int64_t end_pos,
-                            const NodeInfo &node);
-
-  void remove_migration_record(const string &root_path, const string &name);
-
-  RangeIndexMigrationRecord* get_migration_record(
-      const string &root_path, const string &name);
-
-  IndexControllerClientType* get_migration_connection(const string &root_path,
-                                                  const string &name);
-
-  string get_index_id(const string &root_path, const string &name);
-
-  bool is_in_range(const string &key_str, const FileIdRangeType &range);
-
-  /// manually force merging an index's log.
-  Status merge_log_to_index(const string &root_path, const string &name);
-
-  bool forward_data_or_not(); */
 
   DISALLOW_IMPLICIT_CONSTRUCTORS(IndexController);
 };

@@ -1,11 +1,18 @@
-/**
- * \file index_server_handler.cpp
+/*
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
- * \brief Implementation of the RPC handler for IndexServer.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * Copyright 2012 (c) Lei Xu <eddyxu@gmail.com>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 
 #include <glog/logging.h>
 #include <vector>
@@ -72,43 +79,6 @@ void IndexServer::info(RpcIndexInfo &info,  // NOLINT
     throw ouch;
   }
 }
-
-/* void IndexServer::migrate(const RpcIndexMigrationData &data) {
-  Status status = server_->migrate(data);
-  if (!status.ok()) {
-    RpcInvalidOp ouch;
-    ThriftUtils::StatusToRpcInvalidOp(status, &ouch);
-    throw ouch;
-  }
-}
-
-void IndexServer::update_to_remote_log(const RpcIndexUpdate& updates) {
-  Status status = server_->update_to_remote_log(updates);
-  if (!status.ok()) {
-    RpcInvalidOp ouch;
-    ThriftUtils::StatusToRpcInvalidOp(status, &ouch);
-    throw ouch;
-  }
-}
-
-void IndexServer::join_taker_node_server() {
-  Status status = server_->join_taker_node_server();
-  if (!status.ok()) {
-    RpcInvalidOp ouch;
-    ThriftUtils::StatusToRpcInvalidOp(status, &ouch);
-    throw ouch;
-  }
-}
-
-void IndexServer::join_taker_node_index_partition(
-    const RpcIndexInfo &idx_info, int64_t sep) {
-  Status status = server_->join_taker_node_index_partition(idx_info, sep);
-  if (!status.ok()) {
-    RpcInvalidOp ouch;
-    ThriftUtils::StatusToRpcInvalidOp(status, &ouch);
-    throw ouch;
-  }
-} */
 
 }  // namespace indexd
 }  // namespace vsfs

@@ -33,6 +33,7 @@
 #include "vobla/status.h"
 #include "vobla/traits.h"
 #include "vsfs/common/thread.h"
+#include "vsfs/common/types.h"
 #include "vsfs/rpc/vsfs_types.h"
 
 using boost::lexical_cast;
@@ -44,6 +45,7 @@ using std::unordered_set;
 using std::vector;
 using vobla::Status;
 using vobla::find_or_null;
+using vsfs::ObjectId;
 
 namespace vsfs {
 namespace index {
@@ -57,11 +59,10 @@ class RangeIndex;
  */
 class RangeIndexInterface {
  public:
-  typedef int64_t FileIdType;
   // TODO(ziling): use vsfs/common/range.h to replace this.
-  typedef std::pair<FileIdType, FileIdType> FileIdRangeType;
-  typedef FileIdType value_type;
-  typedef vector<FileIdType> FileIdVector;
+  typedef std::pair<ObjectId, ObjectId> FileIdRangeType;
+  typedef ObjectId value_type;
+  typedef vector<ObjectId> FileIdVector;
 
   /// Factory method.
   static RangeIndexInterface* create_range_index(int key_type);
@@ -71,7 +72,7 @@ class RangeIndexInterface {
   virtual ~RangeIndexInterface() {}
 
   template <typename K>
-  void insert(K key, FileIdType file_id) {
+  void insert(K key, ObjectId file_id) {
     insert(&key, sizeof(key), file_id);
   }
 
@@ -93,7 +94,7 @@ class RangeIndexInterface {
                                    const string &file_id) = 0;
 
   template <typename K>
-  void erase(K key, FileIdType file_id) {
+  void erase(K key, ObjectId file_id) {
     erase(&key, sizeof(key), file_id);
   }
 
@@ -140,11 +141,11 @@ class RangeIndexInterface {
 
  protected:
   // TODO(eddyxu): pass the Type2Int::value to check the types.
-  virtual void insert(void *key, size_t key_size, FileIdType file_id) = 0;
+  virtual void insert(void *key, size_t key_size, ObjectId file_id) = 0;
 
   virtual void erase(void *key, size_t key_size) = 0;
 
-  virtual void erase(void *key, size_t key_size, FileIdType file_id) = 0;
+  virtual void erase(void *key, size_t key_size, ObjectId file_id) = 0;
 
   virtual void search(void *lower, void *upper, size_t key_size,
                       FileIdVector *results) = 0;
@@ -187,17 +188,17 @@ class RangeIndex : public RangeIndexInterface {
     return key_type_ == rhs.key_type_ && index_ == rhs.index_;
   }
 
-  void insert(KeyType key, FileIdType file_id) {
+  void insert(KeyType key, ObjectId file_id) {
     MutexGuard guard(lock_);
     index_[key].insert(file_id);
   }
 
   Status insert_string_val(const string &key, const string &value) {
     KeyType insert_key = 0;
-    FileIdType file_id = 0;
+    ObjectId file_id = 0;
     try {
       insert_key = lexical_cast<KeyType>(key);
-      file_id = lexical_cast<FileIdType>(value);
+      file_id = lexical_cast<ObjectId>(value);
     } catch(boost::bad_lexical_cast e) {
       return Status(-EINVAL, "RangeIndex::insert_string_val: Bad cast");
     }
@@ -209,10 +210,10 @@ class RangeIndex : public RangeIndexInterface {
     MutexGuard guard(lock_);
     for (const auto& update : updates) {
       KeyType key = 0;
-      FileIdType file_id = 0;
+      ObjectId file_id = 0;
       try {
         key = lexical_cast<KeyType>(update.key);
-        file_id = lexical_cast<FileIdType>(update.value);
+        file_id = lexical_cast<ObjectId>(update.value);
       } catch(boost::bad_lexical_cast e) {
         return Status(-EINVAL, "RangeIndex::update: Bad cast");
       }
@@ -235,14 +236,14 @@ class RangeIndex : public RangeIndexInterface {
 
   /**
    * \brief Erases Key-FileId pair from the in-memory RangeIndex.
-   * \tparam K the key type (e.g., int64, int, float).
+   * \tparam K the key type (e.g., uint64, int, float).
    * \param key the key to be erased.
    * \param file_id the value to be erased.
    *
    * It only erases the key-value pairs that are exactly same to the
    * parameters.
    */
-  void erase(KeyType key, FileIdType file_id) {
+  void erase(KeyType key, ObjectId file_id) {
     MutexGuard guard(lock_);
     erase_with_lock(key, file_id);
   }
@@ -258,7 +259,7 @@ class RangeIndex : public RangeIndexInterface {
 
   Status erase_string_val(const string &key, const string &value) {
     KeyType erase_key = 0;
-    FileIdType erase_value = 0;
+    ObjectId erase_value = 0;
     try {
       erase_key = lexical_cast<KeyType>(key);
     } catch(boost::bad_lexical_cast e) {
@@ -268,7 +269,7 @@ class RangeIndex : public RangeIndexInterface {
       erase(erase_key);
     } else {
       try {
-        erase_value = lexical_cast<FileIdType>(value);
+        erase_value = lexical_cast<ObjectId>(value);
       } catch(boost::bad_lexical_cast e) {
         return Status(-EINVAL, "RangeIndex::erase_string_val: Bad cast");
       }
@@ -358,19 +359,19 @@ class RangeIndex : public RangeIndexInterface {
    * node used in the std::map is based on the following struct:
    * ~~~~~~~~~~~~~
    * struct RBTree {
-   *   std::pair<Key, FileIdType> data;
+   *   std::pair<Key, ObjectId> data;
    *   char color;
    *   RBTree *left, *right, *parent;
    * }
    * ~~~~~~~~~~~~~
    *
    * Because there is no easy way to directly get the size of key type for
-   * the key_type_, it just uses int64_t to calculate the maximum possible
+   * the key_type_, it just uses uint64_t to calculate the maximum possible
    * length.
    */
   size_t approx_bytes() {
     static const size_t kElementSize =
-        sizeof(int64_t) + sizeof(FileIdType)   // key and value
+        sizeof(uint64_t) + sizeof(ObjectId)   // key and value
         + 3 * sizeof(char*)  // left/right/parent pointers // NOLINT
         + sizeof(char);  // color. // NOLINT
     MutexGuard guard(lock_);
@@ -404,7 +405,7 @@ class RangeIndex : public RangeIndexInterface {
   }
 
  protected:
-  void insert(void *key, size_t key_size, FileIdType file_id) {
+  void insert(void *key, size_t key_size, ObjectId file_id) {
     CHECK_EQ(sizeof(Key), key_size);
     Key k = *static_cast<Key*>(key);
     insert(k, file_id);
@@ -416,7 +417,7 @@ class RangeIndex : public RangeIndexInterface {
     erase(k);
   }
 
-  void erase(void *key, size_t key_size, FileIdType file_id) {
+  void erase(void *key, size_t key_size, ObjectId file_id) {
     CHECK_EQ(sizeof(Key), key_size);
     Key k = *static_cast<Key*>(key);
     erase(k, file_id);
@@ -455,7 +456,7 @@ class RangeIndex : public RangeIndexInterface {
     RangeIndex* other = dynamic_cast<RangeIndex*>(other_interface);  // NOLINT
     CHECK(other->empty());
     size_t total_size = this->size();
-    vector<FileIdType> all_file_ids;
+    vector<ObjectId> all_file_ids;
     MutexGuard guard(lock_);
     for (const auto& iter : index_) {
       for (const auto& file_id : iter.second) {
@@ -466,11 +467,11 @@ class RangeIndex : public RangeIndexInterface {
     std::nth_element(all_file_ids.begin(), all_file_ids.begin() + median_pos,
                      all_file_ids.end());
 
-    FileIdType median = all_file_ids[median_pos];
-    FileIdType end_pos = all_file_ids.back();
+    ObjectId median = all_file_ids[median_pos];
+    ObjectId end_pos = all_file_ids.back();
     // Inserts all file id >= median to the new RangeIndex.
     for (const auto& iter : index_) {
-      unordered_set<FileIdType> moved_file_ids;
+      unordered_set<ObjectId> moved_file_ids;
       for (const auto& file_id : iter.second) {
         if (file_id >= median) {
           moved_file_ids.insert(file_id);
@@ -494,12 +495,12 @@ class RangeIndex : public RangeIndexInterface {
   };
 
  private:
-  typedef unordered_set<FileIdType> FileIdSet;
+  typedef unordered_set<ObjectId> FileIdSet;
 
   typedef map<KeyType, FileIdSet> IndexMap;
 
   /// Caller must hold the lock.
-  void erase_with_lock(KeyType key, FileIdType file_id) {
+  void erase_with_lock(KeyType key, ObjectId file_id) {
     FileIdSet *files = find_or_null(index_, key);
     if (files) {
       files->erase(file_id);

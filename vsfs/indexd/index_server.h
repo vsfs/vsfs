@@ -23,7 +23,7 @@ namespace indexd {
 class IndexController;
 
 /**
- * \brief RPC handler for IndexServer.
+ * \brief RPC handler for IndexController.
  */
 class IndexServer : public IndexServerIf {
  public:
@@ -41,15 +41,6 @@ class IndexServer : public IndexServerIf {
                       const RpcComplexQuery& query);
 
   virtual void info(RpcIndexInfo &info, const RpcIndexInfoRequest &request);
-
-  /* virtual void migrate(const RpcIndexMigrationData &data);
-
-  virtual void update_to_remote_log(const RpcIndexUpdate& updates);
-
-  virtual void join_taker_node_server();
-
-  virtual void join_taker_node_index_partition(const RpcIndexInfo& idx_info,
-                                               int64_t sep); */
 
  private:
   IndexController *server_;
