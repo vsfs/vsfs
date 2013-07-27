@@ -24,18 +24,14 @@ using apache::thrift::transport::TTransportException;
 using std::string;
 using vobla::Status;
 
+DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
+             "VSFS client can use.");
+
 namespace vsfs {
 namespace client {
 
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
-    : index_server_client_factory_(new IndexServerClientFactory),
-      host_(host), port_(port),
-      thread_pool_(FLAGS_vsfs_client_num_thread) {
-}
-
-VSFSRpcClient::VSFSRpcClient(MasterClientType *master,
-    IndexServerClientFactory* index_factory)
-    : master_client_(master), index_server_client_factory_(index_factory),
+    : host_(host), port_(port),
       thread_pool_(FLAGS_vsfs_client_num_thread) {
 }
 
@@ -48,7 +44,28 @@ VSFSRpcClient::~VSFSRpcClient() {
 }
 
 Status VSFSRpcClient::init() {
-  return connect(host_, port_);
+  VLOG(0) << "Initialize a VSFSRpcClient.";
+  auto status = connect(host_, port_);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to connect to primary master("
+               << host_ << ":" << port_ << "), because: "
+               << status.message();
+  }
+  // Gets a full map of all master servers.
+  RpcConsistentHashRing ring;
+  try {
+    master_client_->handler()->get_all_masters(ring);
+  } catch (TTransportException e) {  // NOLINT
+    LOG(ERROR) << "Failed to get_all_masters(): " << e.what();
+    return Status(e.getType(), e.what());
+  }
+  for (const auto& sep_and_address : ring) {
+    NodeInfo node_info;
+    node_info.address = sep_and_address.second;
+    auto sep = sep_and_address.first;
+    master_map_.add(sep, node_info);
+  }
+  return Status::OK;
 }
 
 Status VSFSRpcClient::connect(const string &host, int port) {

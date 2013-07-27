@@ -41,6 +41,8 @@ using vobla::Status;
 
 namespace vsfs {
 
+class ServerMap;
+
 namespace index {
 class IndexInfo;
 }
@@ -50,7 +52,6 @@ namespace masterd {
 class IndexNamespaceInterface;
 class Namespace;
 class PartitionManagerInterface;
-class ServerManager;
 
 /**
  * \brief MasterController the main control block of master server.
@@ -107,6 +108,9 @@ class MasterController : boost::noncopyable {
    * \return Status::OK if success.
    */
   Status join_index_server(const NodeInfo &node, RpcNodeAddressList *replicas);
+
+  /// Returns all the master node address.
+  RpcConsistentHashRing get_all_masters();
 
   Status mkdir(const string& path, mode_t mode, uid_t uid, gid_t gid);
 
@@ -169,9 +173,9 @@ class MasterController : boost::noncopyable {
 
   unique_ptr<PartitionManagerInterface> index_partition_manager_;
 
-  unique_ptr<ServerManager> master_server_manager_;
+  unique_ptr<ServerMap> master_server_manager_;
 
-  unique_ptr<ServerManager> index_server_manager_;
+  unique_ptr<ServerMap> index_server_manager_;
 
   unique_ptr<Namespace> namespace_;
 };
