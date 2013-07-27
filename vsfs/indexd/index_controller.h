@@ -31,7 +31,6 @@
 #include <vector>
 #include "vobla/macros.h"
 #include "vsfs/rpc/rpc_client.h"
-// #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/rpc/IndexServer.h"
 #include "vsfs/rpc/MasterServer.h"
 #include "vsfs/indexd/index_controller_interface.h"

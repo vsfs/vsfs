@@ -132,7 +132,7 @@ class IndexManager {
                         const string &name, int index_type, int key_type);
 
   /*
-  virtual Status remove(uint64_t txn_id,
+  virtual Status remove(int64_t txn_id,
                         const string &index_path,
                         const string &name);
                         */
@@ -166,7 +166,7 @@ class IndexManager {
   RangeIndexInterface* get_range_index(const string &index_path,
                                        const string &name);
 
-  Status merge_log_to_index(const string &index_path, uint64_t txn_id);
+  Status merge_log_to_index(const string &index_path, int64_t txn_id);
 
   /**
    * \brief Check every index if its size exceeds the partition threshold,
@@ -226,7 +226,7 @@ class IndexManager {
     Status update(TxnIdType txn_id, RpcIndexRecordUpdateList *update);
 
     Status search(TxnIdType txn_id, const RpcRangeQuery &query,
-                  vector<uint64_t> *results);
+                  vector<int64_t> *results);
 
     /**
      * \brief Explicitly merge the in-memory log to the index.

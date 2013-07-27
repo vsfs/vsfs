@@ -57,7 +57,7 @@ class RangeIndex;
  */
 class RangeIndexInterface {
  public:
-  typedef uint64_t FileIdType;
+  typedef int64_t FileIdType;
   // TODO(ziling): use vsfs/common/range.h to replace this.
   typedef std::pair<FileIdType, FileIdType> FileIdRangeType;
   typedef FileIdType value_type;
@@ -235,7 +235,7 @@ class RangeIndex : public RangeIndexInterface {
 
   /**
    * \brief Erases Key-FileId pair from the in-memory RangeIndex.
-   * \tparam K the key type (e.g., uint64, int, float).
+   * \tparam K the key type (e.g., int64, int, float).
    * \param key the key to be erased.
    * \param file_id the value to be erased.
    *
@@ -301,7 +301,7 @@ class RangeIndex : public RangeIndexInterface {
 
   /**
    * \brief Search files of which the keys fall into the key range [low, upper]
-   * \tparam K the key type (e.g., uint64, int, float).
+   * \tparam K the key type (e.g., int64, int, float).
    * \param[in] lower the low bound of keys to search.
    * \param[in] upper the upper bound of keys to search.
    * \param[out] results results will be filled with the file IDs that
@@ -332,7 +332,7 @@ class RangeIndex : public RangeIndexInterface {
 
   /**
    * \brief Find all files that are indexed the same key.
-   * \tparam K the key type (e.g., uint64, int, float).
+   * \tparam K the key type (e.g., int64, int, float).
    * \param[in] key the key to search.
    * \param[out] results The output files.
    */
@@ -365,12 +365,12 @@ class RangeIndex : public RangeIndexInterface {
    * ~~~~~~~~~~~~~
    *
    * Because there is no easy way to directly get the size of key type for
-   * the key_type_, it just uses uint64_t to calculate the maximum possible
+   * the key_type_, it just uses int64_t to calculate the maximum possible
    * length.
    */
   size_t approx_bytes() {
     static const size_t kElementSize =
-        sizeof(uint64_t) + sizeof(FileIdType)   // key and value
+        sizeof(int64_t) + sizeof(FileIdType)   // key and value
         + 3 * sizeof(char*)  // left/right/parent pointers // NOLINT
         + sizeof(char);  // color. // NOLINT
     MutexGuard guard(lock_);

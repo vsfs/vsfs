@@ -33,6 +33,7 @@ LDADD = \
 	libvsfs-indexd.a \
 	../rpc/libvsfs-rpc.a \
 	../index/libvsfs-index.a \
+	../common/libvsfs-common.a \
 	-lvobla -lgtest -lgmock -lgmock_main @libthrift_LIBS@
 
 index_manager_test_SOURCES = index_manager_test.cpp

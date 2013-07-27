@@ -46,14 +46,15 @@ using std::thread;
 using std::unique_ptr;
 using std::vector;
 using vobla::contain_key;
+using vsfs::HashUtil;
 
-const uint64_t kDefaultFlushLogSize = 8 * 1024 * 1024;  // 8MB.
+const int64_t kDefaultFlushLogSize = 8 * 1024 * 1024;  // 8MB.
 const char kIndexFileExt[] = ".idx";
 const char kLogFileExt[] = ".log";
 
 DEFINE_bool(update_immediately, false,
             "Sets to true to immediately append index updates to indices.");
-DEFINE_uint64(flush_log_size, kDefaultFlushLogSize,
+DEFINE_int64(flush_log_size, kDefaultFlushLogSize,
               "Sets the size to flush log in bytes. (default: 8*1024*1024).");
 
 namespace vsfs {
@@ -159,7 +160,7 @@ Status IndexManager::RangeIndexWrapper::merge(TxnIdType txn_id) {
 }
 
 Status IndexManager::RangeIndexWrapper::search(
-    TxnIdType txn_id, const RpcRangeQuery &query, vector<uint64_t> *results) {
+    TxnIdType txn_id, const RpcRangeQuery &query, vector<int64_t> *results) {
   CHECK_NOTNULL(results);
   Status status = merge(txn_id);
   if (!status.ok()) {
@@ -323,7 +324,7 @@ RangeIndexInterface* IndexManager::get_range_index(const string &index_path,
 }
 
 Status IndexManager::merge_log_to_index(const string &index_path,
-                                        uint64_t txn_id) {
+                                        int64_t txn_id) {
   MutexGuard lock(lock_);
   auto iter = range_index_map_.find(index_path);
   if (iter == range_index_map_.end()) {
@@ -374,7 +375,7 @@ Status IndexManager::search(const RpcComplexQuery &query,
           range_index_map_[cq.index_path].get();
       CHECK_NOTNULL(index);
       Status status;
-      vector<uint64_t> tmp;
+      vector<int64_t> tmp;
       status = index->search(query.txn_id, cq, &tmp);
       if (!status.ok()) {
         LOG(ERROR) << "Failed to search on index: " << cq.index_path;
@@ -479,7 +480,7 @@ IndexInfo* IndexManager::get_index_info(const string &index_info_key) {
 }
 
 string IndexManager::get_index_file_base_path(const string &root_path) const {
-  uint64_t index_hash = HashUtil::file_path_to_hash(root_path);
+  int64_t index_hash = HashUtil::file_path_to_hash(root_path);
   return basedir_ + "/" + lexical_cast<string>(index_hash);
 }
 
