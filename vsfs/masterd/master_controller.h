@@ -20,8 +20,11 @@
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
 #include <gtest/gtest_prod.h>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 #include "vsfs/common/types.h"
 #include "vobla/macros.h"
@@ -34,7 +37,10 @@ class TServer;
 
 using apache::thrift::server::TServer;
 using boost::shared_ptr;
+using std::condition_variable;
+using std::mutex;
 using std::string;
+using std::thread;
 using std::unique_ptr;
 using std::vector;
 using vobla::Status;
@@ -68,18 +74,28 @@ class MasterController : boost::noncopyable {
 
   /**
    * \brief Constructs a MasterController with given directory.
-   * \param primary Sets it to true if this masterd is the primary masterd.
    * \param basedir the basedir to store metadata.
+   * \param host the host name of this master node.
+   * \param port the port to listen.
+   * \param primary Sets it to true if this masterd is the primary masterd.
    */
-  explicit MasterController(bool primary, const string& basedir);
+  explicit MasterController(const string& basedir,
+                            const string& host = "",
+                            int port = 9876,
+                            bool primary = false,
+                            const string& primary_host = "",
+                            int primary_port = 9876);
 
   /**
    * \brief Constructs a MasterController using dependency injections.
    *
    * It must be used by tests.
    */
-  MasterController(bool primary, IndexNamespaceInterface* idx_ns,
-                   PartitionManagerInterface* pm);
+  MasterController(IndexNamespaceInterface* idx_ns,
+                   PartitionManagerInterface* pm,
+                   const string& host = "",
+                   int port = 9876,
+                   bool primary = false);
 
   virtual ~MasterController();
 
@@ -164,10 +180,37 @@ class MasterController : boost::noncopyable {
  private:
   FRIEND_TEST(MasterControllerTest, TestCreateIndex);
 
+  enum class RuntimeStatus {
+    PREPARE, RUNNING, STOPPED
+  };
+
+  void background_task();
+
   shared_ptr<TServer> server_;
+
+  /// Host name of this master server.
+  string host_;
+
+  /// Listening port of this master server.
+  int port_;
 
   /// Sets to true if this master is a primary node.
   bool is_primary_node_;
+
+  /// The hostname of the primary node (Optional).
+  string primary_host_;
+
+  /// The port of the primary node.
+  int primary_port_;
+
+  /// The thread to run 'background_task()'
+  thread background_thread_;
+
+  condition_variable background_cv_;
+
+  mutex background_mutex_;
+
+  RuntimeStatus runtime_status_;
 
   unique_ptr<IndexNamespaceInterface> index_namespace_;
 
