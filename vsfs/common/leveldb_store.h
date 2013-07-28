@@ -91,8 +91,6 @@ class LevelDBStore  : public KeyValueStore {
 
   typedef LevelDBStoreIterator iterator;
 
-  typedef leveldb::Slice slice;
-
   /// Constructs a LevelDB on the given path.
   explicit LevelDBStore(const string &path);
 
