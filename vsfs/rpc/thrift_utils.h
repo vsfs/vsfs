@@ -46,7 +46,7 @@ class ThriftUtils {
    */
   template <typename Obj,
             typename Protocol = apache::thrift::protocol::TBinaryProtocol>
-  static string serialize(const Obj &obj) {
+  static string serialize(const Obj& obj) {
     boost::shared_ptr<apache::thrift::transport::TMemoryBuffer>
         buffer(new apache::thrift::transport::TMemoryBuffer);
     boost::shared_ptr<Protocol> protocol(new Protocol(buffer));
@@ -60,7 +60,7 @@ class ThriftUtils {
    */
   template <typename Obj,
             typename Protocol = apache::thrift::protocol::TBinaryProtocol>
-  static bool deserialize(const string &buf, Obj* obj) {
+  static bool deserialize(const string& buf, Obj* obj) {
     CHECK_NOTNULL(obj);
     boost::shared_ptr<apache::thrift::transport::TMemoryBuffer>
         buffer(new apache::thrift::transport::TMemoryBuffer(
@@ -79,7 +79,7 @@ class ThriftUtils {
    * \brief Translate Status to RpcInvalidOp
    * Thrift RPC functions will throw RpcInvalidOp if something goes wrong.
    */
-  static RpcInvalidOp StatusToRpcInvalidOp(const vobla::Status &status);
+  static RpcInvalidOp status_to_rpc_invalid_op(const vobla::Status& status);
 
   /**
    * \brief Check the input status. If not ok, translate Status to
