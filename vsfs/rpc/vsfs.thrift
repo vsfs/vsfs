@@ -292,32 +292,4 @@ service IndexServer {
    */
   RpcIndexInfo info(1:RpcIndexInfoRequest request)
 	throws (1:RpcInvalidOp ouch);
-
-  /*--------------------------Migration Operations---------------------------*/
-
-  /**
-   * \brief Migrate data from another index server.
-   */
-  /* void migrate(1:RpcIndexMigrationData data)
-	throws (1:RpcInvalidOp ouch); */
-
-  /**
-   * \brief Transfer the updates only to the log of the remote machines.
-   * \note this function should only be called during Migration Phase 1
-   * for request forwarding.
-   */
-  /* void update_to_remote_log(1:RpcIndexUpdate updates)
-	throws (1:RpcInvalidOp ouch); */
-
-  /**
-   * \brief Let taker node officially join the Index Server CH ring.
-   */
-  // void join_taker_node_server() throws (1:RpcInvalidOp ouch);
-
-  /**
-   * \brief Let taker node add the new index partition to index partition
-   * CH ring.
-   */
-  /* void join_taker_node_index_partition(1:RpcIndexInfo idx_info, 2:i64 sep)
-	throws (1:RpcInvalidOp ouch); */
 }

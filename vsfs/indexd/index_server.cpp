@@ -38,7 +38,7 @@ void IndexServer::create_index(const RpcIndexCreateRequest &index) {
             << " name: " << index.name
             << " type: " << index.index_type
             << " key: " << index.key_type;
-  ThriftUtils::CheckStatus(server_->create_index(index.root,
+  ThriftUtils::check_status(server_->create_index(index.root,
                                                  index.name,
                                                  index.index_type,
                                                  index.key_type));
@@ -51,17 +51,17 @@ void IndexServer::remove_index(const RpcIndexName &name) {
 }
 
 void IndexServer::update(const RpcIndexUpdate &updates) {
-  ThriftUtils::CheckStatus(server_->update(updates));
+  ThriftUtils::check_status(server_->update(updates));
 }
 
 void IndexServer::search(vector<int64_t>& results,  // NOLINT
                          const RpcComplexQuery& query) {
-  ThriftUtils::CheckStatus(server_->search(query, &results));
+  ThriftUtils::check_status(server_->search(query, &results));
 }
 
 void IndexServer::info(RpcIndexInfo &info,  // NOLINT
                        const RpcIndexInfoRequest &request) {
-  ThriftUtils::CheckStatus(server_->info(request, &info));
+  ThriftUtils::check_status(server_->info(request, &info));
 }
 
 }  // namespace indexd

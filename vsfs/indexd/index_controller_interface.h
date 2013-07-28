@@ -18,9 +18,12 @@
 #define VSFS_INDEXD_INDEX_CONTROLLER_INTERFACE_H_
 
 #include <string>
+#include <vector>
 #include "vobla/status.h"
+#include "vsfs/rpc/vsfs_types.h"
 
 using std::string;
+using std::vector;
 using vobla::Status;
 
 namespace vsfs {
@@ -44,6 +47,28 @@ class IndexControllerInterface {
    */
   virtual Status create_index(const string &root_path, const string &name,
                               int index_type, int key_type) = 0;
+
+  /**
+   * \brief Update file records.
+   * \param updates the update rpc packets.
+   */
+  virtual Status update(const RpcIndexUpdate &updates) = 0;
+
+  /**
+   * \brief Search for file records.
+   * \param query the file search query.
+   * \param results the file records result.
+   */
+  virtual Status search(const RpcComplexQuery &query,
+                        vector<int64_t>* results) = 0;
+  /**
+   * \brief Get the information of a particular index.
+   * \param request the requested index.
+   * \param result the information of the requested index.
+   */
+
+  virtual Status info(const RpcIndexInfoRequest &request,
+                      RpcIndexInfo *result) = 0;
 };
 
 }  // namespace indexd

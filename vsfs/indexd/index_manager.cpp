@@ -236,7 +236,7 @@ IndexManager::~IndexManager() {
 }
 
 Status IndexManager::create(
-    uint64_t txn_id, const string &root_path, const string &name,
+    TxnIdType txn_id, const string &root_path, const string &name,
     int index_type, int key_type) {
   // Ignores transaction ID for now.
   (void) txn_id;
@@ -326,7 +326,7 @@ RangeIndexInterface* IndexManager::get_range_index(const string &index_path,
 }
 
 Status IndexManager::merge_log_to_index(const string &index_path,
-                                        uint64_t txn_id) {
+                                        TxnIdType txn_id) {
   MutexGuard lock(lock_);
   auto iter = range_index_map_.find(index_path);
   if (iter == range_index_map_.end()) {

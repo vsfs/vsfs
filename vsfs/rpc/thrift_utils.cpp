@@ -29,7 +29,7 @@ RpcInvalidOp ThriftUtils::StatusToRpcInvalidOp(const Status &status) {
   return invalid;
 }
 
-void ThriftUtils::CheckStatus(const vobla::Status& status) {
+void ThriftUtils::check_status(const vobla::Status& status) {
   if (!status.ok()) {
     throw ThriftUtils::StatusToRpcInvalidOp(status);
   }
