@@ -4,4 +4,7 @@ BUILT_SOURCES = rpc
 rpc:
 	make -C rpc
 
-.PHONY: rpc
+integration-test:
+	$(MAKE) -C masterd $@
+
+.PHONY: rpc integratio-test

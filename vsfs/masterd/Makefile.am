@@ -48,3 +48,16 @@ index_namespace_test_SOURCES = index_namespace_test.cpp
 master_controller_test_SOURCES = master_controller_test.cpp mock_index_namespace.h
 namespace_test_SOURCES = namespace_test.cpp
 partition_manager_test_SOURCES = partition_manager_test.cpp
+
+INTEGRATION_TESTS = \
+		    testing/masterd_integration_test
+
+noinst_PROGRAMS = $(INTEGRATION_TESTS)
+testing_masterd_integration_test_SOURCES = testing/masterd_integration_test.cpp
+
+test: check integration-test
+
+integration-test: $(INTEGRATION_TESTS)
+	for t in $< ; do ./$$t; done
+
+.PHONY: test integration-test

@@ -57,7 +57,7 @@ class MasterControllerTest : public ::testing::Test {
   void SetUp() {
     tmpdir_.reset(new vobla::TemporaryDirectory);
     // controller_ manages to delete index_namespace and partition_manager.
-    controller_.reset(new MasterController(true, tmpdir_->path()));
+    controller_.reset(new MasterController(tmpdir_->path(), "", 9876, true));
     ASSERT_TRUE(controller_->init().ok());
   }
 
@@ -70,7 +70,7 @@ class MasterControllerTest : public ::testing::Test {
     index_namespace_ = new MockIndexNamespace;
     partition_manager_ = new MockPartitionManager;
     controller_.reset(new MasterController(
-        true, index_namespace_, partition_manager_));
+        index_namespace_, partition_manager_));
   }
 
   /// Evenly divide the C.H ring into 'num_index_servers' segements and let
