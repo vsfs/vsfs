@@ -22,16 +22,16 @@ using vobla::Status;
 
 namespace vsfs {
 
-RpcInvalidOp ThriftUtils::StatusToRpcInvalidOp(const Status &status) {
+RpcInvalidOp ThriftUtils::status_to_rpc_invalid_op(const Status &status) {
   RpcInvalidOp invalid;
   invalid.what = status.error();
   invalid.why = status.message();
   return invalid;
 }
 
-void ThriftUtils::check_status(const vobla::Status& status) {
+void ThriftUtils::check_status(const Status& status) {
   if (!status.ok()) {
-    throw ThriftUtils::StatusToRpcInvalidOp(status);
+    throw ThriftUtils::status_to_rpc_invalid_op(status);
   }
 }
 
