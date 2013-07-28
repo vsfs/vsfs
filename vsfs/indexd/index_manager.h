@@ -111,6 +111,7 @@ class IndexRecordUpdateOp {
  */
 class IndexManager {
  public:
+  typedef uint64_t TxnIdType;
   typedef IndexRecordUpdateOp RecordUpdateOp;
   typedef vector<RecordUpdateOp> RecordUpdateOpVector;
 
@@ -128,11 +129,11 @@ class IndexManager {
    *
    * \see "vobla/traits.h" for the definitions of possible key type values.
    */
-  virtual Status create(int64_t txn_id, const string &index_path,
+  virtual Status create(TxnIdType txn_id, const string &index_path,
                         const string &name, int index_type, int key_type);
 
   /*
-  virtual Status remove(uint64_t txn_id,
+  virtual Status remove(TxnIdType txn_id,
                         const string &index_path,
                         const string &name);
                         */
@@ -151,7 +152,7 @@ class IndexManager {
 
   /// Searches files.
   virtual Status search(const RpcComplexQuery &query,
-                        vector<int64_t>* results);
+                        vector<ObjectId>* results);
 
   virtual Status info(const RpcIndexInfoRequest &request,
                       RpcIndexInfo *info);
@@ -166,7 +167,7 @@ class IndexManager {
   RangeIndexInterface* get_range_index(const string &index_path,
                                        const string &name);
 
-  Status merge_log_to_index(const string &index_path, uint64_t txn_id);
+  Status merge_log_to_index(const string &index_path, TxnIdType txn_id);
 
   /**
    * \brief Check every index if its size exceeds the partition threshold,
@@ -226,7 +227,7 @@ class IndexManager {
     Status update(TxnIdType txn_id, RpcIndexRecordUpdateList *update);
 
     Status search(TxnIdType txn_id, const RpcRangeQuery &query,
-                  vector<uint64_t> *results);
+                  vector<ObjectId> *results);
 
     /**
      * \brief Explicitly merge the in-memory log to the index.
