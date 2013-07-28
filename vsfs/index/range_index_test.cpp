@@ -20,6 +20,7 @@
 #include <string>
 #include <utility>
 #include <memory>
+#include "vsfs/common/types.h"
 #include "vsfs/index/range_index.h"
 
 using ::testing::ContainerEq;
@@ -29,7 +30,7 @@ using std::string;
 using vsfs::index::RangeIndex;
 using vsfs::index::RangeIndexInterface;
 
-typedef RangeIndexInterface::FileIdType FileIdType;
+typedef ObjectId FileIdType;
 typedef RangeIndexInterface::FileIdVector FileIdVector;
 
 namespace vsfs {
