@@ -22,13 +22,16 @@
 #include <glog/logging.h>
 #include <protocol/TBinaryProtocol.h>
 #include <server/TNonblockingServer.h>
+#include <transport/TBufferTransports.h>
 #include <server/TServer.h>
+#include <chrono>
 #include <string>
 #include <utility>
 #include <vector>
 #include "vsfs/common/hash_util.h"
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/server_map.h"
+#include "vsfs/common/thread.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/masterd/index_namespace.h"
 #include "vsfs/masterd/master_controller.h"
@@ -36,19 +39,20 @@
 #include "vsfs/masterd/namespace.h"
 #include "vsfs/masterd/partition_manager.h"
 #include "vsfs/rpc/MasterServer.h"
+#include "vsfs/rpc/rpc_client.h"
 
 namespace fs = boost::filesystem;
+using apache::thrift::TProcessor;
 using apache::thrift::concurrency::PosixThreadFactory;
 using apache::thrift::concurrency::ThreadManager;
-using apache::thrift::TProcessor;
 using apache::thrift::protocol::TBinaryProtocolFactory;
 using apache::thrift::protocol::TProtocolFactory;
 using apache::thrift::server::TNonblockingServer;
+using apache::thrift::transport::TFramedTransport;
 using apache::thrift::transport::TTransportFactory;
 using std::string;
 using vsfs::index::IndexInfo;
 
-DEFINE_int32(port, 9876, "Sets the listening port.");
 
 namespace vsfs {
 namespace masterd {
@@ -61,15 +65,29 @@ string get_full_index_path(const string &root, const string &name) {
 
 }
 
-MasterController::MasterController(bool primary, const string& basedir)
-    : is_primary_node_(primary) {
+MasterController::MasterController(const string& basedir,
+                                   const string& host,
+                                   int port,
+                                   bool primary,
+                                   const string& primary_host,
+                                   int primary_port)
+    : port_(port), is_primary_node_(primary), primary_host_(primary_host),
+      primary_port_(primary_port) {
+  if (host.empty()) {
+    host_ = boost::asio::ip::host_name();
+  } else {
+    host_ = host;
+  }
+  if (!is_primary_node_ && primary_host_.empty()) {
+    primary_host_ = boost::asio::ip::host_name();
+  }
   // TODO(eddyxu): merge the primary node code in all constructors.
   if (is_primary_node_) {
     index_server_manager_.reset(new ServerMap);
     master_server_manager_.reset(new ServerMap);
     NodeInfo self;
-    self.address.host = boost::asio::ip::host_name();
-    self.address.port = FLAGS_port;
+    self.address.host = host_;
+    self.address.port = port_;
     master_server_manager_->add(self);
   }
 
@@ -82,17 +100,20 @@ MasterController::MasterController(bool primary, const string& basedir)
           abs_basedir + "/namespace.db"));
 }
 
-MasterController::MasterController(
-    bool primary, IndexNamespaceInterface* idx_ns,
-    PartitionManagerInterface* pm)
-    : is_primary_node_(primary), index_namespace_(idx_ns),
-      index_partition_manager_(pm) {
+MasterController::MasterController(IndexNamespaceInterface* idx_ns,
+                                   PartitionManagerInterface* pm,
+                                   const string& host,
+                                   int port,
+                                   bool primary
+                                   )
+    : host_(host), port_(port), is_primary_node_(primary),
+      index_namespace_(idx_ns), index_partition_manager_(pm) {
   if (is_primary_node_) {
     index_server_manager_.reset(new ServerMap);
     master_server_manager_.reset(new ServerMap);
     NodeInfo self;
     self.address.host = boost::asio::ip::host_name();
-    self.address.port = FLAGS_port;
+    self.address.port = port_;
     master_server_manager_->add(self);
   }
 }
@@ -116,6 +137,32 @@ Status MasterController::init() {
   return status;
 }
 
+void MasterController::background_task() {
+  const int kSleepSeconds = 30;
+  if (!is_primary_node_) {
+    LOG(INFO) << "A secondary master node: " << host_ << ":" << port_
+              << " joins the metadata cluster.";
+    // Join the primary master node.
+
+    rpc::RpcClient<MasterServerClient, TFramedTransport>
+        primary_master(primary_host_, primary_port_);
+    primary_master.open();
+    NodeInfo node_info;
+    node_info.address.host = host_;
+    node_info.address.port = port_;
+    primary_master.handler()->join_master_server(node_info);
+    LOG(INFO) << "Master " << host_ << ":" << port_
+              << " successfully join the primary master (" << primary_host_
+              << ":" << primary_port_ << ").";
+  }
+
+  while (runtime_status_ == RuntimeStatus::RUNNING) {
+    std::unique_lock<mutex> lock(background_mutex_);
+    background_cv_.wait_for(lock, std::chrono::seconds(kSleepSeconds));
+    LOG(INFO) << "Masterd Background Task...";
+  }
+}
+
 void MasterController::start() {
   shared_ptr<MasterServer> handler(new MasterServer(this));
   shared_ptr<TProcessor> processor(new MasterServerProcessor(handler));
@@ -128,13 +175,14 @@ void MasterController::start() {
   thread_manager->threadFactory(thread_factory);
   thread_manager->start();
   server_.reset(new TNonblockingServer(processor, protocol_factory,
-                                       FLAGS_port, thread_manager));
+                                       port_, thread_manager));
 
   if (is_primary_node_) {
     LOG(INFO) << "Primary master server is starting...";
   } else {
     LOG(INFO) << "Master server is starting...";
   }
+  background_thread_ = thread(&MasterController::background_task, this);
   server_->serve();
   if (is_primary_node_) {
     LOG(INFO) << "Primary master server quits...";
@@ -144,6 +192,10 @@ void MasterController::start() {
 }
 
 void MasterController::stop() {
+  if (background_thread_.joinable()) {
+    background_cv_.notify_all();
+    background_thread_.join();
+  }
   if (server_.get()) {
     LOG(INFO) << "Shutting master server down...";
     server_->stop();

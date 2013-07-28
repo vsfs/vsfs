@@ -30,6 +30,7 @@ DEFINE_bool(daemon, false, "Runs in daemon mode.");
 DEFINE_bool(primary, false, "Sets this node as primary master node.");
 DEFINE_string(pidfile, "", "Sets the pid file.");
 DEFINE_string(dir, ".", "Sets the directory to store metadata.");
+DEFINE_int32(port, 9876, "Sets the listening port.");
 
 unique_ptr<MasterController> controller;
 
@@ -62,7 +63,8 @@ int main(int argc, char *argv[]) {
     fclose(pidfp);
   }
 
-  controller.reset(new MasterController(FLAGS_primary, FLAGS_dir));
+  controller.reset(new MasterController(FLAGS_dir, "", FLAGS_port,
+                                        FLAGS_primary));
   controller->start();
   return 0;
 }

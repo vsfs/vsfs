@@ -210,6 +210,9 @@ typedef list<RpcIndexInfo> RpcIndexInfoList
  * \brief MasterServer, the centralized coordinartor for VSFS cluster.
  */
 service MasterServer {
+  /// A secondary master join the primary master.
+  void join_master_server(1:RpcNodeInfo info) throws (1:RpcInvalidOp ouch);
+
   /**
    * \brief An index server joins the hash ring.
    * \return RpcNodeAddressList a list of replica servers for this index

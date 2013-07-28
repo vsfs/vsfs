@@ -18,4 +18,9 @@ coverage:
 release:
 	rpmbuild -ba contrib/vsfs.spec
 
-.PHONY: check coverage release
+test: check integration-test
+
+integration-test:
+	$(MAKE) -C vsfs $@
+
+.PHONY: check coverage release test integration-test
