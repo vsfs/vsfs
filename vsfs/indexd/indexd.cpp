@@ -36,6 +36,7 @@ DEFINE_bool(daemon, false, "Run in daemon mode.");
 unique_ptr<IndexController> controller;
 
 void signal_handle(int sign) {
+  (void) sign;
   if (controller) {
     LOG(INFO) << "Shutting down IndexController...";
     controller->stop();

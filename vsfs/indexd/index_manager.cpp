@@ -16,7 +16,7 @@
 
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
-#include <error.h>
+#include <errno.h>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <algorithm>
