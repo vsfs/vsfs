@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define _GLIBCXX_USE_NANOSLEEP   // Fixed std::this_thread::sleep_for on centos.
+
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <chrono>
