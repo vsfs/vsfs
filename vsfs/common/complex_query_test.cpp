@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
+#include <vector>
 #include "vobla/clock.h"
 #include "vobla/range.h"
 #include "vobla/status.h"
@@ -25,6 +26,7 @@
 using std::string;
 using std::to_string;
 using std::unique_ptr;
+using std::vector;
 using vobla::FakeClock;
 using vobla::Status;
 
@@ -106,6 +108,15 @@ TEST_F(ComplexQueryTest, TestQueryWithSpaces) {
   EXPECT_TRUE(range->lower_closed);
   EXPECT_EQ("12.5", range->lower);
   EXPECT_TRUE(range->upper.empty());
+}
+
+TEST_F(ComplexQueryTest, TestGetNamesOfRangeQueries) {
+  string path("/home/?energy>12&mtime>100");
+  ComplexQuery query;
+  EXPECT_TRUE(query.parse(path).ok());
+
+  vector<string> names = query.get_names_of_range_queries();
+  EXPECT_EQ(2u, names.size());
 }
 
 }  // namespace vsfs
