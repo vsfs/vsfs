@@ -294,7 +294,7 @@ string ComplexQuery::debug_string() const {
   return ret;
 }
 
-StringRange* ComplexQuery::range_query(const string &name) {
+const StringRange* ComplexQuery::range_query(const string &name) const {
   return find_or_null(range_query_map_, name);
 }
 

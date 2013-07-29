@@ -18,10 +18,12 @@
 #include <glog/logging.h>
 #include <thrift/transport/TTransportException.h>
 #include <string>
+#include <vector>
 #include "vsfs/client/vsfs_rpc_client.h"
 
 using apache::thrift::transport::TTransportException;
 using std::string;
+using std::vector;
 using vobla::Status;
 
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
@@ -96,6 +98,46 @@ Status VSFSRpcClient::disconnect() {
         << host_ << ":" << port_;
     return Status(e.getType(), e.what());
   }
+}
+
+Status VSFSRpcClient::create(const string &path, mode_t mode) {
+  (void) path;
+  (void) mode;
+  return Status::OK;
+}
+
+Status VSFSRpcClient::open(const string &path, int flag) {
+  (void) path;
+  (void) flag;
+  return Status::OK;
+}
+
+Status VSFSRpcClient::create_index(const string& index_path,
+                                   const string& index_name,
+                                   int index_type,
+                                   int key_type) {
+  (void) index_path;
+  (void) index_name;
+  (void) index_type;
+  (void) key_type;
+  return Status::OK;
+}
+
+Status VSFSRpcClient::search(const ComplexQuery& query,
+                             vector<string>* results) {
+  (void) query;
+  CHECK_NOTNULL(results);
+  return Status::OK;
+}
+
+Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& updates) {
+  (void) updates;
+  return Status::OK;
+}
+
+Status VSFSRpcClient::import(const vector<string>& file_paths) {
+  (void) file_paths;
+  return Status::OK;
 }
 
 }  // namespace client

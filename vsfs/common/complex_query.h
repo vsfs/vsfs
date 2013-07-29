@@ -106,7 +106,7 @@ class ComplexQuery {
    */
   vector<string> get_names_of_range_queries() const;
 
-  StringRange* range_query(const string &name);
+  const StringRange* range_query(const string &name) const;
 
   string debug_string() const;
 
