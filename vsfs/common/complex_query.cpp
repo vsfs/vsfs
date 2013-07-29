@@ -37,6 +37,7 @@ using std::to_string;
 using std::vector;
 using vobla::Clock;
 using vobla::Status;
+using vobla::append_keys_from_map;
 using vobla::find_or_null;
 
 namespace vsfs {
@@ -295,6 +296,12 @@ string ComplexQuery::debug_string() const {
 
 StringRange* ComplexQuery::range_query(const string &name) {
   return find_or_null(range_query_map_, name);
+}
+
+vector<string> ComplexQuery::get_names_of_range_queries() const {
+  vector<string> results;
+  append_keys_from_map(range_query_map_, &results);
+  return results;
 }
 
 }  // namespace vsfs

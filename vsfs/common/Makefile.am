@@ -2,6 +2,7 @@
 
 BUILT_SOURCES = log_types.h
 CLEANFILES = *.gcda *.gcno *.gcov
+DISTFILES = log.thrift
 
 noinst_LIBRARIES = libvsfs-common.a
 libvsfs_common_a_SOURCES = \
