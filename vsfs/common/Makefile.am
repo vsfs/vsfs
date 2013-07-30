@@ -6,7 +6,9 @@ CLEANFILES = *.gcda *.gcno *.gcov
 noinst_LIBRARIES = libvsfs-common.a
 libvsfs_common_a_SOURCES = \
   complex_query.h complex_query.cpp \
+  file_handler.h \
   file_info.h file_info.cpp \
+  file_op.h \
   hash_util.h hash_util.cpp \
   key_value_store.h \
   leveldb_store.h leveldb_store.cpp \
@@ -15,7 +17,9 @@ libvsfs_common_a_SOURCES = \
   log_types.h log_types.cpp \
   mock_key_value_store.h \
   mock_leveldb_store.h \
+  posix_file_handler.h posix_file_handler.cpp \
   posix_path.h posix_path.cpp \
+  posix_storage_manager.h posix_storage_manager.cpp \
   server_map.h server_map.cpp \
   test_leveldb_store.h test_leveldb_store.cpp \
   thread.h \
