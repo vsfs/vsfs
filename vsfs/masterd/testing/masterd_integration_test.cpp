@@ -63,6 +63,7 @@ class MasterServerIntegrationTest : public ::testing::Test {
             new MasterController(tmpdir_->path(), "", primary_port, true)));
     threads_.emplace_back(
         thread(&MasterController::start, cluster_.back().get()));
+    std::this_thread::sleep_for(std::chrono::seconds(2));
 
     // Starts the secondary masters.
     for (int i = 1; i < num_masters; ++i) {
