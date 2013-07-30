@@ -28,9 +28,9 @@ using std::unique_ptr;
 using std::vector;
 using vobla::Status;
 
-class ComplexQuery;
-
 namespace vsfs {
+
+class ComplexQuery;
 
 namespace index {
 class IndexInfo;
@@ -103,13 +103,18 @@ class VSFSClient : boost::noncopyable {
   // Updates the index of FileInfo
   // Status index(const FileInfo &file, std::function<Operator> IdxOp);
 
-  virtual Status create_index(const string &index_path,
-                              const string &index_name,
+  */
+
+  virtual Status create_index(const string& index_path,
+                              const string& index_name,
                               int index_type,
                               int key_type) = 0;
 
-  virtual Status search(const ComplexQuery &query,
-                        vector<string> *results) = 0;
+  virtual Status search(const ComplexQuery& query,
+                        vector<string>* results) = 0;
+
+
+  virtual Status import(const vector<string>& file_paths) = 0;
 
   struct IndexUpdateRequest {
     enum { UNKNOWN, INSERT, UPDATE, REMOVE };
@@ -118,15 +123,14 @@ class VSFSClient : boost::noncopyable {
     string index_name;
     string key;
   };
-  */
 
   /**
    * \brief Applies a sequence of index update requests to the VSFS
    * \param updates a time-ordered sequence of index updates.
    */
-  /*
-  virtual Status update(const vector<IndexUpdateRequest> &updates) = 0;
+  virtual Status update(const vector<IndexUpdateRequest>& updates) = 0;
 
+  /*
   virtual Status info(const string &path, const string &index_name,
                       vsfs::index::IndexInfo* info) = 0;
                       */

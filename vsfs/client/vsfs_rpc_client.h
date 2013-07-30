@@ -88,6 +88,18 @@ class VSFSRpcClient : public VSFSClient {
 
   Status open(const string &path, int flag);
 
+  Status create_index(const string& index_path,
+                      const string& index_name,
+                      int index_type,
+                      int key_type);
+
+  Status search(const ComplexQuery& query,
+                vector<string>* results);
+
+  Status update(const vector<IndexUpdateRequest>& updates);
+
+  Status import(const vector<string>& file_paths);
+
  private:
   typedef rpc::RpcClient<IndexServerClient, TFramedTransport> IndexClientType;
 

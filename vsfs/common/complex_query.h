@@ -104,9 +104,9 @@ class ComplexQuery {
   /**
    * \brief Gets the index of all range queries.
    */
-  void get_names_of_range_queries(vector<string> *names) const;
+  vector<string> get_names_of_range_queries() const;
 
-  StringRange* range_query(const string &name);
+  const StringRange* range_query(const string &name) const;
 
   string debug_string() const;
 
