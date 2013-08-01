@@ -20,6 +20,7 @@
 #include <boost/shared_ptr.hpp>
 #include <gmock/gmock.h>
 #include <protocol/TProtocol.h>
+#include <transport/TBufferTransports.h>
 #include <string>
 #include "vsfs/rpc/IndexServer.h"
 #include "vsfs/rpc/MasterServer.h"
@@ -28,6 +29,7 @@
 
 using boost::shared_ptr;
 using apache::thrift::protocol::TProtocol;
+using apache::thrift::transport::TFramedTransport;
 using vsfs::rpc::RpcClient;
 using vsfs::rpc::RpcClientFactoryInterface;
 
@@ -59,11 +61,12 @@ class MockIndexServerClient : public IndexServerClient {
   MOCK_METHOD1(update, void(const RpcIndexUpdate&));
 };
 
-template <typename MockClientType>
+template <typename MockClient, typename Client>
 class TestRpcClientFactory : public RpcClientFactoryInterface<
-    RpcClient<MockClientType>> {
+    RpcClient<Client, TFramedTransport>> {
  public:
-  typedef RpcClient<MockClientType> ClientType;
+  typedef RpcClient<Client, TFramedTransport> ClientType;
+  typedef MockClient MockClientType;
 
   TestRpcClientFactory() {
     mock_client_.reset(new MockClientType);

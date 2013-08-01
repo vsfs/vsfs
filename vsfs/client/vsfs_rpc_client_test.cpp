@@ -33,15 +33,26 @@ namespace vsfs {
 namespace client {
 
 class VsfsRpcClientTest : public ::testing::Test {
+  typedef TestRpcClientFactory<MockMasterServerClient, MasterServerClient>
+      MasterClientFactory;
+  typedef TestRpcClientFactory<MockIndexServerClient, IndexServerClient>
+      IndexClientFactory;
  protected:
   void SetUp() {
-    master_factory_.reset(new TestRpcClientFactory<MockMasterServerClient>);
-    index_factory_.reset(new TestRpcClientFactory<MockIndexServerClient>);
+    master_factory_.reset(new MasterClientFactory);
+    mock_master_ = master_factory_->mock_client();
+    index_factory_.reset(new IndexClientFactory);
+    mock_index_ = index_factory_->mock_client();
+
+    test_client_.reset(new VSFSRpcClient(master_factory_.release(),
+                                         index_factory_.release()));
   }
 
   unique_ptr<VSFSRpcClient> test_client_;
-  unique_ptr<TestRpcClientFactory<MockMasterServerClient>> master_factory_;
-  unique_ptr<TestRpcClientFactory<MockIndexServerClient>> index_factory_;
+  unique_ptr<MasterClientFactory> master_factory_;
+  MockMasterServerClient* mock_master_;
+  unique_ptr<IndexClientFactory> index_factory_;
+  MockIndexServerClient* mock_index_;
 };
 
 TEST_F(VsfsRpcClientTest, TestInitialize) {

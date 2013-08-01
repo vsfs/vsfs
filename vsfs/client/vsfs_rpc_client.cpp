@@ -51,6 +51,12 @@ VSFSRpcClient::VSFSRpcClient(const string &host, int port)
       thread_pool_(FLAGS_vsfs_client_num_thread) {
 }
 
+VSFSRpcClient::VSFSRpcClient(MasterClientFactory* master_factory,
+                             IndexClientFactory* index_factory)
+    : master_client_factory_(master_factory),
+      index_client_factory_(index_factory) {
+}
+
 VSFSRpcClient::~VSFSRpcClient() {
   thread_pool_.close();
   thread_pool_.join();

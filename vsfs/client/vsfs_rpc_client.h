@@ -61,6 +61,8 @@ class VSFSRpcClient : public VSFSClient {
  public:
   typedef rpc::RpcClient<MasterServerClient, TFramedTransport> MasterClientType;
   typedef rpc::RpcClient<IndexServerClient, TFramedTransport> IndexClientType;
+  typedef RpcClientFactoryInterface<MasterClientType> MasterClientFactory;
+  typedef RpcClientFactoryInterface<IndexClientType> IndexClientFactory;
 
   VSFSRpcClient(const string& host, int port);
 
@@ -72,8 +74,8 @@ class VSFSRpcClient : public VSFSClient {
    *
    * It is mainly used for dependency injection.
    */
-  VSFSRpcClient(RpcClientFactoryInterface<MasterClientType>* master_factory,
-                RpcClientFactoryInterface<IndexClientType>* index_factory);
+  VSFSRpcClient(MasterClientFactory* master_factory,
+                IndexClientFactory* index_factory);
 
   virtual ~VSFSRpcClient();
 
@@ -117,6 +119,10 @@ class VSFSRpcClient : public VSFSClient {
  private:
   boost::shared_ptr<IndexClientType> create_index_client(
       const string& host, int port);
+
+  unique_ptr<MasterClientFactory> master_client_factory_;
+
+  unique_ptr<IndexClientFactory> index_client_factory_;
 
   unique_ptr<MasterClientType> master_client_;
 
