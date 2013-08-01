@@ -80,6 +80,16 @@ class VSFSClient : boost::noncopyable {
   /// Initializes this client for the sub-class.
   virtual Status init() = 0;
 
+  /**
+   * \brief Creates a new directory on path.
+   * \param path the absolute path of directory to be created.
+   * \param mode the mode of the new created directory.
+   * \param uid the user id of the new created directory.
+   * \param gid the group id of the new created directory.
+   * \return Status::OK if success.
+   */
+  Status mkdir(const string& path, int64_t mode, int64_t uid, int64_t gid) = 0;
+
   /// Creates a new file in the VSFS namespace.
   virtual Status create(const string &path, mode_t mode) = 0;
 
