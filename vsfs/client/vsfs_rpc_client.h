@@ -29,6 +29,7 @@
 #include "vsfs/rpc/IndexServer.h"
 #include "vsfs/rpc/MasterServer.h"
 #include "vsfs/rpc/rpc_client.h"
+#include "vsfs/rpc/rpc_client_factory.h"
 
 using std::string;
 using std::unique_ptr;
@@ -58,7 +59,7 @@ class VSFSRpcClient : public VSFSClient {
  public:
   typedef rpc::RpcClient<MasterServerClient, TFramedTransport> MasterClientType;
 
-  VSFSRpcClient(const string &host, int port);
+  VSFSRpcClient(const string& host, int port);
 
   /**
    * \brief Constructs a VSFS RPC client with an established master daemon
@@ -79,14 +80,14 @@ class VSFSRpcClient : public VSFSClient {
    * \brief connects to the primary MasterNode and obtains the master node
    * map.
    */
-  Status connect(const string &host, int port);
+  Status connect(const string& host, int port);
 
   /// Disconnects from the MasterNode.
   Status disconnect();
 
-  Status create(const string &path, mode_t mode);
+  Status create(const string& path, mode_t mode);
 
-  Status open(const string &path, int flag);
+  Status open(const string& path, int flag);
 
   /**
    * \brief Creates a new directory on path.

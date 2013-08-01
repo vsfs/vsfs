@@ -20,6 +20,8 @@
 #include <thrift/transport/TTransportException.h>
 #include <string>
 #include <vector>
+#include "vsfs/common/types.h"
+#include "vsfs/common/hash_util.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 
 using apache::thrift::transport::TTransportException;
@@ -40,7 +42,7 @@ namespace {
 bool is_validate_path(const string& path) {
   fs::path tmp(path);
   return tmp.is_absolute();
-};
+}
 
 }
 
@@ -133,6 +135,29 @@ Status VSFSRpcClient::mkdir(
   if (!is_validate_path(path)) {
     VLOG(1) << "The directory " << path << " is not a validate path.";
     return Status(-1, "The directory path is not validate.");
+  }
+  FilePathHashType hash = HashUtil::file_path_to_hash(path);
+  NodeInfo node;
+  auto status = master_map_.get(hash, &node);
+  if (!status.ok()) {
+    return status;
+  }
+  try {
+    // TODO(eddyxu): use client multiplex in the future.
+    MasterClientType master_client(node.address);
+    master_client.open();
+    RpcFileInfo dir_info;
+    dir_info.mode = mode;
+    dir_info.uid = uid;
+    dir_info.gid = gid;
+    master_client.handler()->mkdir(path, dir_info);
+    master_client.close();
+  } catch (TTransportException e) {  // NOLINT
+    status = Status(e.getType(), e.what());
+    LOG(ERROR) << "Failed to run mkdir RPC to master node: "
+               << node.address.host << ":" << node.address.port
+               << " because: " << status.message();
+    return status;
   }
   return Status::OK;
 }

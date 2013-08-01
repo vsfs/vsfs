@@ -7,8 +7,7 @@ LDADD = @libthrift_LIBS@ \
 	../index/libvsfs-index.a \
 	../common/libvsfs-common.a \
 	../rpc/libvsfs-rpc.a \
-	../../base/libbase.a \
-	-lcrypto
+	-lvobla -lcrypto -lgtest -lgtest_main
 
 vsfsutil_SOURCES = vsfsutil.cpp \
 		   commands.h commands.cpp \
@@ -18,6 +17,7 @@ libvsfs_client_a_SOURCES = \
 			   vsfs_client.h \
 			   vsfs_rpc_client.cpp vsfs_rpc_client.h
 
-TESTS =
+TESTS = vsfs_rpc_client_test
 
 check_PROGRAMS = $(TESTS)
+vsfs_rpc_client_test_SOURCES = vsfs_rpc_client_test.cpp
