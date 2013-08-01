@@ -36,16 +36,6 @@ DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
 namespace vsfs {
 namespace client {
 
-namespace {
-
-/// Returns true if the path is validated.
-bool is_validate_path(const string& path) {
-  fs::path tmp(path);
-  return tmp.is_absolute();
-}
-
-}
-
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
     : host_(host), port_(port),
       thread_pool_(FLAGS_vsfs_client_num_thread) {
@@ -93,7 +83,7 @@ Status VSFSRpcClient::init() {
 Status VSFSRpcClient::connect(const string &host, int port) {
   host_ = host;
   port_ = port;
-  master_client_.reset(new MasterClientType(host_, port_));
+  master_client_ = master_client_factory_->open(host, port);
   VLOG(1) << "Connecting to " << host_ << ":" << port;
   try {
     master_client_->open();
@@ -138,10 +128,6 @@ Status VSFSRpcClient::mkdir(
     VLOG(1) << "The VSFS RPC client has not initialized yet.";
     return Status(-1, "The client has not initialized yet.");
   }
-  if (!is_validate_path(path)) {
-    VLOG(1) << "The directory " << path << " is not a validate path.";
-    return Status(-1, "The directory path is not validate.");
-  }
   FilePathHashType hash = HashUtil::file_path_to_hash(path);
   NodeInfo node;
   auto status = master_map_.get(hash, &node);
@@ -149,15 +135,14 @@ Status VSFSRpcClient::mkdir(
     return status;
   }
   try {
-    // TODO(eddyxu): use client multiplex in the future.
-    MasterClientType master_client(node.address);
-    master_client.open();
+    auto master_client = master_client_factory_->open(node.address.host,
+                                                      node.address.port);
     RpcFileInfo dir_info;
     dir_info.mode = mode;
     dir_info.uid = uid;
     dir_info.gid = gid;
-    master_client.handler()->mkdir(path, dir_info);
-    master_client.close();
+    master_client->handler()->mkdir(path, dir_info);
+    master_client->close();
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
     LOG(ERROR) << "Failed to run mkdir RPC to master node: "

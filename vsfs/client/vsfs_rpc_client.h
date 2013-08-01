@@ -117,14 +117,11 @@ class VSFSRpcClient : public VSFSClient {
   Status import(const vector<string>& file_paths);
 
  private:
-  boost::shared_ptr<IndexClientType> create_index_client(
-      const string& host, int port);
-
   unique_ptr<MasterClientFactory> master_client_factory_;
 
   unique_ptr<IndexClientFactory> index_client_factory_;
 
-  unique_ptr<MasterClientType> master_client_;
+  boost::shared_ptr<MasterClientType> master_client_;  // primary master
 
   ServerMap master_map_;
 
