@@ -40,6 +40,8 @@ namespace vsfs {
 
 class ComplexQuery;
 
+using rpc::RpcClientFactoryInterface;
+
 namespace client {
 
 /**
@@ -58,6 +60,7 @@ namespace client {
 class VSFSRpcClient : public VSFSClient {
  public:
   typedef rpc::RpcClient<MasterServerClient, TFramedTransport> MasterClientType;
+  typedef rpc::RpcClient<IndexServerClient, TFramedTransport> IndexClientType;
 
   VSFSRpcClient(const string& host, int port);
 
@@ -69,8 +72,8 @@ class VSFSRpcClient : public VSFSClient {
    *
    * It is mainly used for dependency injection.
    */
-  // VSFSRpcClient(MasterClientType *master,
-  //              IndexServerClientFactory* index_server_client_factory);
+  VSFSRpcClient(RpcClientFactoryInterface<MasterClientType>* master_factory,
+                RpcClientFactoryInterface<IndexClientType>* index_factory);
 
   virtual ~VSFSRpcClient();
 
@@ -112,8 +115,6 @@ class VSFSRpcClient : public VSFSClient {
   Status import(const vector<string>& file_paths);
 
  private:
-  typedef rpc::RpcClient<IndexServerClient, TFramedTransport> IndexClientType;
-
   boost::shared_ptr<IndexClientType> create_index_client(
       const string& host, int port);
 

@@ -32,9 +32,11 @@ namespace rpc {
  * \class RpcClientFactoryInterface
  * \brief Basic class for the factory class of IndexServerClient.
  */
-template <typename ClientType>
+template <typename Client>
 class RpcClientFactoryInterface {
  public:
+  typedef Client ClientType;
+
   RpcClientFactoryInterface() = default;
 
   virtual ~RpcClientFactoryInterface() {}
