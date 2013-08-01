@@ -29,6 +29,7 @@
 #include "vsfs/rpc/IndexServer.h"
 #include "vsfs/rpc/MasterServer.h"
 #include "vsfs/rpc/rpc_client.h"
+#include "vsfs/rpc/rpc_client_factory.h"
 
 using std::string;
 using std::unique_ptr;
@@ -38,6 +39,8 @@ using vobla::Status;
 namespace vsfs {
 
 class ComplexQuery;
+
+using rpc::RpcClientFactoryInterface;
 
 namespace client {
 
@@ -57,8 +60,11 @@ namespace client {
 class VSFSRpcClient : public VSFSClient {
  public:
   typedef rpc::RpcClient<MasterServerClient, TFramedTransport> MasterClientType;
+  typedef rpc::RpcClient<IndexServerClient, TFramedTransport> IndexClientType;
+  typedef RpcClientFactoryInterface<MasterClientType> MasterClientFactory;
+  typedef RpcClientFactoryInterface<IndexClientType> IndexClientFactory;
 
-  VSFSRpcClient(const string &host, int port);
+  VSFSRpcClient(const string& host, int port);
 
   /**
    * \brief Constructs a VSFS RPC client with an established master daemon
@@ -68,8 +74,8 @@ class VSFSRpcClient : public VSFSClient {
    *
    * It is mainly used for dependency injection.
    */
-  // VSFSRpcClient(MasterClientType *master,
-  //              IndexServerClientFactory* index_server_client_factory);
+  VSFSRpcClient(MasterClientFactory* master_factory,
+                IndexClientFactory* index_factory);
 
   virtual ~VSFSRpcClient();
 
@@ -79,14 +85,24 @@ class VSFSRpcClient : public VSFSClient {
    * \brief connects to the primary MasterNode and obtains the master node
    * map.
    */
-  Status connect(const string &host, int port);
+  Status connect(const string& host, int port);
 
   /// Disconnects from the MasterNode.
   Status disconnect();
 
-  Status create(const string &path, mode_t mode);
+  Status create(const string& path, mode_t mode);
 
-  Status open(const string &path, int flag);
+  Status open(const string& path, int flag);
+
+  /**
+   * \brief Creates a new directory on path.
+   * \param path the absolute path of directory to be created.
+   * \param mode the mode of the new created directory.
+   * \param uid the user id of the new created directory.
+   * \param gid the group id of the new created directory.
+   * \return Status::OK if success.
+   */
+  Status mkdir(const string& path, int64_t mode, int64_t uid, int64_t gid);
 
   Status create_index(const string& index_path,
                       const string& index_name,
@@ -101,12 +117,11 @@ class VSFSRpcClient : public VSFSClient {
   Status import(const vector<string>& file_paths);
 
  private:
-  typedef rpc::RpcClient<IndexServerClient, TFramedTransport> IndexClientType;
+  unique_ptr<MasterClientFactory> master_client_factory_;
 
-  boost::shared_ptr<IndexClientType> create_index_client(
-      const string& host, int port);
+  unique_ptr<IndexClientFactory> index_client_factory_;
 
-  unique_ptr<MasterClientType> master_client_;
+  boost::shared_ptr<MasterClientType> master_client_;  // primary master
 
   ServerMap master_map_;
 
