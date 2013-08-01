@@ -58,7 +58,7 @@ class IndexManagerTest : public ::testing::Test {
 
   Status update_index(IndexManager* manager,
                       int64_t txn_id, const string &path, const string &name,
-                      int index_type, int key_type, int num_records) {
+                      int num_records) {
     CHECK_NOTNULL(manager);
     RpcIndexUpdate updates;
     updates.txn_id = txn_id;
@@ -124,8 +124,7 @@ TEST_F(IndexManagerTest, TestUpdateBasics) {
   FLAGS_update_immediately = true;
   IndexManager manager(testdir_);
   manager.create(0, "/path", "index", IndexInfo::BTREE, TypeIDs::UINT64);
-  EXPECT_TRUE(update_index(&manager, 100, "/path", "index", IndexInfo::BTREE,
-                           TypeIDs::UINT64, 10).ok());
+  EXPECT_TRUE(update_index(&manager, 100, "/path", "index", 10).ok());
 
   RangeIndexInterface* index = manager.get_range_index("/path", "index");
   EXPECT_TRUE(index != nullptr);
@@ -228,8 +227,7 @@ TEST_F(IndexManagerTest, TestMergeForAnsweringInfoRequest) {
   IndexManager manager(testdir_);
   manager.create(0, "/path", "index",
                  IndexInfo::BTREE, TypeIDs::UINT64);
-  EXPECT_TRUE(update_index(&manager, 100, "/path", "index", IndexInfo::BTREE,
-                           TypeIDs::UINT64, 100).ok());
+  EXPECT_TRUE(update_index(&manager, 100, "/path", "index", 100).ok());
 
   RpcIndexInfoRequest request;
   request.txn_id = 101;
