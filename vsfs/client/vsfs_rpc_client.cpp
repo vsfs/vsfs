@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
+#include <boost/filesystem.hpp>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <thrift/transport/TTransportException.h>
 #include <string>
 #include <vector>
+#include "vsfs/common/types.h"
+#include "vsfs/common/hash_util.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 
 using apache::thrift::transport::TTransportException;
 using std::string;
 using std::vector;
 using vobla::Status;
+namespace fs = boost::filesystem;
 
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
              "VSFS client can use.");
@@ -35,6 +39,12 @@ namespace client {
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
     : host_(host), port_(port),
       thread_pool_(FLAGS_vsfs_client_num_thread) {
+}
+
+VSFSRpcClient::VSFSRpcClient(MasterClientFactory* master_factory,
+                             IndexClientFactory* index_factory)
+    : master_client_factory_(master_factory),
+      index_client_factory_(index_factory) {
 }
 
 VSFSRpcClient::~VSFSRpcClient() {
@@ -73,7 +83,7 @@ Status VSFSRpcClient::init() {
 Status VSFSRpcClient::connect(const string &host, int port) {
   host_ = host;
   port_ = port;
-  master_client_.reset(new MasterClientType(host_, port_));
+  master_client_ = master_client_factory_->open(host, port);
   VLOG(1) << "Connecting to " << host_ << ":" << port;
   try {
     master_client_->open();
@@ -109,6 +119,37 @@ Status VSFSRpcClient::create(const string &path, mode_t mode) {
 Status VSFSRpcClient::open(const string &path, int flag) {
   (void) path;
   (void) flag;
+  return Status::OK;
+}
+
+Status VSFSRpcClient::mkdir(
+    const string& path, int64_t mode, int64_t uid, int64_t gid) {
+  if (master_map_.empty()) {
+    VLOG(1) << "The VSFS RPC client has not initialized yet.";
+    return Status(-1, "The client has not initialized yet.");
+  }
+  FilePathHashType hash = HashUtil::file_path_to_hash(path);
+  NodeInfo node;
+  auto status = master_map_.get(hash, &node);
+  if (!status.ok()) {
+    return status;
+  }
+  try {
+    auto master_client = master_client_factory_->open(node.address.host,
+                                                      node.address.port);
+    RpcFileInfo dir_info;
+    dir_info.mode = mode;
+    dir_info.uid = uid;
+    dir_info.gid = gid;
+    master_client->handler()->mkdir(path, dir_info);
+    master_client->close();
+  } catch (TTransportException e) {  // NOLINT
+    status = Status(e.getType(), e.what());
+    LOG(ERROR) << "Failed to run mkdir RPC to master node: "
+               << node.address.host << ":" << node.address.port
+               << " because: " << status.message();
+    return status;
+  }
   return Status::OK;
 }
 

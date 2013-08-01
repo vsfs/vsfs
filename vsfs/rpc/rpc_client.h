@@ -1,5 +1,5 @@
 /*
- * Copyright 2012-2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 #include <transport/TTransportUtils.h>
 #include <string>
 #include "vobla/macros.h"
+#include "vsfs/rpc/vsfs_types.h"
 
 namespace vsfs {
 namespace rpc {
@@ -50,6 +51,10 @@ template <typename Client, typename Transport = TBufferedTransport>
 class RpcClient {
  public:
   typedef Client HandleType;
+
+  explicit RpcClient(const RpcNodeAddress& addr)
+      : RpcClient(addr.host, addr.port) {
+  }
 
   RpcClient(const string &addr, int port) : addr_(addr), port_(port) {
     socket_.reset(new TSocket(addr, port));

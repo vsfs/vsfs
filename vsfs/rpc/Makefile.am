@@ -10,6 +10,8 @@ libvsfs_rpc_a_SOURCES = \
   IndexServer.h IndexServer.cpp \
   MasterServer.h MasterServer.cpp \
   rpc_client.h \
+  rpc_client_factory.h \
+  mock_rpc_clients.h \
   thrift_utils.h thrift_utils.cpp \
   vsfs_constants.h vsfs_constants.cpp \
   vsfs_types.h vsfs_types.cpp
