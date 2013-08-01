@@ -19,53 +19,29 @@
 #include <gtest/gtest.h>
 #include <memory>
 #include <string>
+#include "vsfs/rpc/mock_rpc_clients.h"
 #include "vsfs/client/vsfs_rpc_client.h"
-#include "vsfs/rpc/rpc_client.h"
-#include "vsfs/rpc/rpc_client_factory.h"
 
 using boost::shared_ptr;
 using std::string;
 using std::unique_ptr;
-using vsfs::rpc::RpcClient;
-using vsfs::rpc::RpcClientFactoryInterface;
+using vsfs::rpc::MockIndexServerClient;
+using vsfs::rpc::MockMasterServerClient;
+using vsfs::rpc::TestRpcClientFactory;
 
 namespace vsfs {
 namespace client {
 
-// TODO(lxu): move this to /rpc/mock_rpc_client_factory.h as a common test
-// framework.
-template <typename MockClientType>
-class TestRpcClientFactory : public RpcClientFactoryInterface<
-    RpcClient<MockClientType>> {
- public:
-  typedef RpcClient<MockClientType> ClientType;
-
-  TestRpcClientFactory() {
-    mock_client_.reset(new MockClientType);
-    client_.reset(new ClientType(mock_client_));
-  }
-
-  shared_ptr<ClientType> open(const string& host, int port) {
-    return client_;
-  }
-
-  /// Gets the underlying mock client object.
-  MockClientType* mock_client() {
-    return mock_client_.get();
-  }
-
- private:
-  shared_ptr<MockClientType> mock_client_;
-  shared_ptr<ClientType> client_;
-};
-
-
 class VsfsRpcClientTest : public ::testing::Test {
  protected:
   void SetUp() {
+    master_factory_.reset(new TestRpcClientFactory<MockMasterServerClient>);
+    index_factory_.reset(new TestRpcClientFactory<MockIndexServerClient>);
   }
 
   unique_ptr<VSFSRpcClient> test_client_;
+  unique_ptr<TestRpcClientFactory<MockMasterServerClient>> master_factory_;
+  unique_ptr<TestRpcClientFactory<MockIndexServerClient>> index_factory_;
 };
 
 TEST_F(VsfsRpcClientTest, TestInitialize) {
