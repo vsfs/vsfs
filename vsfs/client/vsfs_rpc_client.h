@@ -104,6 +104,9 @@ class VSFSRpcClient : public VSFSClient {
    */
   Status mkdir(const string& path, int64_t mode, int64_t uid, int64_t gid);
 
+  /// Deletes a directory.
+  Status rmdir(const string& path);
+
   Status create_index(const string& index_path,
                       const string& index_name,
                       int index_type,
@@ -117,6 +120,9 @@ class VSFSRpcClient : public VSFSClient {
   Status import(const vector<string>& file_paths);
 
  private:
+  /// Returns true if this client has been initialized.
+  bool is_initialized();
+
   unique_ptr<MasterClientFactory> master_client_factory_;
 
   unique_ptr<IndexClientFactory> index_client_factory_;

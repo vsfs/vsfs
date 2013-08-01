@@ -124,7 +124,7 @@ Status VSFSRpcClient::open(const string &path, int flag) {
 
 Status VSFSRpcClient::mkdir(
     const string& path, int64_t mode, int64_t uid, int64_t gid) {
-  if (master_map_.empty()) {
+  if (!is_initialized()) {
     VLOG(1) << "The VSFS RPC client has not initialized yet.";
     return Status(-1, "The client has not initialized yet.");
   }
@@ -148,6 +148,32 @@ Status VSFSRpcClient::mkdir(
     LOG(ERROR) << "Failed to run mkdir RPC to master node: "
                << node.address.host << ":" << node.address.port
                << " because: " << status.message();
+    return status;
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::rmdir(const string& path) {
+  if (!is_initialized()) {
+    VLOG(1) << "The VSFS RPC client has not initialized yet.";
+    return Status(-1, "The client has not initialized yet.");
+  }
+  FilePathHashType hash = HashUtil::file_path_to_hash(path);
+  NodeInfo node;
+  auto status = master_map_.get(hash, &node);
+  if (!status.ok()) {
+    return status;
+  }
+  try {
+    auto master_client = master_client_factory_->open(node.address.host,
+                                                      node.address.port);
+    master_client->handler()->rmdir(path);
+    master_client->close();
+  } catch (TTransportException e) {  // NOLINT
+    status = Status(e.getType(), e.what());
+    LOG(ERROR) << "Failed to run mkdir RPC to master node: "
+        << node.address.host << ":" << node.address.port
+        << " because: " << status.message();
     return status;
   }
   return Status::OK;
@@ -179,6 +205,10 @@ Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& updates) {
 Status VSFSRpcClient::import(const vector<string>& file_paths) {
   (void) file_paths;
   return Status::OK;
+}
+
+bool VSFSRpcClient::is_initialized() {
+  return !master_map_.empty();
 }
 
 }  // namespace client

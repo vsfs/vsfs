@@ -91,6 +91,13 @@ class VSFSClient : boost::noncopyable {
   virtual Status mkdir(const string& path, int64_t mode,
                        int64_t uid, int64_t gid) = 0;
 
+  /**
+   * \brief Deletes a directory.
+   * \param path the absolute path of the directory to be deleted.
+   * \return Status::OK if success
+   */
+  virtual Status rmdir(const string& path) = 0;
+
   /// Creates a new file in the VSFS namespace.
   virtual Status create(const string &path, mode_t mode) = 0;
 
