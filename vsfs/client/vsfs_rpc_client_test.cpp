@@ -103,5 +103,13 @@ TEST_F(VsfsRpcClientTest, TestMkdir) {
   EXPECT_TRUE(test_client_->mkdir("/abcd", 0x666, 100, 100).ok());
 }
 
+TEST_F(VsfsRpcClientTest, TestRmdir) {
+  EXPECT_FALSE(test_client_->rmdir("/abcd").ok());
+
+  init_client(2);
+  EXPECT_CALL(*mock_master_, rmdir("/abc"));
+  EXPECT_TRUE(test_client_->rmdir("/abc").ok());
+}
+
 }  // namespace client
 }  // namespace vsfs

@@ -154,6 +154,7 @@ Status VSFSRpcClient::mkdir(
 }
 
 Status VSFSRpcClient::rmdir(const string& path) {
+  // TODO(eddyxu): refactory mkdir/rmdir and extract shared code.
   if (!is_initialized()) {
     VLOG(1) << "The VSFS RPC client has not initialized yet.";
     return Status(-1, "The client has not initialized yet.");
