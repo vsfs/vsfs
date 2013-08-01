@@ -30,52 +30,34 @@ using std::string;
 
 namespace vsfs {
 
-PosixFileHandler::PosixFileHandler(PosixStorageManager *psm, int fd)
-    : storage_manager_(psm), fd_(fd) {
+PosixFileHandler::PosixFileHandler(PosixStorageManager *psm, ObjectId objectId)
+    : storage_manager_(psm), objectId_(objectId) {
   CHECK_NOTNULL(psm);
-  CHECK_GT(fd_, 0);
+  CHECK_GT(objectId_, 0);
 }
 
 PosixFileHandler::~PosixFileHandler() {
-  if (fd_) {
+  if (objectId_) {
     this->close();
   }
 }
 
 Status PosixFileHandler::close() {
   int ret = 0;
-  ret = ::close(fd_);
+  ret = ::close(objectId_);
   if (ret) {
     return Status(ret, strerror(ret));
   }
-  fd_ = 0;
+  objectId_ = 0;
   return Status::OK;
 }
 
-size_t PosixFileHandler::read(void *buf, size_t nbytes) {
-  return ::read(fd_, buf, nbytes);
+size_t PosixFileHandler::read(void *buf, size_t nbytes, off_t offset) {
+  return ::pread(objectId_, buf, nbytes, offset);
 }
 
-size_t PosixFileHandler::pread(void *buf, size_t nbytes, off_t offset) {
-  return ::pread(fd_, buf, nbytes, offset);
-}
-
-size_t PosixFileHandler::write(const void *buf, size_t nbytes) {
-  return ::write(fd_, buf, nbytes);
-}
-
-size_t PosixFileHandler::pwrite(const void *buf, size_t nbytes, off_t offset) {
-  return ::pwrite(fd_, buf, nbytes, offset);
-}
-
-Status PosixFileHandler::seek(off_t offset, int whence) {
-  int ret = ::lseek(fd_, offset, whence);
-  if (!ret) {
-    const string errmsg = strerror(errno);
-    LOG(ERROR) << "Failed to seek: " << errmsg;
-    return Status(ret, errmsg);
-  }
-  return Status::OK;
+size_t PosixFileHandler::write(const void *buf, size_t nbytes, off_t offset) {
+  return ::pwrite(objectId_, buf, nbytes, offset);
 }
 
 Status PosixFileHandler::flush() {

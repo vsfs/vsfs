@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 (c) Ziling Huang <hzlgis@gmail.com>
+ * Copyright 2013 (c) Ziling Huang <hzlgis@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #ifndef VSFS_COMMON_STORAGE_MANAGER_H_
 #define VSFS_COMMON_STORAGE_MANAGER_H_
 
+#include <sys/types.h>
 #include <boost/noncopyable.hpp>
 #include <string>
 #include "vobla/status.h"
@@ -31,12 +32,12 @@ using vobla::Status;
 namespace vsfs {
 
 class FileHandler;
-class FileOp;
+class FileObject;
 
 /*
  * \class StorageManager
  *
- * \brief Abstraction and Wrapper for underlying filesystem.
+ * \brief Abstraction and Wrapper for underlying storage system.
  */
 class StorageManager : private boost::noncopyable {
   public:
@@ -52,10 +53,10 @@ class StorageManager : private boost::noncopyable {
 
     /**
      * \brief open a file according to the logical path and context.
-     * \return a new FileOp object, caller now has the ownership of this
-     * FileOp object.
+     * \return a new FileObject object, caller now has the ownership of this
+     * FileObject object.
      */
-    virtual FileOp* open_file(const string &path, int flags) = 0;
+    virtual FileObject* open_file(const string &path, int flags) = 0;
 
     /**
      * \brief close a file
@@ -67,32 +68,20 @@ class StorageManager : private boost::noncopyable {
      * \return Return the number of bytes actually read, -1 on error
      */
     virtual size_t read(FileHandler *file_handler, void *buf,
-                        const size_t count) = 0;
+                        const size_t count, off_t offset) = 0;
 
     /**
      * \brief write to the file
      * \return Return the number of bytes actually written, -1 on error
      */
     virtual size_t write(FileHandler *file_handler, const void *buf,
-                         const size_t count) = 0;
-
-    /**
-     * \brief seek in the file
-     * \return Status object
-     */
-    virtual Status seek(FileHandler *file_handler, const off_t offset,
-                        const int whence) const = 0;
+                         const size_t count, off_t offset) = 0;
 
     /**
      * \brief flush the data to the disk.
      * \return Status object
      */
     virtual Status flush(FileHandler *file_handler) const = 0;
-
-    /**
-     * \brief return the number of opened files in the storage manager.
-     */
-    virtual int num_opened_files() const = 0;
 
   protected:
     /*

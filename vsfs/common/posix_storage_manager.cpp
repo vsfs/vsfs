@@ -24,7 +24,7 @@
 #include <memory>
 #include <string>
 #include "vobla/status.h"
-#include "vsfs/common/file_op.h"
+#include "vsfs/common/file_object.h"
 #include "vsfs/common/posix_file_handler.h"
 #include "vsfs/common/posix_storage_manager.h"
 
@@ -48,7 +48,7 @@ Status PosixStorageManager::destroy() {
   return Status::OK;
 }
 
-FileOp* PosixStorageManager::open_file(const string &path, int flags) {
+FileObject* PosixStorageManager::open_file(const string &path, int flags) {
   const string local_path = translate_path(path);
   int fd = open(path.c_str(), flags);
   if (fd < 0) {
@@ -56,7 +56,7 @@ FileOp* PosixStorageManager::open_file(const string &path, int flags) {
     return nullptr;
   }
   unique_ptr<PosixFileHandler> file_handler(new PosixFileHandler(this, fd));
-  return new FileOp(file_handler.release());
+  return new FileObject(file_handler.release());
 }
 
 Status PosixStorageManager::close_file(vsfs::FileHandler* handler) const {
@@ -65,30 +65,20 @@ Status PosixStorageManager::close_file(vsfs::FileHandler* handler) const {
 }
 
 size_t PosixStorageManager::read(FileHandler *handler, void *buf,
-                                 const size_t count) {
+                                 const size_t count, off_t offset) {
   CHECK_NOTNULL(handler);
-  return handler->read(buf, count);
+  return handler->read(buf, count, offset);
 }
 
 size_t PosixStorageManager::write(FileHandler *handler, const void *buf,
-                                  const size_t count) {
+                                  const size_t count, off_t offset) {
   CHECK_NOTNULL(handler);
   CHECK_NOTNULL(buf);
-  return handler->write(buf, count);
-}
-
-Status PosixStorageManager::seek(FileHandler *handler, const off_t offset,
-                                 const int whence) const {
-  CHECK_NOTNULL(handler);
-  return handler->seek(offset, whence);
+  return handler->write(buf, count, offset);
 }
 
 Status PosixStorageManager::flush(FileHandler *handler) const {
   return handler->flush();
-}
-
-int PosixStorageManager::num_opened_files() const {
-  return 0;
 }
 
 string PosixStorageManager::translate_path(const string &path) const {

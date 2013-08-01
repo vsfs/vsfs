@@ -32,7 +32,7 @@ using std::string;
 
 namespace vsfs {
 
-class FileOp;
+class FileObject;
 
 /**
  * \class PosixStorageManager
@@ -56,21 +56,17 @@ class PosixStorageManager : public StorageManager {
    */
   Status destroy();
 
-  FileOp* open_file(const string &path, int flags);
+  FileObject* open_file(const string &path, int flags);
 
   Status close_file(vsfs::FileHandler* handler) const;
 
-  size_t read(FileHandler *file_handler, void *buf, const size_t count);
+  size_t read(FileHandler *file_handler, void *buf, const size_t count,
+              off_t offset);
 
   size_t write(FileHandler *file_handler, const void *buf,
-               const size_t count);
-
-  Status seek(FileHandler *file_handler, const off_t offset,
-              const int whence) const;
+               const size_t count, off_t offset);
 
   Status flush(FileHandler *file_handler) const;
-
-  int num_opened_files() const;
 
  private:
   /// Returns the native path of the file requested.

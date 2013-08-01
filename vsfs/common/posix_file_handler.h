@@ -26,6 +26,7 @@
 #include <string>
 #include "vobla/status.h"
 #include "vsfs/common/file_handler.h"
+#include "vsfs/common/types.h"
 
 using std::string;
 
@@ -35,30 +36,24 @@ class PosixStorageManager;
 
 class PosixFileHandler : public FileHandler {
  public:
-  PosixFileHandler(PosixStorageManager *psm, int fd);
+  PosixFileHandler(PosixStorageManager *psm, ObjectId objectId);
 
   virtual ~PosixFileHandler();
 
   Status close();
 
-  size_t read(void *buf, size_t nbytes);
+  size_t read(void *buf, size_t nbytes, off_t offset);
 
-  size_t pread(void *buf, size_t nbytes, off_t offset);
-
-  size_t write(const void *buf, size_t nbytes);
-
-  size_t pwrite(const void *buf, size_t nbytes, off_t offset);
-
-  Status seek(off_t offset, int whence);
+  size_t write(const void *buf, size_t nbytes, off_t offset);
 
   Status flush();
 
-  int id() const { return fd_; }
+  ObjectId objectId() const { return objectId_; }
 
  private:
   PosixStorageManager *storage_manager_;
 
-  int fd_;
+  int objectId_;
 };
 
 }  // namespace vsfs
