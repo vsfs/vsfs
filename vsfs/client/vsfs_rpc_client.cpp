@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <boost/filesystem.hpp>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <thrift/transport/TTransportException.h>
@@ -25,12 +26,23 @@ using apache::thrift::transport::TTransportException;
 using std::string;
 using std::vector;
 using vobla::Status;
+namespace fs = boost::filesystem;
 
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
              "VSFS client can use.");
 
 namespace vsfs {
 namespace client {
+
+namespace {
+
+/// Returns true if the path is validated.
+bool is_validate_path(const string& path) {
+  fs::path tmp(path);
+  return tmp.is_absolute();
+};
+
+}
 
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
     : host_(host), port_(port),
@@ -109,6 +121,19 @@ Status VSFSRpcClient::create(const string &path, mode_t mode) {
 Status VSFSRpcClient::open(const string &path, int flag) {
   (void) path;
   (void) flag;
+  return Status::OK;
+}
+
+Status VSFSRpcClient::mkdir(
+    const string& path, int64_t mode, int64_t uid, int64_t gid) {
+  if (master_map_.empty()) {
+    VLOG(1) << "The VSFS RPC client has not initialized yet.";
+    return Status(-1, "The client has not initialized yet.");
+  }
+  if (!is_validate_path(path)) {
+    VLOG(1) << "The directory " << path << " is not a validate path.";
+    return Status(-1, "The directory path is not validate.");
+  }
   return Status::OK;
 }
 

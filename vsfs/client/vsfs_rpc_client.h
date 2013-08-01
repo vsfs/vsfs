@@ -88,6 +88,16 @@ class VSFSRpcClient : public VSFSClient {
 
   Status open(const string &path, int flag);
 
+  /**
+   * \brief Creates a new directory on path.
+   * \param path the absolute path of directory to be created.
+   * \param mode the mode of the new created directory.
+   * \param uid the user id of the new created directory.
+   * \param gid the group id of the new created directory.
+   * \return Status::OK if success.
+   */
+  Status mkdir(const string& path, int64_t mode, int64_t uid, int64_t gid);
+
   Status create_index(const string& index_path,
                       const string& index_name,
                       int index_type,
