@@ -30,11 +30,18 @@ namespace rpc {
 
 /**
  * \class RpcClientFactoryInterface
- * \brief Basic class for the factory class of IndexServerClient.
+ * \brief The interface of the factory class for any RpcClient.
+ *
+ * The purpose of this factory class family is two-fold:
+ *   - It offers the opportunity to optimize the allocation of costly RpcClient,
+ *   e.g., to re-use alreay established connections if any.
+ *   - It can also be used to create mock FooServerClient for the dependency
+ *   injection purpose.
  */
 template <typename Client>
 class RpcClientFactoryInterface {
  public:
+  // The ClientType is usually RpcClient<FooServerClient>.
   typedef Client ClientType;
 
   RpcClientFactoryInterface() = default;
@@ -45,7 +52,7 @@ class RpcClientFactoryInterface {
    * \brief It creates a new RpcClient instance and pass the ownership of the
    * RpcClient to the caller. The caller must reclaim the ClientType.
    */
-  virtual shared_ptr<ClientType> open(const string& host, int port) = 0;
+  virtual boost::shared_ptr<ClientType> open(const string& host, int port) = 0;
 };
 
 /**
@@ -60,6 +67,9 @@ class RpcClientFactory : public RpcClientFactoryInterface<ClientType> {
   virtual ~RpcClientFactory() {}
 
   virtual boost::shared_ptr<ClientType> open(const string& host, int port) {
+    // Currently, it is just the simplest form: creating a new client for each
+    // open() request. We can use this function to provide better resource
+    // management for RpcClient later.
     boost::shared_ptr<ClientType> client(new ClientType(host, port));
     return client;
   }
