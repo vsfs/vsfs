@@ -34,7 +34,7 @@ using vobla::Status;
 
 namespace vsfs {
 
-PosixStorageManager::PosixStorageManager(const string &base_path)
+PosixStorageManager::PosixStorageManager(const string& base_path)
     : base_path_(base_path) {
 }
 
@@ -49,7 +49,7 @@ Status PosixStorageManager::destroy() {
   return Status::OK;
 }
 
-FileObject PosixStorageManager::open(const string &path, int flags) {
+FileObject PosixStorageManager::open(const string& path, int flags) {
   const string local_path = translate_path(path);
   int fd = ::open(local_path.c_str(), flags);
   if (fd < 0) {
@@ -64,20 +64,20 @@ Status PosixStorageManager::close(vsfs::FileHandler* handler) const {
   return handler->close();
 }
 
-size_t PosixStorageManager::read(FileHandler *handler, void *buf,
-                                 const size_t count, off_t offset) {
+ssize_t PosixStorageManager::read(FileHandler* handler, void* buf,
+                                  size_t count, off_t offset) {
   CHECK_NOTNULL(handler);
   return handler->read(buf, count, offset);
 }
 
-size_t PosixStorageManager::write(FileHandler *handler, const void *buf,
-                                  const size_t count, off_t offset) {
+ssize_t PosixStorageManager::write(FileHandler* handler, const void* buf,
+                                   size_t count, off_t offset) {
   CHECK_NOTNULL(handler);
   CHECK_NOTNULL(buf);
   return handler->write(buf, count, offset);
 }
 
-string PosixStorageManager::translate_path(const string &path) const {
+string PosixStorageManager::translate_path(const string& path) const {
   return base_path_ + "/" + path;
 }
 

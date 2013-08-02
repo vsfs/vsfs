@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
  * \file posix_storage_manager.h
- *
  * \brief A StorageManager runs on top of POSIX file interface.
  *
  * This storage manager is used to run on top of native fs (e.g., Ext4/Btrfs)
@@ -40,6 +40,7 @@ class FileObject;
  */
 class PosixStorageManager : public StorageManager {
  public:
+  PosixStorageManager() = delete;
   explicit PosixStorageManager(const string &base_path);
 
   virtual ~PosixStorageManager();
@@ -56,15 +57,15 @@ class PosixStorageManager : public StorageManager {
    */
   Status destroy();
 
-  FileObject open(const string &path, int flags);
+  FileObject open(const string& path, int flags);
 
-  Status close(vsfs::FileHandler* handler) const;
+  Status close(FileHandler* handler) const;
 
-  size_t read(FileHandler *file_handler, void *buf, const size_t count,
-              off_t offset);
+  ssize_t read(FileHandler *file_handler, void *buf, size_t count,
+               off_t offset);
 
-  size_t write(FileHandler *file_handler, const void *buf,
-               const size_t count, off_t offset);
+  ssize_t write(FileHandler *file_handler, const void *buf,
+                size_t count, off_t offset);
 
  private:
   /// Returns the native path of the file requested.

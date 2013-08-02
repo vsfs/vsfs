@@ -21,8 +21,8 @@
 #ifndef VSFS_COMMON_STORAGE_MANAGER_H_
 #define VSFS_COMMON_STORAGE_MANAGER_H_
 
-#include <sys/types.h>
 #include <boost/noncopyable.hpp>
+#include <sys/types.h>
 #include <string>
 #include "vobla/status.h"
 
@@ -36,12 +36,11 @@ class FileObject;
 
 /*
  * \class StorageManager
- *
  * \brief Abstraction and Wrapper for underlying storage system.
  */
-class StorageManager : private boost::noncopyable {
+class StorageManager : boost::noncopyable {
   public:
-    StorageManager() {}
+    StorageManager() = default;
 
     virtual ~StorageManager() {}
 
@@ -56,40 +55,32 @@ class StorageManager : private boost::noncopyable {
      * \return a new FileObject object, caller now has the ownership of this
      * FileObject object.
      */
-    virtual FileObject* open_file(const string &path, int flags) = 0;
+    virtual FileObject open(const string& path, int flags) = 0;
 
     /**
      * \brief close a file
      */
-    virtual Status close_file(FileHandler *file_handler) const = 0;
+    virtual Status close(FileHandler* file_handler) const = 0;
 
     /**
      * \brief read from the file
      * \return Return the number of bytes actually read, -1 on error
      */
-    virtual size_t read(FileHandler *file_handler, void *buf,
-                        const size_t count, off_t offset) = 0;
+    virtual ssize_t read(FileHandler* file_handler, void *buf,
+                         size_t count, off_t offset) = 0;
 
     /**
      * \brief write to the file
      * \return Return the number of bytes actually written, -1 on error
      */
-    virtual size_t write(FileHandler *file_handler, const void *buf,
-                         const size_t count, off_t offset) = 0;
+    virtual ssize_t write(FileHandler* file_handler, const void *buf,
+                          size_t count, off_t offset) = 0;
 
     /**
      * \brief flush the data to the disk.
      * \return Status object
      */
-    virtual Status flush(FileHandler *file_handler) const = 0;
-
-  protected:
-    /*
-     * \brief Translate the logical path to physical path in underlying storage
-     * \param logical path and context for the file
-     * \return physical path for the file
-     */
-    virtual string translate_path(const string &logical_path) const = 0;
+    virtual Status flush(FileHandler* file_handler) const = 0;
 };
 
 }  // namespace vsfs
