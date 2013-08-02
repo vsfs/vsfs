@@ -110,9 +110,73 @@ Status VSFSRpcClient::disconnect() {
   }
 }
 
-Status VSFSRpcClient::create(const string &path, mode_t mode) {
-  (void) path;
+Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
+                             int64_t gid, ObjectId* id) {
+  if (!is_initialized()) {
+    VLOG(1) << "The VSFS RPC client has not initialized yet.";
+    return Status(-1, "The client has not initialized yet.");
+  }
+  auto parent = fs::path(path).parent_path().string();
+  auto hash = HashUtil::file_path_to_hash(path);
+  auto parent_hash = HashUtil::file_path_to_hash(parent);
   (void) mode;
+  NodeInfo file_node;
+  auto status = master_map_.get(hash, &file_node);
+  if (!status.ok()) {
+    VLOG(0) << "Failed to find a master server to create file: " << path;
+    return status;
+  }
+  // Number of retries to create file to solve the conflicts.
+  const int kNumBackOffs = 3;
+  int backoff = kNumBackOffs;
+  while (backoff) {
+    try {
+      auto client = master_client_factory_->open(file_node.address.host,
+                                                 file_node.address.port);
+      *id = client->handler()->create(path, mode, uid, gid);
+      client->close();
+    } catch (TTransportException e) {  // NOLINT
+      // TODO(eddyxu): clear the conflict resolving algorithm later.
+      status.set_error(e.getType());
+      status.set_message(e.what());
+      backoff--;
+      continue;
+    }
+  }
+  if (!status.ok()) {
+    VLOG(0) << "Failed to create file: "
+            << path << " because: " << status.message();
+    return status;
+  }
+  NodeInfo parent_node;
+  status = master_map_.get(parent_hash, &parent_node);
+  CHECK(status.ok());  // master_map_ must exist at this point.
+  backoff = kNumBackOffs;
+  while (backoff) {
+    try {
+      auto client = master_client_factory_->open(parent_node.address.host,
+                                                 parent_node.address.port);
+      client->handler()->create(path, mode, uid, gid);
+      client->close();
+    } catch (TTransportException e) {  // NOLINT
+      // TODO(eddyxu): clear the conflict resolving algorithm later.
+      status.set_error(e.getType());
+      status.set_message(e.what());
+      backoff--;
+      continue;
+    }
+  }
+  if (!status.ok()) {
+    // Roll back the created file record from `file_node`.
+    try {
+      auto client = master_client_factory_->open(file_node.address.host,
+                                                 file_node.address.port);
+      client->handler()->remove(path);
+      client->close();
+    } catch (TTransportException e) {  // NOLINT
+      return Status(e.getType(), e.what());
+    }
+  }
   return Status::OK;
 }
 

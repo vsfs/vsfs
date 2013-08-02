@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 #include "vobla/status.h"
+#include "vsfs/common/types.h"
 
 using std::string;
 using std::unique_ptr;
@@ -99,10 +100,11 @@ class VSFSClient : boost::noncopyable {
   virtual Status rmdir(const string& path) = 0;
 
   /// Creates a new file in the VSFS namespace.
-  virtual Status create(const string &path, mode_t mode) = 0;
+  virtual Status create(const string& path, int64_t mode, int64_t uid,
+                        int64_t gid, ObjectId* id) = 0;
 
   /// Opens a file and get the file handler.
-  virtual Status open(const string &path, int flag) = 0;
+  virtual Status open(const string& path, int flag) = 0;
 
   /*
   /// Close a file handler.

@@ -22,9 +22,10 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <mutex>
+#include <mutex>  // NOLINT
 #include "vobla/thread_pool.h"
 #include "vsfs/client/vsfs_client.h"
+#include "vsfs/common/types.h"
 #include "vsfs/common/server_map.h"
 #include "vsfs/rpc/IndexServer.h"
 #include "vsfs/rpc/MasterServer.h"
@@ -90,7 +91,8 @@ class VSFSRpcClient : public VSFSClient {
   /// Disconnects from the MasterNode.
   Status disconnect();
 
-  Status create(const string& path, mode_t mode);
+  Status create(const string& path, int64_t mode, int64_t uid, int64_t gid,
+                ObjectId* id);
 
   Status open(const string& path, int flag);
 
