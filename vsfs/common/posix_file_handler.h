@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
  * \file posix_file_handler.h
- *
  * \brief FileHandler for Posix File API access.
  */
 
@@ -42,11 +42,9 @@ class PosixFileHandler : public FileHandler {
 
   Status close();
 
-  size_t read(void *buf, size_t nbytes, off_t offset);
+  ssize_t read(void *buf, size_t nbytes, off_t offset);
 
-  size_t write(const void *buf, size_t nbytes, off_t offset);
-
-  Status flush();
+  ssize_t write(const void *buf, size_t nbytes, off_t offset);
 
   ObjectId objectId() const { return objectId_; }
 

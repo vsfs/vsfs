@@ -46,6 +46,11 @@ PosixPath::PosixPath(const string& posix_path) : path_(posix_path) {
   }
 }
 
+bool PosixPath::is_validate() const {
+  // TODO(eddyxu): check the valid of path.
+  return true;
+}
+
 bool PosixPath::is_query() const {
   return !query_.empty() && result_.empty();
 }

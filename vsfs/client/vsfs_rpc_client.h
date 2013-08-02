@@ -94,6 +94,8 @@ class VSFSRpcClient : public VSFSClient {
 
   Status open(const string& path, int flag);
 
+  Status unlink(const string& path);
+
   /**
    * \brief Creates a new directory on path.
    * \param path the absolute path of directory to be created.

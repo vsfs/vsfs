@@ -85,6 +85,8 @@ class PosixPath {
    */
   vobla::Status complex_query(ComplexQuery *query);
 
+  bool is_validate() const;
+
  private:
   string path_;
   string root_;

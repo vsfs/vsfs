@@ -37,7 +37,7 @@
 #include <vector>
 #include "vobla/status.h"
 #include "vsfs/common/complex_query.h"
-#include "vsfs/common/file_op.h"
+#include "vsfs/common/file_object.h"
 #include "vsfs/common/posix_path.h"
 // #include "vsfs/common/posix_storage_manager.h"
 #include "vsfs/fuse/vsfs_ops.h"
@@ -110,14 +110,16 @@ string VsfsFuse::mnt_path(const string &vsfs_path) const {
 
 void* vsfs_init(struct fuse_conn_info *conn) {
   LOG(INFO) << "Fuse component initializing...";
+  (void) conn;
   return nullptr;
 }
 
 void vsfs_destroy(void *data) {
+  (void) data;
   VsfsFuse::destory();
 }
 
-int vsfs_statfs(const char *path , struct statvfs *stbuf) {
+int vsfs_statfs(const char* path , struct statvfs *stbuf) {
   string abspath = VsfsFuse::instance()->abspath(path);
   if (statvfs(abspath.c_str(), stbuf) == -1) {
     return -errno;
@@ -125,11 +127,11 @@ int vsfs_statfs(const char *path , struct statvfs *stbuf) {
   return 0;
 }
 
-int vsfs_access(const char *path, int flag) {
+int vsfs_access(const char* path, int flag) {
   LOG(INFO) << "VSFS_ACCESS";
   PosixPath vsp(path);
   string abspath = VsfsFuse::instance()->abspath(path);
-  if (!vsp.is_validated()) {
+  if (!vsp.is_validate()) {
       return -EINVAL;
   } else if (!vsp.is_query()) {
     return access(abspath.c_str(), flag);
@@ -141,11 +143,11 @@ int vsfs_access(const char *path, int flag) {
   return 0;
 }
 
-int vsfs_getattr(const char *path, struct stat *stbuf) {
+int vsfs_getattr(const char* path, struct stat *stbuf) {
   LOG(INFO) << "VSFS_GETATTR\n";
   int ret = 0;
   PosixPath vsp(path);
-  if (!vsp.is_validated()) {
+  if (!vsp.is_validate()) {
     return -EINVAL;
   }
   if (vsp.is_query()) {
@@ -164,7 +166,7 @@ int vsfs_getattr(const char *path, struct stat *stbuf) {
   return ret;
 }
 
-int vsfs_fgetattr(const char *, struct stat* stbuf,
+int vsfs_fgetattr(const char* , struct stat* stbuf,
                   struct fuse_file_info* fi) {
   int ret = fstat(fi->fh, stbuf);
   if (ret == -1) {
@@ -173,7 +175,7 @@ int vsfs_fgetattr(const char *, struct stat* stbuf,
   return 0;
 }
 
-int vsfs_utimens(const char *path, const struct timespec tv[2]) {
+int vsfs_utimens(const char* path, const struct timespec tv[2]) {
   string abspath = VsfsFuse::instance()->abspath(path);
   if (utimensat(0, abspath.c_str(), tv, 0) == -1) {
     return -errno;
@@ -181,31 +183,37 @@ int vsfs_utimens(const char *path, const struct timespec tv[2]) {
   return 0;
 }
 
-int vsfs_chmod(const char *path, mode_t mode) {
+int vsfs_chmod(const char* path, mode_t mode) {
   string abspath = VsfsFuse::instance()->abspath(path);
   return chmod(abspath.c_str(), mode);
 }
 
-int vsfs_chown(const char *path, uid_t uid, gid_t gid) {
+int vsfs_chown(const char* path, uid_t uid, gid_t gid) {
   string abspath = VsfsFuse::instance()->abspath(path);
   return chown(abspath.c_str(), uid, gid);
 }
 
-int vsfs_truncate(const char *path, off_t offset) {
+int vsfs_truncate(const char* path, off_t offset) {
+  (void) path;
+  (void) offset;
   return 0;
 }
 
-int vsfs_opendir(const char *path, struct fuse_file_info* info) {
+int vsfs_opendir(const char* path, struct fuse_file_info* info) {
   // TODO(lxu): check permission.
+  (void) path;
+  (void) info;
   return 0;
 }
 
-int vsfs_releasedir(const char *path, struct fuse_file_info * info) {
+int vsfs_releasedir(const char* path, struct fuse_file_info* info) {
+  (void) path;
+  (void) info;
   return 0;
 }
 
-int vsfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-    off_t offset, struct fuse_file_info *fi) {
+int vsfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
+                 off_t, struct fuse_file_info*) {
   LOG(INFO) << "VSFS_READDIR";
   PosixPath vsp(path);
 
@@ -253,17 +261,17 @@ int vsfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 /**
  * \brief Create a directory
  */
-int vsfs_mkdir(const char *path, mode_t mode) {
+int vsfs_mkdir(const char* path, mode_t mode) {
   string abspath = VsfsFuse::instance()->abspath(path);
   return mkdir(abspath.c_str(), mode);
 }
 
-int vsfs_rmdir(const char *path) {
+int vsfs_rmdir(const char* path) {
   string abspath = VsfsFuse::instance()->abspath(path);
   return rmdir(abspath.c_str());
 }
 
-int vsfs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
+int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
   // TODO(lxu): use StorageManager.
   string abspath = VsfsFuse::instance()->abspath(path);
   vector<string> files;
@@ -282,7 +290,7 @@ int vsfs_create(const char *path, mode_t mode, struct fuse_file_info *fi) {
   return 0;
 }
 
-int vsfs_open(const char *path, struct fuse_file_info *fi) {
+int vsfs_open(const char* path, struct fuse_file_info *fi) {
   string abspath = VsfsFuse::instance()->abspath(path);
   int fd = open(abspath.c_str(), fi->flags);
   if (fd == -1) {
@@ -293,8 +301,8 @@ int vsfs_open(const char *path, struct fuse_file_info *fi) {
   return 0;
 }
 
-int vsfs_unlink(const char *path) {
-  Status status = vsfs->client()->remove(path);
+int vsfs_unlink(const char* path) {
+  Status status = vsfs->client()->unlink(path);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to remove a file from metaserver:"
                << status.message();
@@ -308,7 +316,8 @@ int vsfs_unlink(const char *path) {
   return 0;
 }
 
-int vsfs_release(const char *path, struct fuse_file_info *fi) {
+int vsfs_release(const char* path, struct fuse_file_info *fi) {
+  (void) path;
   int ret = 0;
   if (fi->fh) {
     ret = close(fi->fh);
@@ -316,7 +325,7 @@ int vsfs_release(const char *path, struct fuse_file_info *fi) {
   return ret ? -errno : 0;
 }
 
-int vsfs_readlink(const char *path, char *buf, size_t size) {
+int vsfs_readlink(const char* path, char *buf, size_t size) {
   int ret = 0;
   PosixPath vsp(path);
   if (vsp.is_query()) {
@@ -340,8 +349,8 @@ int vsfs_readlink(const char *path, char *buf, size_t size) {
   return ret;
 }
 
-int vsfs_read(const char *path, char *buf, size_t size, off_t offset,
-              struct fuse_file_info *fi) {
+int vsfs_read(const char*, char *buf, size_t size, off_t offset,
+              struct fuse_file_info* fi) {
   ssize_t nread = pread(fi->fh, buf, size, offset);
   if (nread == -1) {
     LOG(ERROR) << "VSFS_READ ERROR: " <<  strerror(errno);
@@ -350,7 +359,7 @@ int vsfs_read(const char *path, char *buf, size_t size, off_t offset,
   return nread;
 }
 
-int vsfs_write(const char *path, const char *buf, size_t size, off_t offset,
+int vsfs_write(const char*, const char* buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
   ssize_t nwrite = 0;
   nwrite = pwrite(fi->fh, buf, size, offset);
@@ -361,12 +370,12 @@ int vsfs_write(const char *path, const char *buf, size_t size, off_t offset,
   return nwrite;
 }
 
-int vsfs_flush(const char *, struct fuse_file_info *) {
+int vsfs_flush(const char* , struct fuse_file_info *) {
   // We are using open(2), there is nothing to flush.
   return 0;
 }
 
-int vsfs_getxattr(const char *path, const char *name, char *value,
+int vsfs_getxattr(const char* path, const char* name, char *value,
                   size_t vlen) {
   string abspath = VsfsFuse::instance()->abspath(path);
   return getxattr(abspath.c_str(), name, value, vlen);
@@ -374,7 +383,7 @@ int vsfs_getxattr(const char *path, const char *name, char *value,
 
 #if defined(FUSE_29)
 
-int vsfs_flock(const char *path, struct fuse_file_info *fi, int op) {
+int vsfs_flock(const char* path, struct fuse_file_info *fi, int op) {
   if (flock(fi->fh, op) == -1) {
     LOG(ERROR) << "Failed to flock(" << path << ", " << op << "), fd="
                << fi->fh;
@@ -383,7 +392,7 @@ int vsfs_flock(const char *path, struct fuse_file_info *fi, int op) {
   return 0;
 }
 
-int vsfs_write_buf(const char *, struct fuse_bufvec *buf, off_t off,
+int vsfs_write_buf(const char* , struct fuse_bufvec *buf, off_t off,
                    struct fuse_file_info *fi) {
   ssize_t nwrite = 0;
   ssize_t total_write = 0;
@@ -397,8 +406,8 @@ int vsfs_write_buf(const char *, struct fuse_bufvec *buf, off_t off,
   return total_write;
 }
 
-int vsfs_read_buf(const char *path, struct fuse_bufvec **bufp, size_t size,
-                  off_t off, struct fuse_file_info *fi) {
+int vsfs_read_buf(const char*, struct fuse_bufvec **bufp, size_t size,
+                  off_t, struct fuse_file_info *fi) {
   // NO IDEA what does this function do...
   *bufp = static_cast<fuse_bufvec*>(malloc(sizeof(fuse_bufvec)));
   (*bufp)->count = 1;
@@ -422,7 +431,7 @@ int vsfs_lock(const char*, struct fuse_file_info* fi, int cmd,
   return 0;
 }
 
-int vsfs_fsync(const char *path, int datasync, struct fuse_file_info* fi) {
+int vsfs_fsync(const char*, int, struct fuse_file_info* fi) {
   if (fsync(fi->fh) == 0) {
     return 0;
   }

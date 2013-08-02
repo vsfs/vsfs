@@ -17,8 +17,8 @@
 #ifndef VSFS_COMMON_FILE_HANDLER_H_
 #define VSFS_COMMON_FILE_HANDLER_H_
 
-#include <sys/types.h>
 #include <boost/noncopyable.hpp>
+#include <sys/types.h>
 #include <string>
 #include "vobla/status.h"
 #include "vsfs/common/types.h"
@@ -37,7 +37,7 @@ namespace vsfs {
  * instance contain one unique File Handler instance.
  *
  */
-class FileHandler : private boost::noncopyable {
+class FileHandler : boost::noncopyable {
  public:
   FileHandler() = default;
 
@@ -50,12 +50,10 @@ class FileHandler : private boost::noncopyable {
   virtual Status close() = 0;
 
   /// Reads from the file with offset.
-  virtual size_t read(void *buf, size_t nbytes, off_t offset) = 0;
+  virtual ssize_t read(void *buf, size_t nbytes, off_t offset) = 0;
 
   /// Writes nbytes to the file.
-  virtual size_t write(const void *buf, size_t nbytes, off_t offset) = 0;
-
-  virtual Status flush() = 0;
+  virtual ssize_t write(const void *buf, size_t nbytes, off_t offset) = 0;
 };
 
 }  // namespace vsfs

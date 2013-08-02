@@ -13,20 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #ifndef VSFS_COMMON_FILE_OBJECT_H_
 #define VSFS_COMMON_FILE_OBJECT_H_
 
-#include <glog/logging.h>
-#include <sys/types.h>
 #include <boost/noncopyable.hpp>
+#include <sys/types.h>
 #include <memory>
 #include <string>
-#include "vsfs/common/file_handler.h"
 
 using std::string;
 using std::unique_ptr;
 
+namespace vobla {
+class Status;
+}
+
 namespace vsfs {
+
+class FileHandler;
 
 /**
  * \class FileObject file_op.h
@@ -36,11 +41,14 @@ namespace vsfs {
  */
 class FileObject : private boost::noncopyable {
  public:
-  explicit FileObject(FileHandler *file_handler) : file_handler_(file_handler) {
-    CHECK_NOTNULL(file_handler);
-  }
+  FileObject() = delete;
 
-  ~FileObject() {}
+  explicit FileObject(FileHandler* file_handler);
+
+  /// Move constructor.
+  FileObject(FileObject&& rhs);
+
+  ~FileObject();
 
   /**
    * \brief Reads data starting from an offset.
@@ -49,28 +57,19 @@ class FileObject : private boost::noncopyable {
    * \param offset the offset from the file begining to read.
    * \return the actural bytes read.
    */
-  size_t read(void *buf, size_t count, off_t offset) {
-    return file_handler_->read(buf, count, offset);
-  }
+  ssize_t read(void *buf, size_t count, off_t offset);
 
   /**
    * \brief Writes the buffer from the offset of file.
    * \see pread()
    */
-  size_t write(const void *buf, size_t count, off_t offset) {
-    return file_handler_->write(buf, count, offset);
-  }
+  ssize_t write(const void *buf, size_t count, off_t offset);
 
-  /**
-   * \brief close the file
-   */
-  Status close() {
-    return get_file_handler()->close();
-  }
+  /// Closes the file it holds.
+  vobla::Status close();
 
-  FileHandler* get_file_handler() {
-    return file_handler_.get();
-  }
+  /// Returns the pointer of the underlying file handler.
+  FileHandler* file_handler();
 
  private:
   // Pointer to File Handler

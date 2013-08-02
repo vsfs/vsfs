@@ -56,17 +56,15 @@ class PosixStorageManager : public StorageManager {
    */
   Status destroy();
 
-  FileObject* open_file(const string &path, int flags);
+  FileObject open(const string &path, int flags);
 
-  Status close_file(vsfs::FileHandler* handler) const;
+  Status close(vsfs::FileHandler* handler) const;
 
   size_t read(FileHandler *file_handler, void *buf, const size_t count,
               off_t offset);
 
   size_t write(FileHandler *file_handler, const void *buf,
                const size_t count, off_t offset);
-
-  Status flush(FileHandler *file_handler) const;
 
  private:
   /// Returns the native path of the file requested.

@@ -52,15 +52,12 @@ Status PosixFileHandler::close() {
   return Status::OK;
 }
 
-size_t PosixFileHandler::read(void *buf, size_t nbytes, off_t offset) {
+ssize_t PosixFileHandler::read(void *buf, size_t nbytes, off_t offset) {
   return ::pread(objectId_, buf, nbytes, offset);
 }
 
-size_t PosixFileHandler::write(const void *buf, size_t nbytes, off_t offset) {
+ssize_t PosixFileHandler::write(const void *buf, size_t nbytes, off_t offset) {
   return ::pwrite(objectId_, buf, nbytes, offset);
 }
 
-Status PosixFileHandler::flush() {
-  return Status::OK;
-}
 }  // namespace vsfs

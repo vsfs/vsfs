@@ -22,7 +22,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <cstdio>
-
 #include "vobla/status.h"
 #include "vsfs/fuse/vsfs_ops.h"
 
@@ -60,8 +59,7 @@ struct fuse_opt vsfs_opts[] = {
   {NULL, 0, 0}
 };
 
-int vsfs_opt_proc(void *data, const char *arg, int key,
-                  struct fuse_args *outargs) {
+int vsfs_opt_proc(void *, const char *, int key, struct fuse_args *outargs) {
   static fuse_operations opers;
   int res = 1;
   switch (key) {

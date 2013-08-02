@@ -22,11 +22,11 @@ mount_vsfs_LDADD = \
   ../common/libvsfs-common.a \
   -lvobla $(libthrift_LIBS) $(fuse_LIBS)
 
-LDADD = $(vsfs_LDADD) $(GTEST_LIBS) $(GMOCK_LIBS)
+LDADD = $(mount_vsfs_LDADD) -lgtest -lgtest_main -lgmock
 
 TESTS = \
-  vsfs_ops_test \
-  testing/fuse_tests.py
+  vsfs_ops_test
+  #testing/fuse_tests.py
 
 check_PROGRAMS = vsfs_ops_test
 vsfs_ops_test_SOURCES = vsfs_ops.h vsfs_ops.cpp vsfs_ops_test.cpp

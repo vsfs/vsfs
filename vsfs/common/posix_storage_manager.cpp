@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 /**
  * \file posix_storage_manager.cpp
- *
  * \brief Implementation of the PosixStorageManager.
  */
 
@@ -30,6 +30,7 @@
 
 using std::unique_ptr;
 using std::string;
+using vobla::Status;
 
 namespace vsfs {
 
@@ -48,18 +49,17 @@ Status PosixStorageManager::destroy() {
   return Status::OK;
 }
 
-FileObject* PosixStorageManager::open_file(const string &path, int flags) {
+FileObject PosixStorageManager::open(const string &path, int flags) {
   const string local_path = translate_path(path);
-  int fd = open(path.c_str(), flags);
+  int fd = ::open(local_path.c_str(), flags);
   if (fd < 0) {
-    LOG(ERROR) << "Failed to open file: " << path;
-    return nullptr;
+    LOG(ERROR) << "Failed to open file: " << local_path;
+    return FileObject(nullptr);
   }
-  unique_ptr<PosixFileHandler> file_handler(new PosixFileHandler(this, fd));
-  return new FileObject(file_handler.release());
+  return FileObject(new PosixFileHandler(this, fd));
 }
 
-Status PosixStorageManager::close_file(vsfs::FileHandler* handler) const {
+Status PosixStorageManager::close(vsfs::FileHandler* handler) const {
   CHECK_NOTNULL(handler);
   return handler->close();
 }
@@ -75,10 +75,6 @@ size_t PosixStorageManager::write(FileHandler *handler, const void *buf,
   CHECK_NOTNULL(handler);
   CHECK_NOTNULL(buf);
   return handler->write(buf, count, offset);
-}
-
-Status PosixStorageManager::flush(FileHandler *handler) const {
-  return handler->flush();
 }
 
 string PosixStorageManager::translate_path(const string &path) const {

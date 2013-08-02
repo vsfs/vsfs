@@ -122,6 +122,11 @@ Status VSFSRpcClient::open(const string &path, int flag) {
   return Status::OK;
 }
 
+Status VSFSRpcClient::unlink(const string& path) {
+  (void) path;
+  return Status::OK;
+}
+
 Status VSFSRpcClient::mkdir(
     const string& path, int64_t mode, int64_t uid, int64_t gid) {
   if (!is_initialized()) {
