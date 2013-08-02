@@ -126,10 +126,6 @@ void HelpCommand::print_help() const {
           "  index\t\t\tindex files.\n"
           "  import\t\timports a directory into VSFS.\n"
           "  info\t\t\tquery the index information.\n"
-          "  ls\t\t\tlist groups and files.\n"
-          "  cp\t\t\tcopy files.\n"
-          "  rm\t\t\tremove files.\n"
-          "  cat\t\t\tconcatenate files and print on the standard output.\n"
           "");
 }
 
