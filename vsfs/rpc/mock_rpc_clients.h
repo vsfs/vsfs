@@ -47,6 +47,10 @@ class MockMasterServerClient : public MasterServerClient {
   MOCK_METHOD1(get_all_masters, void(RpcConsistentHashRing&));
   MOCK_METHOD2(mkdir, void(const string&, const RpcFileInfo&));
   MOCK_METHOD1(rmdir, void(const string&));
+  MOCK_METHOD4(create, RpcObjectId(const string&, const int64_t, const int64_t,
+                                   const int64_t));
+  MOCK_METHOD1(remove, void(const string&));
+  MOCK_METHOD2(add_subfile, void(const string&, const string&));
 };
 
 /**

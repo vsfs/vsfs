@@ -135,6 +135,7 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
                                                  file_node.address.port);
       *id = client->handler()->create(path, mode, uid, gid);
       master_client_factory_->close(client);
+      break;
     } catch (TTransportException e) {  // NOLINT
       // TODO(eddyxu): clear the conflict resolving algorithm later.
       status.set_error(e.getType());
@@ -159,6 +160,7 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
       auto filename = fs::path(path).filename().string();
       client->handler()->add_subfile(parent, filename);
       master_client_factory_->close(client);
+      break;
     } catch (TTransportException e) {  // NOLINT
       // TODO(eddyxu): clear the conflict resolving algorithm later.
       status.set_error(e.getType());

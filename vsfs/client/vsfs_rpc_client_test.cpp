@@ -25,6 +25,7 @@
 #include "vsfs/rpc/mock_rpc_clients.h"
 #include "vsfs/rpc/vsfs_types.h"
 
+using ::testing::Return;
 using ::testing::SetArgReferee;
 using ::testing::_;
 using boost::shared_ptr;
@@ -109,6 +110,17 @@ TEST_F(VsfsRpcClientTest, TestRmdir) {
   init_client(2);
   EXPECT_CALL(*mock_master_, rmdir("/abc"));
   EXPECT_TRUE(test_client_->rmdir("/abc").ok());
+}
+
+TEST_F(VsfsRpcClientTest, TestCreateSuccess) {
+  init_client(2);
+  ObjectId oid;
+  EXPECT_CALL(*mock_master_, create("/abc/def", 0x666, 100, 100))
+      .WillOnce(Return(1234));
+  EXPECT_CALL(*mock_master_, add_subfile("/abc", "def"));
+
+  EXPECT_TRUE(test_client_->create("/abc/def", 0x666, 100, 100, &oid).ok());
+  EXPECT_EQ(1234, oid);
 }
 
 }  // namespace client
