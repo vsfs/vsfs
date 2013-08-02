@@ -134,7 +134,7 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
       auto client = master_client_factory_->open(file_node.address.host,
                                                  file_node.address.port);
       *id = client->handler()->create(path, mode, uid, gid);
-      client->close();
+      master_client_factory_->close(client);
     } catch (TTransportException e) {  // NOLINT
       // TODO(eddyxu): clear the conflict resolving algorithm later.
       status.set_error(e.getType());
@@ -156,8 +156,9 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
     try {
       auto client = master_client_factory_->open(parent_node.address.host,
                                                  parent_node.address.port);
-      client->handler()->create(path, mode, uid, gid);
-      client->close();
+      auto filename = fs::path(path).filename().string();
+      client->handler()->add_subfile(parent, filename);
+      master_client_factory_->close(client);
     } catch (TTransportException e) {  // NOLINT
       // TODO(eddyxu): clear the conflict resolving algorithm later.
       status.set_error(e.getType());
@@ -172,7 +173,7 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
       auto client = master_client_factory_->open(file_node.address.host,
                                                  file_node.address.port);
       client->handler()->remove(path);
-      client->close();
+      master_client_factory_->close(client);
     } catch (TTransportException e) {  // NOLINT
       return Status(e.getType(), e.what());
     }
@@ -211,7 +212,7 @@ Status VSFSRpcClient::mkdir(
     dir_info.uid = uid;
     dir_info.gid = gid;
     master_client->handler()->mkdir(path, dir_info);
-    master_client->close();
+    master_client_factory_->close(master_client);
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
     LOG(ERROR) << "Failed to run mkdir RPC to master node: "
@@ -238,7 +239,7 @@ Status VSFSRpcClient::rmdir(const string& path) {
     auto master_client = master_client_factory_->open(node.address.host,
                                                       node.address.port);
     master_client->handler()->rmdir(path);
-    master_client->close();
+    master_client_factory_->close(master_client);
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
     LOG(ERROR) << "Failed to run mkdir RPC to master node: "

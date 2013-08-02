@@ -79,6 +79,11 @@ class TestRpcClientFactory : public RpcClientFactoryInterface<
     return client_;
   }
 
+  void close(shared_ptr<ClientType> client) {
+    // Do nothing.
+    (void) client;
+  }
+
   /// Gets the underlying mock client object.
   MockClientType* mock_client() {
     return mock_client_.get();

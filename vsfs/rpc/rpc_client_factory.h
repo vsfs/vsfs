@@ -53,6 +53,13 @@ class RpcClientFactoryInterface {
    * RpcClient to the caller. The caller must reclaim the ClientType.
    */
   virtual boost::shared_ptr<ClientType> open(const string& host, int port) = 0;
+
+  /**
+   * \brief Close the connection, in concept.
+   *
+   * This function manages to reclaim the connection hold by the client.
+   */
+  virtual void close(boost::shared_ptr<ClientType> client) = 0;
 };
 
 /**
@@ -72,6 +79,10 @@ class RpcClientFactory : public RpcClientFactoryInterface<ClientType> {
     // management for RpcClient later.
     boost::shared_ptr<ClientType> client(new ClientType(host, port));
     return client;
+  }
+
+  virtual void close(boost::shared_ptr<ClientType> client) {
+    client->close();
   }
 };
 
