@@ -1,4 +1,4 @@
-SUBDIRS = rpc common query index masterd indexd client
+SUBDIRS = rpc common query index masterd indexd client fuse
 BUILT_SOURCES = rpc
 
 rpc:

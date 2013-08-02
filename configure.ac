@@ -95,6 +95,7 @@ AC_CONFIG_FILES([Makefile
 				 contrib/vsfs.spec
 				 vsfs/client/Makefile
 				 vsfs/common/Makefile
+				 vsfs/fuse/Makefile
 				 vsfs/index/Makefile
 				 vsfs/indexd/Makefile
 				 vsfs/masterd/Makefile
