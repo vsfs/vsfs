@@ -28,7 +28,7 @@
 #if FUSE_MAJOR_VERSION == 2 and FUSE_MINOR_VERSION == 9
 #include <sys/file.h>
 #endif
-#include <attr/xattr.h>
+#include <attr/xattr.h>  // It must be after sys/types.h.
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -39,12 +39,13 @@
 #include "vsfs/common/complex_query.h"
 #include "vsfs/common/file_object.h"
 #include "vsfs/common/posix_path.h"
-// #include "vsfs/common/posix_storage_manager.h"
+#include "vsfs/common/posix_storage_manager.h"
 #include "vsfs/fuse/vsfs_ops.h"
 
 using std::string;
 using std::unique_ptr;
 using std::vector;
+using vobla::Status;
 using vsfs::client::VSFSRpcClient;
 
 namespace fs = boost::filesystem;
@@ -52,16 +53,12 @@ namespace fs = boost::filesystem;
 namespace vsfs {
 namespace fuse {
 
-const int kHostnameLen = 512;
-char gHostname[kHostnameLen];
-
 unique_ptr<VsfsFuse> VsfsFuse::instance_;
 VsfsFuse *vsfs;
 
 Status VsfsFuse::init(const string &basedir, const string &mnt,
                       const string &host, int port) {
   LOG(INFO) << "VsfsFuse starts initilizing...";
-  gethostname(gHostname, kHostnameLen);
   // This function should be only called once.
   CHECK(instance_.get() == NULL)
       << "VsfsFuse should only be initialized once.";
@@ -86,7 +83,7 @@ VsfsFuse* VsfsFuse::instance() {
 VsfsFuse::VsfsFuse(const string &basedir, const string &mnt,
                    const string &host, int port)
   : basedir_(basedir), mount_point_(mnt), host_(host), port_(port),
-    // storage_manager_(new PosixStorageManager(basedir)),
+    storage_manager_(new PosixStorageManager(basedir)),
     client_(new VSFSRpcClient(host, port)) {
 }
 

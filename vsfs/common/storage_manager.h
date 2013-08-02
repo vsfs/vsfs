@@ -57,30 +57,22 @@ class StorageManager : boost::noncopyable {
      */
     virtual FileObject open(const string& path, int flags) = 0;
 
-    /**
-     * \brief close a file
-     */
+    /// Closes an opened file handler.
     virtual Status close(FileHandler* file_handler) const = 0;
 
     /**
-     * \brief read from the file
-     * \return Return the number of bytes actually read, -1 on error
+     * \brief Reads from the file.
+     * \return Returns the number of bytes actually read, -1 on error
      */
     virtual ssize_t read(FileHandler* file_handler, void *buf,
                          size_t count, off_t offset) = 0;
 
     /**
-     * \brief write to the file
-     * \return Return the number of bytes actually written, -1 on error
+     * \brief Writes to the file.
+     * \return Returns the number of bytes actually written, -1 on error
      */
     virtual ssize_t write(FileHandler* file_handler, const void *buf,
                           size_t count, off_t offset) = 0;
-
-    /**
-     * \brief flush the data to the disk.
-     * \return Status object
-     */
-    virtual Status flush(FileHandler* file_handler) const = 0;
 };
 
 }  // namespace vsfs

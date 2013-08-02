@@ -45,20 +45,22 @@ AX_BOOST_SYSTEM([1.53])
 AC_HEADER_STDBOOL
 
 # Checks for typedefs, structures, and compiler characteristics.
-AC_TYPE_SIZE_T
-AC_TYPE_UINT64_T
-AC_TYPE_OFF_T
 AC_TYPE_INT16_T
 AC_TYPE_INT32_T
 AC_TYPE_INT64_T
 AC_TYPE_INT8_T
+AC_TYPE_MODE_T
+AC_TYPE_OFF_T
 AC_TYPE_SIGNAL
+AC_TYPE_SIZE_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
+AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
+AC_C_INLINE
 
 
 AX_CXX_COMPILE_STDCXX_11(noext)
@@ -77,6 +79,10 @@ if test "x${gcov_enabled}" = xyes; then
 fi
 
 # Checks for library functions.
+AC_CHECK_FUNCS([strerrno])
+AC_FUNC_CHOWN
+AC_FUNC_MALLOC
+AC_FUNC_ERROR_AT_LINE
 
 #CXXFLAGS="-Wall -Wextra -Werror -pedantic -Wunused-value $CXXFLAGS"
 CXXFLAGS="-Wall -Wextra -static -pedantic -Wunused-value $CXXFLAGS"
