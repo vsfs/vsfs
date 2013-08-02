@@ -148,18 +148,13 @@ class VSFSClient : boost::noncopyable {
    */
   virtual Status update(const vector<IndexUpdateRequest>& updates) = 0;
 
-  /*
-  virtual Status info(const string &path, const string &index_name,
-                      vsfs::index::IndexInfo* info) = 0;
-                      */
-
   /**
    * \brief Gets the information for all indices on the path.
    * \param[in] path The path to find indices.
    * \param[out] infos Filled with all index infos on this path.
    */
-  // virtual Status info(const string &path,
-  //                    vector<vsfs::index::IndexInfo> *infos) = 0;
+  virtual Status info(const string& path,
+                      vector<index::IndexInfo>* infos) = 0;
 };
 
 }  // namespace client

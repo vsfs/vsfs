@@ -208,6 +208,13 @@ Status VSFSRpcClient::import(const vector<string>& file_paths) {
   return Status::OK;
 }
 
+Status VSFSRpcClient::info(const string& path,
+                           vector<index::IndexInfo>* infos) {
+  CHECK_NOTNULL(infos);
+  (void) path;
+  return Status::OK;
+}
+
 bool VSFSRpcClient::is_initialized() {
   return !master_map_.empty();
 }

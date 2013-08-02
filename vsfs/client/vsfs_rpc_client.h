@@ -119,6 +119,8 @@ class VSFSRpcClient : public VSFSClient {
 
   Status import(const vector<string>& file_paths);
 
+  Status info(const string& path, vector<index::IndexInfo>* infos);
+
  private:
   /// Returns true if this client has been initialized.
   bool is_initialized();
