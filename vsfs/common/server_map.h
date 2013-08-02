@@ -86,6 +86,9 @@ class ServerMap : boost::noncopyable {
    */
   size_t num_nodes();
 
+  /// Returns true if this ring is empty.
+  bool empty();
+
   /**
    * \brief Get all the partitions in the ring.
    */

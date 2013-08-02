@@ -117,6 +117,11 @@ size_t ServerMap::num_nodes() {
   return ring_.num_nodes();
 }
 
+bool ServerMap::empty() {
+  MutexGuard guard(lock_);
+  return ring_.empty();
+}
+
 vector<HashValueType> ServerMap::get_partitions() {
   vector<HashValueType> partitions;
   MutexGuard lock(lock_);

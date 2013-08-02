@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
+#include <boost/filesystem.hpp>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <thrift/transport/TTransportException.h>
 #include <string>
 #include <vector>
+#include "vsfs/common/types.h"
+#include "vsfs/common/hash_util.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 
 using apache::thrift::transport::TTransportException;
 using std::string;
 using std::vector;
 using vobla::Status;
+namespace fs = boost::filesystem;
 
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
              "VSFS client can use.");
@@ -35,6 +39,12 @@ namespace client {
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
     : host_(host), port_(port),
       thread_pool_(FLAGS_vsfs_client_num_thread) {
+}
+
+VSFSRpcClient::VSFSRpcClient(MasterClientFactory* master_factory,
+                             IndexClientFactory* index_factory)
+    : master_client_factory_(master_factory),
+      index_client_factory_(index_factory) {
 }
 
 VSFSRpcClient::~VSFSRpcClient() {
@@ -73,7 +83,7 @@ Status VSFSRpcClient::init() {
 Status VSFSRpcClient::connect(const string &host, int port) {
   host_ = host;
   port_ = port;
-  master_client_.reset(new MasterClientType(host_, port_));
+  master_client_ = master_client_factory_->open(host, port);
   VLOG(1) << "Connecting to " << host_ << ":" << port;
   try {
     master_client_->open();
@@ -112,6 +122,64 @@ Status VSFSRpcClient::open(const string &path, int flag) {
   return Status::OK;
 }
 
+Status VSFSRpcClient::mkdir(
+    const string& path, int64_t mode, int64_t uid, int64_t gid) {
+  if (!is_initialized()) {
+    VLOG(1) << "The VSFS RPC client has not initialized yet.";
+    return Status(-1, "The client has not initialized yet.");
+  }
+  FilePathHashType hash = HashUtil::file_path_to_hash(path);
+  NodeInfo node;
+  auto status = master_map_.get(hash, &node);
+  if (!status.ok()) {
+    return status;
+  }
+  try {
+    auto master_client = master_client_factory_->open(node.address.host,
+                                                      node.address.port);
+    RpcFileInfo dir_info;
+    dir_info.mode = mode;
+    dir_info.uid = uid;
+    dir_info.gid = gid;
+    master_client->handler()->mkdir(path, dir_info);
+    master_client->close();
+  } catch (TTransportException e) {  // NOLINT
+    status = Status(e.getType(), e.what());
+    LOG(ERROR) << "Failed to run mkdir RPC to master node: "
+               << node.address.host << ":" << node.address.port
+               << " because: " << status.message();
+    return status;
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::rmdir(const string& path) {
+  // TODO(eddyxu): refactory mkdir/rmdir and extract shared code.
+  if (!is_initialized()) {
+    VLOG(1) << "The VSFS RPC client has not initialized yet.";
+    return Status(-1, "The client has not initialized yet.");
+  }
+  FilePathHashType hash = HashUtil::file_path_to_hash(path);
+  NodeInfo node;
+  auto status = master_map_.get(hash, &node);
+  if (!status.ok()) {
+    return status;
+  }
+  try {
+    auto master_client = master_client_factory_->open(node.address.host,
+                                                      node.address.port);
+    master_client->handler()->rmdir(path);
+    master_client->close();
+  } catch (TTransportException e) {  // NOLINT
+    status = Status(e.getType(), e.what());
+    LOG(ERROR) << "Failed to run mkdir RPC to master node: "
+        << node.address.host << ":" << node.address.port
+        << " because: " << status.message();
+    return status;
+  }
+  return Status::OK;
+}
+
 Status VSFSRpcClient::create_index(const string& index_path,
                                    const string& index_name,
                                    int index_type,
@@ -138,6 +206,10 @@ Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& updates) {
 Status VSFSRpcClient::import(const vector<string>& file_paths) {
   (void) file_paths;
   return Status::OK;
+}
+
+bool VSFSRpcClient::is_initialized() {
+  return !master_map_.empty();
 }
 
 }  // namespace client

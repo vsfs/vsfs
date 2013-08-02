@@ -34,6 +34,9 @@ AC_CHECK_LIB([snappy], [snappy_compress], [], [AC_MSG_ERROR([libsnappy was not f
 AC_CHECK_LIB([leveldb], [leveldb_open], [], [AC_MSG_ERROR([libleveldb was not found.])], [-lsnappy -lpthread])
 AC_CHECK_LIB([event], [main], [], [AC_MSG_ERROR([libevent was not found.])])
 PKG_CHECK_MODULES([libthrift], [thrift-nb])
+PKG_CHECK_MODULES([fuse], [fuse >= 2.8.0], [],
+				  [AC_MSG_ERROR(fuse was not found.)])
+
 
 # Checks for header files.
 AX_BOOST_BASE([1.53])

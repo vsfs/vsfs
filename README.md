@@ -11,6 +11,7 @@ The Official VSFS repo!
  - g++ > 4.7.1
  - boost >= 1.53
  - thrift 0.9.0
+ - FUSE > 2.8.0
  - LevelDB and snappy
  - glog
  - gflags
