@@ -21,6 +21,7 @@
 #include <transport/TBufferTransports.h>
 #include <string>
 #include "vsfs/rpc/rpc_client.h"
+#include "vsfs/rpc/vsfs_types.h"
 
 using apache::thrift::transport::TFramedTransport;
 using std::string;
@@ -47,6 +48,10 @@ class RpcClientFactoryInterface {
   RpcClientFactoryInterface() = default;
 
   virtual ~RpcClientFactoryInterface() {}
+
+  virtual boost::shared_ptr<ClientType> open(const RpcNodeAddress& addr) {
+    return open(addr.host, addr.port);
+  }
 
   /**
    * \brief It creates a new RpcClient instance and pass the ownership of the

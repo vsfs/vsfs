@@ -192,8 +192,7 @@ Status VSFSRpcClient::open(const string& path, ObjectId* oid) {
     return status;
   }
   try {
-    auto client = master_client_factory_->open(node.address.host,
-                                               node.address.port);
+    auto client = master_client_factory_->open(node.address);
     *oid = client->handler()->object_id(path);
     master_client_factory_->close(client);
   } catch (TTransportException e) {  // NOLINT
@@ -203,15 +202,32 @@ Status VSFSRpcClient::open(const string& path, ObjectId* oid) {
 }
 
 Status VSFSRpcClient::unlink(const string& path) {
+  // First remove the subfile from its parent node.
+  NodeInfo parent_node;
+  auto parent = fs::path(path).parent_path().string();
+  auto parent_hash = HashUtil::file_path_to_hash(parent);
+  auto filename = fs::path(path).filename().string();
+  auto status = master_map_.get(parent_hash, &parent_node);
+  if (!status.ok()) {
+    return status;
+  }
+  // Removes this file from its parent directory first.
+  try {
+    auto client = master_client_factory_->open(parent_node.address);
+    client->handler()->remove_subfile(parent, filename);
+    master_client_factory_->close(client);
+  } catch (TTransportException e) {  // NOLINT
+    return Status(e.getType(), e.what());
+  }
+
   NodeInfo node;
   auto hash = HashUtil::file_path_to_hash(path);
-  auto status = master_map_.get(hash, &node);
+  status = master_map_.get(hash, &node);
   if (!status.ok()) {
     return status;
   }
   try {
-    auto client = master_client_factory_->open(node.address.host,
-                                               node.address.port);
+    auto client = master_client_factory_->open(node.address);
     client->handler()->remove(path);
     master_client_factory_->close(client);
   } catch (TTransportException e) {  // NOLINT
