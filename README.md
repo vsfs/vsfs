@@ -16,4 +16,5 @@ The Official VSFS repo!
  - glog
  - gflags
  - libssl-dev
+ - libattr1-dev
  - gmock 1.6.0 for testing.
