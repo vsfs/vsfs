@@ -244,6 +244,9 @@ service MasterServer {
   RpcObjectId create(1:string path, 2:i64 mode, 3:i64 uid, 4:i64 gid)
     throws (1:RpcInvalidOp ouch);
 
+  /// Obtains the object ID for a file.
+  RpcObjectId object_id(1:string path) throws (1:RpcInvalidOp ouch);
+
   /// Removes a file.
   void remove(1:string path)
     throws (1:RpcInvalidOp ouch);

@@ -84,6 +84,12 @@ void MasterServer::remove(const string& path) {
   ThriftUtils::check_status(controller_->remove(path));
 }
 
+RpcObjectId MasterServer::object_id(const string& path) {
+  RpcObjectId tmp;
+  ThriftUtils::check_status(controller_->object_id(path, &tmp));
+  return tmp;
+}
+
 void MasterServer::getattr(RpcFileInfo& info, const string& path) {  // NOLINT
   ThriftUtils::check_status(controller_->getattr(path, &info));
 }

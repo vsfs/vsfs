@@ -300,7 +300,11 @@ Status MasterController::remove(const string& path) {
   return namespace_->remove(path);
 }
 
-Status MasterController::getattr(const string &path, RpcFileInfo *info) {
+Status MasterController::object_id(const string& path, ObjectId* oid) {
+  return namespace_->object_id(path, oid);
+}
+
+Status MasterController::getattr(const string& path, RpcFileInfo *info) {
   // Same to "remove", we do not need to check the validataion of path.
   return namespace_->getattr(path, info);
 }

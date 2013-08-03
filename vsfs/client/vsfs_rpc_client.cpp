@@ -183,14 +183,40 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
   return Status::OK;
 }
 
-Status VSFSRpcClient::open(const string &path, int flag) {
-  (void) path;
-  (void) flag;
+Status VSFSRpcClient::open(const string& path, ObjectId* oid) {
+  CHECK_NOTNULL(oid);
+  auto hash = HashUtil::file_path_to_hash(path);
+  NodeInfo node;
+  auto status = master_map_.get(hash, &node);
+  if (!status.ok()) {
+    return status;
+  }
+  try {
+    auto client = master_client_factory_->open(node.address.host,
+                                               node.address.port);
+    *oid = client->handler()->object_id(path);
+    master_client_factory_->close(client);
+  } catch (TTransportException e) {  // NOLINT
+    return Status(e.getType(), e.what());
+  }
   return Status::OK;
 }
 
 Status VSFSRpcClient::unlink(const string& path) {
-  (void) path;
+  NodeInfo node;
+  auto hash = HashUtil::file_path_to_hash(path);
+  auto status = master_map_.get(hash, &node);
+  if (!status.ok()) {
+    return status;
+  }
+  try {
+    auto client = master_client_factory_->open(node.address.host,
+                                               node.address.port);
+    client->handler()->remove(path);
+    master_client_factory_->close(client);
+  } catch (TTransportException e) {  // NOLINT
+    return Status(e.getType(), e.what());
+  }
   return Status::OK;
 }
 

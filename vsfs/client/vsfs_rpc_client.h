@@ -94,7 +94,7 @@ class VSFSRpcClient : public VSFSClient {
   Status create(const string& path, int64_t mode, int64_t uid, int64_t gid,
                 ObjectId* id);
 
-  Status open(const string& path, int flag);
+  Status open(const string& path, ObjectId *id);
 
   Status unlink(const string& path);
 

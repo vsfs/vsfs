@@ -68,6 +68,8 @@ class MasterServer : public vsfs::MasterServerIf {
 
   void remove(const string& path);
 
+  RpcObjectId object_id(const string& path);
+
   void getattr(RpcFileInfo& info, const string& path);  // NOLINT
 
   void find_files(RpcFileList& files, const RpcObjectList& objects);  // NOLINT

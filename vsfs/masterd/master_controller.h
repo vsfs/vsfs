@@ -153,6 +153,9 @@ class MasterController : boost::noncopyable {
   /// Removes a file if exists.
   Status remove(const string& path);
 
+  /// Gets the object ID for the path, if existed.
+  Status object_id(const string& path, ObjectId* oid);
+
   /// Gets the attribute of a file / dir / index.
   Status getattr(const string &path, RpcFileInfo *info);
 

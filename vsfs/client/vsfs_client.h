@@ -104,7 +104,7 @@ class VSFSClient : boost::noncopyable {
                         int64_t gid, ObjectId* id) = 0;
 
   /// Opens a file and get the file handler.
-  virtual Status open(const string& path, int flag) = 0;
+  virtual Status open(const string& path, ObjectId* id) = 0;
 
   /*
   /// Close a file handler.
