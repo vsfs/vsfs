@@ -294,6 +294,21 @@ Status VSFSRpcClient::rmdir(const string& path) {
   return Status::OK;
 }
 
+Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  // NOLINT
+  CHECK_NOTNULL(files);
+  auto hash = HashUtil::file_path_to_hash(dirpath);
+  NodeInfo node;
+  CHECK(master_map_.get(hash, &node).ok());
+  try {
+    auto client = master_client_factory_->open(node.address);
+    client->handler()->readdir(*files, dirpath);
+    master_client_factory_->close(client);
+  }  catch (TTransportException e) {  // NOLINT
+    return Status(e.getType(), e.what());
+  }
+  return Status::OK;
+}
+
 Status VSFSRpcClient::create_index(const string& index_path,
                                    const string& index_name,
                                    int index_type,

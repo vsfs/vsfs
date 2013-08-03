@@ -99,6 +99,9 @@ class VSFSClient : boost::noncopyable {
    */
   virtual Status rmdir(const string& path) = 0;
 
+  /// Reads all files from one directory.
+  virtual Status readdir(const string& dir, vector<string>* subfiles) = 0;  // NOLINT
+
   /// Creates a new file in the VSFS namespace.
   virtual Status create(const string& path, int64_t mode, int64_t uid,
                         int64_t gid, ObjectId* id) = 0;
@@ -107,9 +110,6 @@ class VSFSClient : boost::noncopyable {
   virtual Status open(const string& path, ObjectId* id) = 0;
 
   /*
-  /// Close a file handler.
-  virtual Status close(FileOp *file_op, FileInfo *file) = 0;
-
   // TODO(ziling): use const FileOp &file_op, need to modify all related
   // operations in file_op, file_handler, storage_manager to const
   /// Read a file and return the bytes that have been read

@@ -111,6 +111,9 @@ class VSFSRpcClient : public VSFSClient {
   /// Deletes a directory.
   Status rmdir(const string& path);
 
+  /// Reads all subfiles from a directory.
+  Status readdir(const string& dirpath, vector<string>* files);  // NOLINT
+
   Status create_index(const string& index_path,
                       const string& index_name,
                       int index_type,
