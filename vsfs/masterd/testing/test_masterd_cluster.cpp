@@ -15,6 +15,7 @@
  */
 
 #include <glog/logging.h>
+#include <unistd.h>
 #include <string>
 #include "vsfs/masterd/testing/test_masterd_cluster.h"
 
@@ -35,7 +36,8 @@ void TestMasterdCluster::start() {
           new MasterController(basedir_, "", kPrimaryPort, true)));
   threads_.emplace_back(
       thread(&MasterController::start, cluster_.back().get()));
-  std::this_thread::sleep_for(std::chrono::seconds(2));
+  // std::this_thread::sleep_for(std::chrono::seconds(2));
+  sleep(2);
 
   // Starts the secondary masters.
   for (int i = 1; i < num_masterds_; ++i) {
