@@ -16,8 +16,8 @@
 
 /**
  * \file client_metadata_test.cpp
- * \brief Integration tests of the client to issues metadata ops to the master
- * cluster.
+ * \brief Integration tests of the VsfsRpcClient to perform metadata ops to the
+ * master cluster.
  */
 
 #include <glog/logging.h>
