@@ -25,8 +25,8 @@ libvsfs_masterd_a_SOURCES = \
   partition_manager.h
 
 libvsfs_masterd_test_a_SOURCES = \
-  testing/test_masterd_cluster.h \
-  testing/test_masterd_cluster.cpp
+  testing/local_masterd_cluster.h \
+  testing/local_masterd_cluster.cpp
 
 masterd_types.h: masterd.thrift
 	thrift --gen cpp -out . $<

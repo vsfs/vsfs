@@ -14,30 +14,32 @@
  * limitations under the License.
  */
 
+#define _GLIBCXX_USE_NANOSLEEP   // Fixed std::this_thread::sleep_for on centos.
 #include <glog/logging.h>
 #include <unistd.h>
+#include <chrono>
 #include <string>
-#include "vsfs/masterd/testing/test_masterd_cluster.h"
+#include <thread>
+#include "vsfs/masterd/testing/local_masterd_cluster.h"
 
 namespace vsfs {
 namespace masterd {
 
-TestMasterdCluster::TestMasterdCluster(const string& dirpath, int nmasterd)
+LocalMasterdCluster::LocalMasterdCluster(const string& dirpath, int nmasterd)
     : basedir_(dirpath), num_masterds_(nmasterd) {
 }
 
-TestMasterdCluster::~TestMasterdCluster() {
+LocalMasterdCluster::~LocalMasterdCluster() {
   stop();
 }
 
-void TestMasterdCluster::start() {
+void LocalMasterdCluster::start() {
   const int kPrimaryPort = 10100;
   cluster_.emplace_back(unique_ptr<MasterController>(
           new MasterController(basedir_, "", kPrimaryPort, true)));
   threads_.emplace_back(
       thread(&MasterController::start, cluster_.back().get()));
-  // std::this_thread::sleep_for(std::chrono::seconds(2));
-  sleep(2);
+  std::this_thread::sleep_for(std::chrono::seconds(2));
 
   // Starts the secondary masters.
   for (int i = 1; i < num_masterds_; ++i) {
@@ -47,10 +49,10 @@ void TestMasterdCluster::start() {
     threads_.emplace_back(
         thread(&MasterController::start, cluster_.back().get()));
   }
-  sleep(2);
+  std::this_thread::sleep_for(std::chrono::seconds(2));
 }
 
-void TestMasterdCluster::stop() {
+void LocalMasterdCluster::stop() {
   /// Stops the cluster and wait all threads exit.
   for (auto it = cluster_.rbegin(); it != cluster_.rend(); ++it) {
     (*it)->stop();
@@ -62,22 +64,22 @@ void TestMasterdCluster::stop() {
   }
 }
 
-MasterController* TestMasterdCluster::primary() {
+MasterController* LocalMasterdCluster::primary() {
   CHECK_GE(cluster_.size(), 1);
   return cluster_[0].get();
 }
 
-string TestMasterdCluster::host(int idx) const {
+string LocalMasterdCluster::host(int idx) const {
   CHECK_LT(idx, cluster_.size());
   return cluster_[idx]->host();
 }
 
-int TestMasterdCluster::port(int idx) const {
+int LocalMasterdCluster::port(int idx) const {
   CHECK_LT(idx, cluster_.size());
   return cluster_[idx]->port();
 }
 
-int TestMasterdCluster::cluster_size() const {
+int LocalMasterdCluster::cluster_size() const {
   return cluster_.size();
 }
 

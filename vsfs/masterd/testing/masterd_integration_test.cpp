@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#define _GLIBCXX_USE_NANOSLEEP   // Fixed std::this_thread::sleep_for on centos.
-
 #include <glog/logging.h>
 #include <gtest/gtest.h>
 #include <chrono>
@@ -25,7 +23,7 @@
 #include "vobla/file.h"
 #include "vsfs/rpc/vsfs_types.h"
 #include "vsfs/masterd/master_controller.h"
-#include "vsfs/masterd/testing/test_masterd_cluster.h"
+#include "vsfs/masterd/testing/local_masterd_cluster.h"
 
 using std::thread;
 using std::unique_ptr;
@@ -54,12 +52,12 @@ class MasterServerIntegrationTest : public ::testing::Test {
    * \note the first node is the primary one.
    */
   void start_cluster(int num_masters) {
-    test_cluster_.reset(new TestMasterdCluster(tmpdir_->path(), num_masters));
+    test_cluster_.reset(new LocalMasterdCluster(tmpdir_->path(), num_masters));
     test_cluster_->start();
   }
 
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
-  unique_ptr<TestMasterdCluster> test_cluster_;
+  unique_ptr<LocalMasterdCluster> test_cluster_;
 };
 
 TEST_F(MasterServerIntegrationTest, TestStartMasterServerCluster) {

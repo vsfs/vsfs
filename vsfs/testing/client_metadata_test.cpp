@@ -28,14 +28,14 @@
 #include <vector>
 #include "vobla/file.h"
 #include "vsfs/client/vsfs_rpc_client.h"
-#include "vsfs/masterd/testing/test_masterd_cluster.h"
+#include "vsfs/masterd/testing/local_masterd_cluster.h"
 
 using std::thread;
 using std::unique_ptr;
 using std::vector;
 using vobla::TemporaryDirectory;
 using vsfs::client::VSFSRpcClient;
-using vsfs::masterd::TestMasterdCluster;
+using vsfs::masterd::LocalMasterdCluster;
 
 namespace vsfs {
 
@@ -51,12 +51,12 @@ class ClientMetadataTest : public ::testing::Test {
   }
 
   void start(int num_masters) {
-    cluster_.reset(new TestMasterdCluster(tmpdir_->path(), num_masters));
+    cluster_.reset(new LocalMasterdCluster(tmpdir_->path(), num_masters));
     cluster_->start();
   }
 
   unique_ptr<TemporaryDirectory> tmpdir_;
-  unique_ptr<TestMasterdCluster> cluster_;
+  unique_ptr<LocalMasterdCluster> cluster_;
 };
 
 TEST_F(ClientMetadataTest, TestMakeDirs) {

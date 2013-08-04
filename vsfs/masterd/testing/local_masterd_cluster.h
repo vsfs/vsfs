@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VSFS_MASTERD_TESTING_TEST_MASTERD_CLUSTER_H_
-#define VSFS_MASTERD_TESTING_TEST_MASTERD_CLUSTER_H_
+#ifndef VSFS_MASTERD_TESTING_LOCAL_MASTERD_CLUSTER_H_
+#define VSFS_MASTERD_TESTING_LOCAL_MASTERD_CLUSTER_H_
 
 #include <boost/utility.hpp>
 #include <memory>
@@ -35,20 +35,20 @@ namespace vsfs {
 namespace masterd {
 
 /**
- * \class TestMasterdCluster
+ * \class LocalMasterdCluster
  * \brief Constructs and manages a test masterd cluster locally for test
  * purpose.
  */
-class TestMasterdCluster : boost::noncopyable {
+class LocalMasterdCluster : boost::noncopyable {
  public:
   /**
    * \brief Constructs a Masterd cluster with 'num_masterd' nodes. The first
    * node will be the primary one.
    */
-  TestMasterdCluster(const string& basedir, int cluster_size);
+  LocalMasterdCluster(const string& basedir, int cluster_size);
 
   /// Destructs the cluster and stop / reclaim resources.
-  virtual ~TestMasterdCluster();
+  virtual ~LocalMasterdCluster();
 
   /// Starts the cluster.
   void start();
@@ -82,4 +82,4 @@ class TestMasterdCluster : boost::noncopyable {
 }  // namespace masterd
 }  // namespace vsfs
 
-#endif  // VSFS_MASTERD_TESTING_TEST_MASTERD_CLUSTER_H_
+#endif  // VSFS_MASTERD_TESTING_LOCAL_MASTERD_CLUSTER_H_
