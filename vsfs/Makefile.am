@@ -1,4 +1,4 @@
-SUBDIRS = rpc common query index masterd indexd client fuse
+SUBDIRS = rpc common query index masterd indexd client fuse testing
 BUILT_SOURCES = rpc
 
 rpc:
@@ -6,5 +6,6 @@ rpc:
 
 integration-test:
 	$(MAKE) -C masterd $@
+	$(MAKE) -C testing $@
 
 .PHONY: rpc integratio-test

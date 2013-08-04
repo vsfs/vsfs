@@ -6,7 +6,7 @@ BUILT_SOURCES = masterd_types.h
 bin_PROGRAMS = masterd
 EXTRA_DIST = masterd.thrift
 
-noinst_LIBRARIES = libvsfs-masterd.a
+noinst_LIBRARIES = libvsfs-masterd.a libvsfs-masterd-test.a
 libvsfs_masterd_a_SOURCES = \
   index_namespace.cpp \
   index_namespace.h \
@@ -23,6 +23,10 @@ libvsfs_masterd_a_SOURCES = \
   namespace.h \
   partition_manager.cpp \
   partition_manager.h
+
+libvsfs_masterd_test_a_SOURCES = \
+  testing/test_masterd_cluster.h \
+  testing/test_masterd_cluster.cpp
 
 masterd_types.h: masterd.thrift
 	thrift --gen cpp -out . $<
