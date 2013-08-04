@@ -1,6 +1,6 @@
 # vim: ts=8:st=8:noexpandtab
 
-bin_PROGRAMS = vsfsutil
+bin_PROGRAMS = vsfs
 lib_LIBRARIES = libvsfs-client.a
 
 LDADD = libvsfs-client.a \
@@ -10,8 +10,8 @@ LDADD = libvsfs-client.a \
 	-lthrift -lthriftnb \
 	-lvobla -lcrypto -lgtest -lgtest_main -lgmock
 
-vsfsutil_SOURCES = \
-  vsfsutil.cpp \
+vsfs_SOURCES = \
+  vsfs.cpp \
   commands.h commands.cpp
 
 libvsfs_client_a_SOURCES = \
