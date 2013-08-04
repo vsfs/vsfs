@@ -15,12 +15,15 @@
  */
 
 #define _GLIBCXX_USE_NANOSLEEP   // Fixed std::this_thread::sleep_for on centos.
+#include <boost/filesystem.hpp>
 #include <glog/logging.h>
 #include <unistd.h>
 #include <chrono>
 #include <string>
 #include <thread>
 #include "vsfs/masterd/testing/local_masterd_cluster.h"
+
+namespace fs = boost::filesystem;
 
 namespace vsfs {
 namespace masterd {
@@ -35,17 +38,23 @@ LocalMasterdCluster::~LocalMasterdCluster() {
 
 void LocalMasterdCluster::start() {
   const int kPrimaryPort = 10100;
+  fs::create_directories(basedir_ + "/0");
   cluster_.emplace_back(unique_ptr<MasterController>(
-          new MasterController(basedir_, "", kPrimaryPort, true)));
+          new MasterController(basedir_ + "/0", "", kPrimaryPort, true)));
+  CHECK(cluster_.back()->init().ok());
   threads_.emplace_back(
       thread(&MasterController::start, cluster_.back().get()));
   std::this_thread::sleep_for(std::chrono::seconds(2));
 
   // Starts the secondary masters.
   for (int i = 1; i < num_masterds_; ++i) {
+    string basedir = basedir_ + "/" + std::to_string(i);
+    fs::create_directories(basedir);
     cluster_.emplace_back(unique_ptr<MasterController>(
-            new MasterController(basedir_, "", kPrimaryPort + i,
+            new MasterController(basedir, "", kPrimaryPort + i,
                                  false, "", kPrimaryPort)));
+
+    CHECK(cluster_.back()->init().ok());
     threads_.emplace_back(
         thread(&MasterController::start, cluster_.back().get()));
   }

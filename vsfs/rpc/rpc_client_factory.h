@@ -83,6 +83,7 @@ class RpcClientFactory : public RpcClientFactoryInterface<ClientType> {
     // open() request. We can use this function to provide better resource
     // management for RpcClient later.
     boost::shared_ptr<ClientType> client(new ClientType(host, port));
+    client->open();
     return client;
   }
 

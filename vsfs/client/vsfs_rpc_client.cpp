@@ -264,9 +264,9 @@ Status VSFSRpcClient::mkdir(
     master_client_factory_->close(master_client);
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
-    LOG(ERROR) << "Failed to run mkdir RPC to master node: "
+    LOG(ERROR) << "Failed to run mkdir RPC to master node {"
                << node.address.host << ":" << node.address.port
-               << " because: " << status.message();
+               << "} : " << status.message();
     return status;
   }
   return Status::OK;

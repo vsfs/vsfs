@@ -64,6 +64,7 @@ TEST_F(ClientMetadataTest, TestMakeDirs) {
 
   VSFSRpcClient client(cluster_->host(0), cluster_->port(0));
   EXPECT_TRUE(client.init().ok());
+  EXPECT_TRUE(client.mkdir("/", 0x666, 100, 100).ok());
 }
 
 }  // namespace vsfs
