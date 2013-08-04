@@ -411,5 +411,13 @@ Status MasterController::locate_index(const RpcIndexLookupRequest &request,
   return Status::OK;
 }
 
+string MasterController::host() const {
+  return host_;
+}
+
+int MasterController::port() const {
+  return port_;
+}
+
 }  // namespace masterd
 }  // namespace vsfs

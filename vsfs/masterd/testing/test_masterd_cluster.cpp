@@ -47,6 +47,7 @@ void TestMasterdCluster::start() {
     threads_.emplace_back(
         thread(&MasterController::start, cluster_.back().get()));
   }
+  sleep(2);
 }
 
 void TestMasterdCluster::stop() {
@@ -64,6 +65,16 @@ void TestMasterdCluster::stop() {
 MasterController* TestMasterdCluster::primary() {
   CHECK_GE(cluster_.size(), 1);
   return cluster_[0].get();
+}
+
+string TestMasterdCluster::host(int idx) const {
+  CHECK_LT(idx, cluster_.size());
+  return cluster_[idx]->host();
+}
+
+int TestMasterdCluster::port(int idx) const {
+  CHECK_LT(idx, cluster_.size());
+  return cluster_[idx]->port();
 }
 
 int TestMasterdCluster::cluster_size() const {

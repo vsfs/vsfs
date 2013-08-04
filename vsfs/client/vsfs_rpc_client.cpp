@@ -34,10 +34,15 @@ DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
              "VSFS client can use.");
 
 namespace vsfs {
+
+using rpc::RpcClientFactory;
+
 namespace client {
 
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
-    : host_(host), port_(port),
+    : master_client_factory_(new RpcClientFactory<MasterClientType>),
+      index_client_factory_(new RpcClientFactory<IndexClientType>),
+      host_(host), port_(port),
       thread_pool_(FLAGS_vsfs_client_num_thread) {
 }
 

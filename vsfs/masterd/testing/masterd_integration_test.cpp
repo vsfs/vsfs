@@ -64,8 +64,6 @@ class MasterServerIntegrationTest : public ::testing::Test {
 
 TEST_F(MasterServerIntegrationTest, TestStartMasterServerCluster) {
   start_cluster(4);
-  LOG(INFO) << "Fully started.";
-  std::this_thread::sleep_for(std::chrono::seconds(2));
   RpcConsistentHashRing ring = test_cluster_->primary()->get_all_masters();
   EXPECT_EQ(4u, ring.size());
 }

@@ -59,6 +59,12 @@ class TestMasterdCluster : boost::noncopyable {
   /// Returns the instance of the primary masterd.
   MasterController* primary();
 
+  /// Returns the host address of the `idx`-th masterd node.
+  string host(int idx) const;
+
+  /// Returns the listening port of the `idx`-th master node.
+  int port(int idx) const;
+
   /// Returns the number of masterd node in this cluster.
   int cluster_size() const;
 

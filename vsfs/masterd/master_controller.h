@@ -180,6 +180,10 @@ class MasterController : boost::noncopyable {
   Status locate_index(const RpcIndexLookupRequest &lookup_request,
                       RpcIndexLocationList *results);
 
+  string host() const;
+
+  int port() const;
+
  private:
   FRIEND_TEST(MasterControllerTest, TestCreateIndex);
 

@@ -20,18 +20,22 @@
  * cluster.
  */
 
-#include <gtest/gtest.h>
+#include <glog/logging.h>
 #include <gmock/gmock.h>
-#include <chrono>
+#include <gtest/gtest.h>
 #include <memory>
 #include <thread>
 #include <vector>
 #include "vobla/file.h"
+#include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/masterd/testing/test_masterd_cluster.h"
 
 using std::thread;
 using std::unique_ptr;
 using std::vector;
 using vobla::TemporaryDirectory;
+using vsfs::client::VSFSRpcClient;
+using vsfs::masterd::TestMasterdCluster;
 
 namespace vsfs {
 
@@ -42,12 +46,24 @@ class ClientMetadataTest : public ::testing::Test {
   }
 
   void TearDown() {
+    cluster_.reset();
+    tmpdir_.reset();
+  }
+
+  void start(int num_masters) {
+    cluster_.reset(new TestMasterdCluster(tmpdir_->path(), num_masters));
+    cluster_->start();
   }
 
   unique_ptr<TemporaryDirectory> tmpdir_;
+  unique_ptr<TestMasterdCluster> cluster_;
 };
 
 TEST_F(ClientMetadataTest, TestMakeDirs) {
+  start(4);
+
+  VSFSRpcClient client(cluster_->host(0), cluster_->port(0));
+  EXPECT_TRUE(client.init().ok());
 }
 
 }  // namespace vsfs
