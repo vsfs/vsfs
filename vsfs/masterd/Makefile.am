@@ -45,7 +45,7 @@ TESTS = \
   partition_manager_test
 
 check_PROGRAMS = $(TESTS)
-LDADD = libvsfs-masterd.a $(masterd_LDADD) \
+LDADD = libvsfs-masterd.a libvsfs-masterd-test.a $(masterd_LDADD) \
 	-lgtest -lgtest_main -lgmock
 
 index_namespace_test_SOURCES = index_namespace_test.cpp

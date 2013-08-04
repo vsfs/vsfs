@@ -25,6 +25,7 @@
 #include "vobla/file.h"
 #include "vsfs/rpc/vsfs_types.h"
 #include "vsfs/masterd/master_controller.h"
+#include "vsfs/masterd/testing/test_masterd_cluster.h"
 
 using std::thread;
 using std::unique_ptr;
@@ -43,12 +44,7 @@ class MasterServerIntegrationTest : public ::testing::Test {
   void TearDown() {
     LOG(INFO) << "TearDown cluster.";
     /// Stops the cluster and wait all threads exit.
-    for (auto it = cluster_.rbegin(); it != cluster_.rend(); ++it) {
-      (*it)->stop();
-    }
-    for (auto& thd : threads_) {
-      thd.join();
-    }
+    test_cluster_.reset();
     tmpdir_.reset();
   }
 
@@ -58,33 +54,19 @@ class MasterServerIntegrationTest : public ::testing::Test {
    * \note the first node is the primary one.
    */
   void start_cluster(int num_masters) {
-    const int primary_port = 10100;
-    cluster_.emplace_back(unique_ptr<MasterController>(
-            new MasterController(tmpdir_->path(), "", primary_port, true)));
-    threads_.emplace_back(
-        thread(&MasterController::start, cluster_.back().get()));
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-
-    // Starts the secondary masters.
-    for (int i = 1; i < num_masters; ++i) {
-      cluster_.emplace_back(unique_ptr<MasterController>(
-            new MasterController(tmpdir_->path(), "", primary_port + i,
-                                 false, "", primary_port)));
-      threads_.emplace_back(
-        thread(&MasterController::start, cluster_.back().get()));
-    }
+    test_cluster_.reset(new TestMasterdCluster(tmpdir_->path(), num_masters));
+    test_cluster_->start();
   }
 
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
-  vector<unique_ptr<MasterController>> cluster_;
-  vector<thread> threads_;  // Each thread runs a master controller.
+  unique_ptr<TestMasterdCluster> test_cluster_;
 };
 
 TEST_F(MasterServerIntegrationTest, TestStartMasterServerCluster) {
   start_cluster(4);
   LOG(INFO) << "Fully started.";
   std::this_thread::sleep_for(std::chrono::seconds(2));
-  RpcConsistentHashRing ring = cluster_[0]->get_all_masters();
+  RpcConsistentHashRing ring = test_cluster_->primary()->get_all_masters();
   EXPECT_EQ(4u, ring.size());
 }
 

@@ -33,10 +33,11 @@ using vobla::Status;
 
 namespace vsfs {
 namespace masterd {
-namespace testing {
 
 /**
- * \brief Manages a test masterd cluster for test purpose.
+ * \class TestMasterdCluster
+ * \brief Constructs and manages a test masterd cluster locally for test
+ * purpose.
  */
 class TestMasterdCluster : boost::noncopyable {
  public:
@@ -44,7 +45,7 @@ class TestMasterdCluster : boost::noncopyable {
    * \brief Constructs a Masterd cluster with 'num_masterd' nodes. The first
    * node will be the primary one.
    */
-  TestMasterdCluster(const string& basedir, int num_masterd);
+  TestMasterdCluster(const string& basedir, int cluster_size);
 
   /// Destructs the cluster and stop / reclaim resources.
   virtual ~TestMasterdCluster();
@@ -54,6 +55,12 @@ class TestMasterdCluster : boost::noncopyable {
 
   /// Stops the cluster.
   void stop();
+
+  /// Returns the instance of the primary masterd.
+  MasterController* primary();
+
+  /// Returns the number of masterd node in this cluster.
+  int cluster_size() const;
 
  private:
   string basedir_;
@@ -66,7 +73,6 @@ class TestMasterdCluster : boost::noncopyable {
   vector<thread> threads_;
 };
 
-}  // namespace testing
 }  // namespace masterd
 }  // namespace vsfs
 

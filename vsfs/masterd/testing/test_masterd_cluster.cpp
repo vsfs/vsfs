@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <string>
 #include "vsfs/masterd/testing/test_masterd_cluster.h"
 
 namespace vsfs {
 namespace masterd {
-namespace testing {
 
 TestMasterdCluster::TestMasterdCluster(const string& dirpath, int nmasterd)
     : basedir_(dirpath), num_masterds_(nmasterd) {
@@ -32,7 +32,7 @@ TestMasterdCluster::~TestMasterdCluster() {
 void TestMasterdCluster::start() {
   const int kPrimaryPort = 10100;
   cluster_.emplace_back(unique_ptr<MasterController>(
-          new MasterController(basedir_, "localhost", kPrimaryPort, true)));
+          new MasterController(basedir_, "", kPrimaryPort, true)));
   threads_.emplace_back(
       thread(&MasterController::start, cluster_.back().get()));
   std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -40,8 +40,8 @@ void TestMasterdCluster::start() {
   // Starts the secondary masters.
   for (int i = 1; i < num_masterds_; ++i) {
     cluster_.emplace_back(unique_ptr<MasterController>(
-            new MasterController(basedir_, "localhost", kPrimaryPort + i,
-                                 false, "localhost", kPrimaryPort)));
+            new MasterController(basedir_, "", kPrimaryPort + i,
+                                 false, "", kPrimaryPort)));
     threads_.emplace_back(
         thread(&MasterController::start, cluster_.back().get()));
   }
@@ -59,6 +59,14 @@ void TestMasterdCluster::stop() {
   }
 }
 
-}  // namespace testing
+MasterController* TestMasterdCluster::primary() {
+  CHECK_GE(cluster_.size(), 1);
+  return cluster_[0].get();
+}
+
+int TestMasterdCluster::cluster_size() const {
+  return cluster_.size();
+}
+
 }  // namespace masterd
 }  // namespace vsfs
