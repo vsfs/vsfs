@@ -24,6 +24,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <string>
 #include <thread>
 #include <vector>
 #include "vobla/file.h"
@@ -31,6 +32,7 @@
 #include "vsfs/masterd/testing/local_masterd_cluster.h"
 
 using std::thread;
+using std::to_string;
 using std::unique_ptr;
 using std::vector;
 using vobla::TemporaryDirectory;
@@ -65,6 +67,14 @@ TEST_F(ClientMetadataTest, TestMakeDirs) {
   VSFSRpcClient client(cluster_->host(0), cluster_->port(0));
   EXPECT_TRUE(client.init().ok());
   EXPECT_TRUE(client.mkdir("/", 0x666, 100, 100).ok());
+  EXPECT_TRUE(client.mkdir("/test", 0x666, 100, 100).ok());
+  for (int i = 0; i < 100; i++) {
+    EXPECT_TRUE(client.mkdir("/test/dir" + to_string(i), 0x666, 100, 100).ok());
+  }
+
+  vector<string> files;
+  EXPECT_TRUE(client.readdir("/test", &files).ok());
+  EXPECT_EQ(100u, files.size());
 }
 
 }  // namespace vsfs

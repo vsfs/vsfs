@@ -32,6 +32,7 @@ namespace fs = boost::filesystem;
 
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
              "VSFS client can use.");
+const int kNumBackOffs = 3;
 
 namespace vsfs {
 
@@ -121,9 +122,7 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
     VLOG(1) << "The VSFS RPC client has not initialized yet.";
     return Status(-1, "The client has not initialized yet.");
   }
-  auto parent = fs::path(path).parent_path().string();
   auto hash = HashUtil::file_path_to_hash(path);
-  auto parent_hash = HashUtil::file_path_to_hash(parent);
   (void) mode;
   NodeInfo file_node;
   auto status = master_map_.get(hash, &file_node);
@@ -132,7 +131,6 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
     return status;
   }
   // Number of retries to create file to solve the conflicts.
-  const int kNumBackOffs = 3;
   int backoff = kNumBackOffs;
   while (backoff) {
     try {
@@ -154,31 +152,11 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
             << path << " because: " << status.message();
     return status;
   }
-  NodeInfo parent_node;
-  status = master_map_.get(parent_hash, &parent_node);
-  CHECK(status.ok());  // master_map_ must exist at this point.
-  backoff = kNumBackOffs;
-  while (backoff) {
-    try {
-      auto client = master_client_factory_->open(parent_node.address.host,
-                                                 parent_node.address.port);
-      auto filename = fs::path(path).filename().string();
-      client->handler()->add_subfile(parent, filename);
-      master_client_factory_->close(client);
-      break;
-    } catch (TTransportException e) {  // NOLINT
-      // TODO(eddyxu): clear the conflict resolving algorithm later.
-      status.set_error(e.getType());
-      status.set_message(e.what());
-      backoff--;
-      continue;
-    }
-  }
+  status = add_subfile(path);
   if (!status.ok()) {
     // Roll back the created file record from `file_node`.
     try {
-      auto client = master_client_factory_->open(file_node.address.host,
-                                                 file_node.address.port);
+      auto client = master_client_factory_->open(file_node.address);
       client->handler()->remove(path);
       master_client_factory_->close(client);
     } catch (TTransportException e) {  // NOLINT
@@ -269,6 +247,17 @@ Status VSFSRpcClient::mkdir(
                << "} : " << status.message();
     return status;
   }
+  status = add_subfile(path);
+  if (!status.ok()) {
+    // Roll back.
+    try {
+      auto client = master_client_factory_->open(node.address);
+      client->handler()->remove(path);
+      master_client_factory_->close(client);
+    } catch (TTransportException e) {  // NOLINT
+      return Status(e.getType(), e.what());
+    }
+  }
   return Status::OK;
 }
 
@@ -351,6 +340,34 @@ Status VSFSRpcClient::info(const string& path,
 
 bool VSFSRpcClient::is_initialized() {
   return !master_map_.empty();
+}
+
+Status VSFSRpcClient::add_subfile(const string& path) {
+  if (path == "/") {
+    return Status::OK;
+  }
+  auto parent = fs::path(path).parent_path().string();
+  auto hash = HashUtil::file_path_to_hash(parent);
+  auto filename = fs::path(path).filename().string();
+  NodeInfo node;
+  auto status = master_map_.get(hash, &node);
+  CHECK(status.ok());  // master_map_ must exist at this point.
+  int backoff = kNumBackOffs;
+  while (backoff) {
+    try {
+      auto client = master_client_factory_->open(node.address);
+      client->handler()->add_subfile(parent, filename);
+      master_client_factory_->close(client);
+      break;
+    } catch (TTransportException e) {  // NOLINT
+      // TODO(eddyxu): clear the conflict resolving algorithm later.
+      status.set_error(e.getType());
+      status.set_message(e.what());
+      backoff--;
+      continue;
+    }
+  }
+  return status;
 }
 
 }  // namespace client

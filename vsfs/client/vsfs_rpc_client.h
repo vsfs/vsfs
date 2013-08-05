@@ -132,6 +132,8 @@ class VSFSRpcClient : public VSFSClient {
   /// Returns true if this client has been initialized.
   bool is_initialized();
 
+  Status add_subfile(const string& filepath);
+
   unique_ptr<MasterClientFactory> master_client_factory_;
 
   unique_ptr<IndexClientFactory> index_client_factory_;
