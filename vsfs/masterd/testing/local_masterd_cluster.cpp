@@ -17,13 +17,17 @@
 #define _GLIBCXX_USE_NANOSLEEP   // Fixed std::this_thread::sleep_for on centos.
 #include <boost/filesystem.hpp>
 #include <glog/logging.h>
+#include <thrift/transport/TTransportException.h>
 #include <unistd.h>
 #include <chrono>
 #include <string>
 #include <thread>
+#include "vsfs/rpc/rpc_client.h"
+#include "vsfs/rpc/MasterServer.h"
 #include "vsfs/masterd/testing/local_masterd_cluster.h"
 
 namespace fs = boost::filesystem;
+using apache::thrift::transport::TTransportException;
 
 namespace vsfs {
 namespace masterd {
@@ -37,6 +41,7 @@ LocalMasterdCluster::~LocalMasterdCluster() {
 }
 
 void LocalMasterdCluster::start() {
+  typedef rpc::RpcClient<MasterServerClient> MasterClientType;
   const int kPrimaryPort = 10100;
   fs::create_directories(basedir_ + "/0");
   cluster_.emplace_back(unique_ptr<MasterController>(
@@ -44,7 +49,17 @@ void LocalMasterdCluster::start() {
   CHECK(cluster_.back()->init().ok());
   threads_.emplace_back(
       thread(&MasterController::start, cluster_.back().get()));
-  std::this_thread::sleep_for(std::chrono::seconds(2));
+  while (true) {
+    try {
+      MasterClientType client("localhost", kPrimaryPort);
+      client.open();
+      client.close();
+    } catch (TTransportException e) {  // NOLINT
+      std::this_thread::sleep_for(std::chrono::microseconds(100));
+      continue;
+    }
+    break;
+  }
 
   // Starts the secondary masters.
   for (int i = 1; i < num_masterds_; ++i) {
@@ -58,7 +73,13 @@ void LocalMasterdCluster::start() {
     threads_.emplace_back(
         thread(&MasterController::start, cluster_.back().get()));
   }
-  std::this_thread::sleep_for(std::chrono::seconds(2));
+  while (true) {
+    auto all_masters = cluster_[0]->get_all_masters();
+    if (all_masters.size() == static_cast<size_t>(num_masterds_)) {
+      break;
+    }
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+  }
 }
 
 void LocalMasterdCluster::stop() {
