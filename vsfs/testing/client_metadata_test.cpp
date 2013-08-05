@@ -27,10 +27,13 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <set>
 #include "vobla/file.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/masterd/testing/local_masterd_cluster.h"
 
+using ::testing::ContainerEq;
+using std::set;
 using std::thread;
 using std::to_string;
 using std::unique_ptr;
@@ -68,13 +71,17 @@ TEST_F(ClientMetadataTest, TestMakeDirs) {
   EXPECT_TRUE(client.init().ok());
   EXPECT_TRUE(client.mkdir("/", 0x666, 100, 100).ok());
   EXPECT_TRUE(client.mkdir("/test", 0x666, 100, 100).ok());
+
+  set<string> expected_files;
   for (int i = 0; i < 100; i++) {
     EXPECT_TRUE(client.mkdir("/test/dir" + to_string(i), 0x666, 100, 100).ok());
+    expected_files.insert("dir" + to_string(i));
   }
 
   vector<string> files;
   EXPECT_TRUE(client.readdir("/test", &files).ok());
-  EXPECT_EQ(100u, files.size());
+  set<string> actual_files(files.begin(), files.end());
+  EXPECT_THAT(actual_files, ContainerEq(expected_files));
 }
 
 }  // namespace vsfs
