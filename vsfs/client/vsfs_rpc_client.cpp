@@ -161,13 +161,13 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
     return Status(-1, "The client has not initialized yet.");
   }
   auto hash = HashUtil::file_path_to_hash(path);
-  (void) mode;
   NodeInfo file_node;
   auto status = master_map_.get(hash, &file_node);
   if (!status.ok()) {
     VLOG(0) << "Failed to find a master server to create file: " << path;
     return status;
   }
+  mode |= S_IFREG;
   // Number of retries to create file to solve the conflicts.
   int backoff = kNumBackOffs;
   while (backoff) {
@@ -273,7 +273,7 @@ Status VSFSRpcClient::mkdir(
     auto master_client = master_client_factory_->open(node.address.host,
                                                       node.address.port);
     RpcFileInfo dir_info;
-    dir_info.mode = mode;
+    dir_info.mode = mode | S_IFDIR;
     dir_info.uid = uid;
     dir_info.gid = gid;
     master_client->handler()->mkdir(path, dir_info);
