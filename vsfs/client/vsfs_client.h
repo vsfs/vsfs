@@ -32,6 +32,8 @@ using vobla::Status;
 namespace vsfs {
 
 class ComplexQuery;
+class FileInfo;
+class FileObject;
 
 namespace index {
 class IndexInfo;
@@ -109,17 +111,15 @@ class VSFSClient : boost::noncopyable {
   /// Opens a file and get the file handler.
   virtual Status open(const string& path, ObjectId* id) = 0;
 
-  /*
-  // TODO(ziling): use const FileOp &file_op, need to modify all related
-  // operations in file_op, file_handler, storage_manager to const
   /// Read a file and return the bytes that have been read
-  virtual int read(FileOp *file_op, char *buf, size_t size,
+  virtual int read(const FileObject& file_obj, char *buf, size_t size,
                    off_t offset) = 0;
 
   /// Write to a file and return the bytes that have been written
-  virtual int write(FileOp *file_op, const char *buf, size_t size,
+  virtual int write(const FileObject& file_obj, char *buf, size_t size,
                     off_t offset, FileInfo *file) = 0;
 
+  /*
   // Updates the index of FileInfo
   // Status index(const FileInfo &file, std::function<Operator> IdxOp);
 

@@ -40,6 +40,8 @@ using vobla::Status;
 namespace vsfs {
 
 class ComplexQuery;
+class FileInfo;
+class FileObject;
 
 using rpc::RpcClientFactoryInterface;
 
@@ -95,6 +97,11 @@ class VSFSRpcClient : public VSFSClient {
                 ObjectId* id);
 
   Status open(const string& path, ObjectId *id);
+
+  int read(const FileObject& file_obj, char *buf, size_t size, off_t offset);
+
+  int write(const FileObject& file_obj, char *buf, size_t size, off_t offset,
+            FileInfo *file);
 
   Status unlink(const string& path);
 
