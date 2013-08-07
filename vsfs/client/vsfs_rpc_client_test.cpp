@@ -113,11 +113,11 @@ TEST_F(VsfsRpcClientTest, TestInitialize) {
 
 TEST_F(VsfsRpcClientTest, TestMkdir) {
   // VSFS client has not been initialized yet.
-  EXPECT_FALSE(test_client_->mkdir("/abcd", 0x666, 100, 100).ok());
+  EXPECT_FALSE(test_client_->mkdir("/abcd", 0666, 100, 100).ok());
 
   init_client(2, 1);
   EXPECT_CALL(*mock_master_, mkdir("/abcd", _));
-  EXPECT_TRUE(test_client_->mkdir("/abcd", 0x666, 100, 100).ok());
+  EXPECT_TRUE(test_client_->mkdir("/abcd", 0666, 100, 100).ok());
 }
 
 TEST_F(VsfsRpcClientTest, TestRmdir) {
@@ -131,11 +131,11 @@ TEST_F(VsfsRpcClientTest, TestRmdir) {
 TEST_F(VsfsRpcClientTest, TestCreateSuccess) {
   init_client(2, 1);
   ObjectId oid;
-  EXPECT_CALL(*mock_master_, create("/abc/def", 0x666, 100, 100))
+  EXPECT_CALL(*mock_master_, create("/abc/def", 0666 | S_IFREG, 100, 100))
       .WillOnce(Return(1234));
   EXPECT_CALL(*mock_master_, add_subfile("/abc", "def"));
 
-  EXPECT_TRUE(test_client_->create("/abc/def", 0x666, 100, 100, &oid).ok());
+  EXPECT_TRUE(test_client_->create("/abc/def", 0666, 100, 100, &oid).ok());
   EXPECT_EQ(1234, oid);
 }
 
