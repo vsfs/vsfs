@@ -18,6 +18,8 @@
 #define VSFS_CLIENT_VSFS_RPC_CLIENT_H_
 
 #include <boost/shared_ptr.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <transport/TBufferTransports.h>
 #include <memory>
 #include <string>
@@ -113,6 +115,8 @@ class VSFSRpcClient : public VSFSClient {
 
   /// Reads all subfiles from a directory.
   Status readdir(const string& dirpath, vector<string>* files);  // NOLINT
+
+  Status getattr(const string& path, struct stat* stbuf);
 
   Status create_index(const string& index_path,
                       const string& index_name,

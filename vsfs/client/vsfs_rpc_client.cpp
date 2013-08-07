@@ -341,10 +341,43 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
   return Status::OK;
 }
 
+Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
+  CHECK_NOTNULL(stbuf);
+  auto hash = HashUtil::file_path_to_hash(path);
+  NodeInfo node;
+  CHECK(master_map_.get(hash, &node).ok());
+  RpcFileInfo file_info;
+  try {
+    auto client = master_client_factory_->open(node.address);
+    client->handler()->getattr(file_info, path);
+    master_client_factory_->close(client);
+  } catch (TTransportException e) {  // NOLINT
+    return Status(e.getType(), e.what());
+  }
+  stbuf->st_mode = file_info.mode;
+  stbuf->st_size = file_info.size;
+  stbuf->st_uid = file_info.uid;
+  stbuf->st_gid = file_info.gid;
+  stbuf->st_atime = file_info.atime;
+  stbuf->st_ctime = file_info.ctime;
+  stbuf->st_mtime = file_info.mtime;
+  return Status::OK;
+}
+
 Status VSFSRpcClient::create_index(const string& index_path,
                                    const string& index_name,
                                    int index_type,
                                    int key_type) {
+  struct stat stbuf;
+  auto status = getattr(index_path, &stbuf);
+  if (!status.ok()) {
+    LOG(ERROR) << "Can not create log: " << status.message();
+    return status;
+  }
+  if (!S_ISDIR(stbuf.st_mode)) {
+    LOG(ERROR) << "Can not create index on an non-dir path.";
+    return Status::system_error(-ENOTDIR);
+  }
   RpcIndexCreateRequest create_request;
   create_request.root = index_path;
   create_request.name = index_name;

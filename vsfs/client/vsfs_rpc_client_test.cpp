@@ -147,6 +147,11 @@ TEST_F(VsfsRpcClientTest, TestCreateIndexSuccess) {
       .WillOnce(SetArgReferee<0>(loc));
   EXPECT_CALL(*mock_index_, create_index(_));
 
+  RpcFileInfo dir_info;
+  dir_info.mode = 0755 | S_IFDIR;
+  EXPECT_CALL(*mock_master_, getattr(_, "/foo/bar"))
+      .WillOnce(SetArgReferee<0>(dir_info));
+
   EXPECT_TRUE(test_client_->create_index(
       "/foo/bar", "index", IndexInfo::BTREE, INT64).ok());
 }
