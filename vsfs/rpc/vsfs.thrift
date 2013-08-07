@@ -223,6 +223,9 @@ service MasterServer {
   /// Obtains the C.H ring of all masters.
   RpcConsistentHashRing get_all_masters() throws (1:RpcInvalidOp ouch);
 
+  /// Obtains the C.H ring of all index servers.
+  RpcConsistentHashRing get_all_index_servers() throws (1:RpcInvalidOp ouch);
+
   /**
    * \brief Makes a new directory.
    */

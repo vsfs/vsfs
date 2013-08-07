@@ -132,6 +132,12 @@ class VSFSRpcClient : public VSFSClient {
   /// Returns true if this client has been initialized.
   bool is_initialized();
 
+  /// Synchronize the master server's CH ring.
+  Status sync_master_server_map();
+
+  /// Synchronize the index server's CH ring.
+  Status sync_index_server_map();
+
   Status add_subfile(const string& filepath);
 
   unique_ptr<MasterClientFactory> master_client_factory_;
@@ -140,7 +146,11 @@ class VSFSRpcClient : public VSFSClient {
 
   boost::shared_ptr<MasterClientType> master_client_;  // primary master
 
+  /// Caches a copy of master map.
   ServerMap master_map_;
+
+  /// Caches a copy of index server map.
+  ServerMap index_server_map_;
 
   std::mutex master_lock_;
 

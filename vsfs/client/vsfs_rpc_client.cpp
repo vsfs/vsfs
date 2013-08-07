@@ -20,9 +20,10 @@
 #include <thrift/transport/TTransportException.h>
 #include <string>
 #include <vector>
-#include "vsfs/common/types.h"
-#include "vsfs/common/hash_util.h"
 #include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/common/hash_util.h"
+#include "vsfs/common/types.h"
+#include "vsfs/rpc/vsfs_types.h"
 
 using apache::thrift::transport::TTransportException;
 using std::string;
@@ -61,15 +62,8 @@ VSFSRpcClient::~VSFSRpcClient() {
   }
 }
 
-Status VSFSRpcClient::init() {
-  VLOG(0) << "Initialize a VSFSRpcClient.";
-  auto status = connect(host_, port_);
-  if (!status.ok()) {
-    LOG(ERROR) << "Failed to connect to primary master("
-               << host_ << ":" << port_ << "), because: "
-               << status.message();
-  }
-  // Gets a full map of all master servers.
+Status VSFSRpcClient::sync_master_server_map() {
+  VLOG(0) << "Caches master server Consistent Hashing Ring.";
   RpcConsistentHashRing ring;
   try {
     master_client_->handler()->get_all_masters(ring);
@@ -82,6 +76,50 @@ Status VSFSRpcClient::init() {
     node_info.address = sep_and_address.second;
     auto sep = sep_and_address.first;
     master_map_.add(sep, node_info);
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::sync_index_server_map() {
+  VLOG(0) << "Caches index server Consistent Hashing Ring.";
+  RpcConsistentHashRing ring;
+  try {
+    master_client_->handler()->get_all_index_servers(ring);
+  } catch (TTransportException e) {  // NOLINT
+    LOG(ERROR) << "Failed to get_all_index_servers(): " << e.what();
+    return Status(e.getType(), e.what());
+  }
+  for (const auto& sep_and_address : ring) {
+    NodeInfo node_info;
+    node_info.address = sep_and_address.second;
+    auto sep = sep_and_address.first;
+    index_server_map_.add(sep, node_info);
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::init() {
+  VLOG(0) << "Initialize a VSFSRpcClient.";
+  auto status = connect(host_, port_);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to connect to primary master("
+               << host_ << ":" << port_ << "), because: "
+               << status.message();
+    return status;
+  }
+  status = sync_master_server_map();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to synchronize local master server mapping with "
+               << " the primary master server: " << host_ << ":" << port_
+               << ", because: " << status.message();
+    return status;
+  }
+  status = sync_index_server_map();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to synchronize local index server mapping with "
+               << " the primary master server: " << host_ << ":" << port_
+               << ", because: " << status.message();
+    return status;
   }
   return Status::OK;
 }
@@ -297,7 +335,7 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
     auto client = master_client_factory_->open(node.address);
     client->handler()->readdir(*files, dirpath);
     master_client_factory_->close(client);
-  }  catch (TTransportException e) {  // NOLINT
+  } catch (TTransportException e) {  // NOLINT
     return Status(e.getType(), e.what());
   }
   return Status::OK;
@@ -307,10 +345,29 @@ Status VSFSRpcClient::create_index(const string& index_path,
                                    const string& index_name,
                                    int index_type,
                                    int key_type) {
-  (void) index_path;
-  (void) index_name;
-  (void) index_type;
-  (void) key_type;
+  RpcIndexCreateRequest create_request;
+  create_request.root = index_path;
+  create_request.name = index_name;
+  create_request.index_type = index_type;
+  create_request.__set_key_type(key_type);
+
+  // Asks the primary masterd for the index location.
+  RpcIndexLocation index_loc;
+  try {
+    master_client_->handler()->create_index(index_loc, create_request);
+  } catch (RpcInvalidOp e) {  // NOLINT
+    LOG(ERROR) << "Rpc Invalid Op: " << e.what << ":" << e.why;
+    return Status(e.what, e.why);
+  }
+
+  create_request.root = index_loc.full_index_path;
+  try {
+    auto index_client = index_client_factory_->open(index_loc.server_addr);
+    index_client->handler()->create_index(create_request);
+    index_client_factory_->close(index_client);
+  } catch (TTransportException e) {  // NOLINT
+    return Status(e.getType(), e.what());
+  }
   return Status::OK;
 }
 

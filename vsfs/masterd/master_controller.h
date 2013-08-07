@@ -125,8 +125,18 @@ class MasterController : boost::noncopyable {
    */
   Status join_index_server(const NodeInfo &node, RpcNodeAddressList *replicas);
 
-  /// Returns all the master node address.
-  RpcConsistentHashRing get_all_masters();
+  /**
+   * \brief Returns all the master node address.
+   * \return Status(-1, ..) if this is not the primary master.
+   */
+  Status get_all_masters(RpcConsistentHashRing* ring);
+
+  /**
+   * \brief Returns C.H ring of index server.
+   * \param[out] ring filled with the index server ring.
+   * \return Status(-1, ..) if this is not the primary master.
+   */
+  Status get_all_index_servers(RpcConsistentHashRing* ring);
 
   Status mkdir(const string& path, mode_t mode, uid_t uid, gid_t gid);
 

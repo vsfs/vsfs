@@ -215,15 +215,6 @@ Status MasterController::join_master_server(const NodeInfo& node) {
   return status;
 }
 
-RpcConsistentHashRing MasterController::get_all_masters() {
-  RpcConsistentHashRing ring;
-  auto ch_ring_map = master_server_manager_->get_ch_ring_as_map();
-  for (const auto& sep_and_node : ch_ring_map) {
-    ring[sep_and_node.first] = sep_and_node.second.address;
-  }
-  return ring;
-}
-
 Status MasterController::join_index_server(const NodeInfo &node,
                                            RpcNodeAddressList *replicas) {
   CHECK_NOTNULL(replicas);
@@ -243,6 +234,32 @@ Status MasterController::join_index_server(const NodeInfo &node,
     replicas->emplace_back(node.address);
   }
   return status;
+}
+
+Status MasterController::get_all_masters(RpcConsistentHashRing* ring) {
+  CHECK_NOTNULL(ring);
+  if (!is_primary_node_) {
+    return Status(-1, "This is not the primary node.");
+  }
+  auto ch_ring_map = master_server_manager_->get_ch_ring_as_map();
+  for (const auto& sep_and_node : ch_ring_map) {
+    ring->emplace(std::make_pair(sep_and_node.first,
+                                 sep_and_node.second.address));
+  }
+  return Status::OK;
+}
+
+Status MasterController::get_all_index_servers(RpcConsistentHashRing* ring) {
+  CHECK_NOTNULL(ring);
+  if (!is_primary_node_) {
+    return Status(-1, "This is not the primary node.");
+  }
+  auto ch_ring_map = index_server_manager_->get_ch_ring_as_map();
+  for (const auto& sep_and_node : ch_ring_map) {
+    ring->emplace(std::make_pair(sep_and_node.first,
+                                 sep_and_node.second.address));
+  }
+  return Status::OK;
 }
 
 namespace {
