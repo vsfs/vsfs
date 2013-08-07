@@ -243,8 +243,8 @@ Status MasterController::get_all_masters(RpcConsistentHashRing* ring) {
   }
   auto ch_ring_map = master_server_manager_->get_ch_ring_as_map();
   for (const auto& sep_and_node : ch_ring_map) {
-    ring->emplace(std::make_pair(sep_and_node.first,
-                                 sep_and_node.second.address));
+    ring->insert(std::make_pair(sep_and_node.first,
+                                sep_and_node.second.address));
   }
   return Status::OK;
 }
@@ -256,7 +256,7 @@ Status MasterController::get_all_index_servers(RpcConsistentHashRing* ring) {
   }
   auto ch_ring_map = index_server_manager_->get_ch_ring_as_map();
   for (const auto& sep_and_node : ch_ring_map) {
-    ring->emplace(std::make_pair(sep_and_node.first,
+    ring->insert(std::make_pair(sep_and_node.first,
                                  sep_and_node.second.address));
   }
   return Status::OK;
