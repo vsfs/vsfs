@@ -20,8 +20,10 @@
 #include <memory>
 #include <string>
 #include "vobla/status.h"
+#include "vobla/traits.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/common/server_map.h"
+#include "vsfs/index/index_info.h"
 #include "vsfs/rpc/mock_rpc_clients.h"
 #include "vsfs/rpc/vsfs_types.h"
 
@@ -33,6 +35,7 @@ using std::map;
 using std::string;
 using std::unique_ptr;
 using vobla::Status;
+using vsfs::index::IndexInfo;
 using vsfs::rpc::MockIndexServerClient;
 using vsfs::rpc::MockMasterServerClient;
 using vsfs::rpc::TestRpcClientFactory;
@@ -72,16 +75,29 @@ class VsfsRpcClientTest : public ::testing::Test {
                                          index_factory_.release()));
   }
 
-  void init_client(int num_masters) {
-    RpcConsistentHashRing filled_ring;
-    for (int i = 0; i < num_masters; ++i) {
+  /**
+   * \brief Initialize the client with appropriate cached server mapping.
+   * \param num_master_server the number of master servers.
+   * \param num_index_servers the number of index servers.
+   */
+  void init_client(int num_master_servers, int num_index_servers) {
+    RpcConsistentHashRing master_ring, index_ring;
+    for (int i = 0; i < num_master_servers; ++i) {
       RpcNodeAddress address;
       address.host = "localhost";
       address.port = 10000 + i;
-      filled_ring[i * 10000] = address;
+      master_ring[i * 10000] = address;
+    }
+    for (int i = 0; i < num_index_servers; ++i) {
+      RpcNodeAddress address;
+      address.host = "localhost";
+      address.port = 12000 + i;
+      index_ring[i * 12000] = address;
     }
     EXPECT_CALL(*mock_master_, get_all_masters(_))
-        .WillOnce(SetArgReferee<0>(filled_ring));
+        .WillOnce(SetArgReferee<0>(master_ring));
+    EXPECT_CALL(*mock_master_, get_all_index_servers(_))
+        .WillOnce(SetArgReferee<0>(index_ring));
     test_client_->init();
   }
 
@@ -99,7 +115,7 @@ TEST_F(VsfsRpcClientTest, TestMkdir) {
   // VSFS client has not been initialized yet.
   EXPECT_FALSE(test_client_->mkdir("/abcd", 0x666, 100, 100).ok());
 
-  init_client(2);
+  init_client(2, 1);
   EXPECT_CALL(*mock_master_, mkdir("/abcd", _));
   EXPECT_TRUE(test_client_->mkdir("/abcd", 0x666, 100, 100).ok());
 }
@@ -107,13 +123,13 @@ TEST_F(VsfsRpcClientTest, TestMkdir) {
 TEST_F(VsfsRpcClientTest, TestRmdir) {
   EXPECT_FALSE(test_client_->rmdir("/abcd").ok());
 
-  init_client(2);
+  init_client(2, 1);
   EXPECT_CALL(*mock_master_, rmdir("/abc"));
   EXPECT_TRUE(test_client_->rmdir("/abc").ok());
 }
 
 TEST_F(VsfsRpcClientTest, TestCreateSuccess) {
-  init_client(2);
+  init_client(2, 1);
   ObjectId oid;
   EXPECT_CALL(*mock_master_, create("/abc/def", 0x666, 100, 100))
       .WillOnce(Return(1234));
@@ -121,6 +137,18 @@ TEST_F(VsfsRpcClientTest, TestCreateSuccess) {
 
   EXPECT_TRUE(test_client_->create("/abc/def", 0x666, 100, 100, &oid).ok());
   EXPECT_EQ(1234, oid);
+}
+
+TEST_F(VsfsRpcClientTest, TestCreateIndexSuccess) {
+  init_client(2, 1);
+  RpcIndexLocation loc;
+  loc.full_index_path = "/foo/bar/.vsfs/index/0";
+  EXPECT_CALL(*mock_master_, create_index(_, _))
+      .WillOnce(SetArgReferee<0>(loc));
+  EXPECT_CALL(*mock_index_, create_index(_));
+
+  EXPECT_TRUE(test_client_->create_index(
+      "/foo/bar", "index", IndexInfo::BTREE, INT64).ok());
 }
 
 }  // namespace client
