@@ -399,7 +399,10 @@ Status VSFSRpcClient::create_index(const string& index_path,
     index_client->handler()->create_index(create_request);
     index_client_factory_->close(index_client);
   } catch (TTransportException e) {  // NOLINT
-    return Status(e.getType(), e.what());
+    status = Status(e.getType(), e.what());
+  }
+  if (!status.ok()) {
+    // Roll back.
   }
   return Status::OK;
 }

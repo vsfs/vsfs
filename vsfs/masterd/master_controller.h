@@ -182,6 +182,11 @@ class MasterController : boost::noncopyable {
 
 
   /**
+   * \brief Removes a file index.
+   */
+  Status remove_index(const string& root, const string& name);
+
+  /**
    * \brief Locates the index servers as well as the index roots for files.
    * \param[in] lookup_request The request of index lookup.
    * \param[out] results a list of RpcIndexLocation corresponding to every
