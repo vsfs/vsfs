@@ -421,25 +421,20 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
   status = mkdir(root + "/.vsfs", mode, uid, gid);
   if (!status.ok() && status.error() != -EEXIST) {
     // Roll back
-    RpcIndexName remove_request;
-    remove_request.root = root;
-    remove_request.name = name;
-    try {
-      auto index_client = index_client_factory_->open(index_server.address);
-      index_client->handler()->remove_index(remove_request);
-      index_client_factory_->close(index_client);
-    } catch (TTransportException e) {  // NOLINT
-      status = Status(e.getType(), e.what());
-    }
+    status = remove_index(root, name);
+    return status;
   }
 
   status = mkdir(get_index_full_path(root, name), mode, uid, gid);
   if (!status.ok()) {
     // Roll back
+    status = remove_index(root, name);
     return status;
   }
-  status = mkdir(get_partition_full_path(root, name, 0), mode, uid, gid);
+  status = mkdir(partition_path, mode, uid, gid);
   if (!status.ok()) {
+    status = this->rmdir(get_index_full_path(root, name));
+    status = remove_index(root, name);
   }
   return Status::OK;
 }
