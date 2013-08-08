@@ -132,9 +132,6 @@ class VSFSClient : boost::noncopyable {
   virtual Status search(const ComplexQuery& query,
                         vector<string>* results) = 0;
 
-
-  virtual Status import(const vector<string>& file_paths) = 0;
-
   struct IndexUpdateRequest {
     enum { UNKNOWN, INSERT, UPDATE, REMOVE };
     int op;

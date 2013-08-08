@@ -484,11 +484,6 @@ Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& updates) {
   return Status::OK;
 }
 
-Status VSFSRpcClient::import(const vector<string>& file_paths) {
-  (void) file_paths;
-  return Status::OK;
-}
-
 Status VSFSRpcClient::info(const string& path,
                            vector<index::IndexInfo>* infos) {
   CHECK_NOTNULL(infos);

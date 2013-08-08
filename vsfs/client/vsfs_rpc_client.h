@@ -130,8 +130,6 @@ class VSFSRpcClient : public VSFSClient {
 
   Status update(const vector<IndexUpdateRequest>& updates);
 
-  Status import(const vector<string>& file_paths);
-
   Status info(const string& path, vector<index::IndexInfo>* infos);
 
  private:
