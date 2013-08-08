@@ -40,6 +40,7 @@
 #include "vsfs/common/file_object.h"
 #include "vsfs/common/posix_path.h"
 #include "vsfs/common/posix_storage_manager.h"
+#include "vsfs/common/types.h"
 #include "vsfs/fuse/vsfs_ops.h"
 
 using std::string;
@@ -271,13 +272,13 @@ int vsfs_rmdir(const char* path) {
 int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
   // TODO(lxu): use StorageManager.
   string abspath = VsfsFuse::instance()->abspath(path);
-  vector<string> files;
-  files.push_back(path);
-  Status status = vsfs->client()->import(files);
+  ObjectId oid;
+  Status status = vsfs->client()->create(path, mode, getuid(), getgid(), &oid);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to create file: " << status.message();
     return status.error();
   }
+  // TODO(lxu): Use StorageManager to open a FileObject.
   int fd = open(abspath.c_str(), fi->flags | O_CREAT, mode);
   if (fd == -1) {
     LOG(ERROR) << strerror(errno);
