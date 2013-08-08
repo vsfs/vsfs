@@ -193,26 +193,6 @@ class IndexCommand : public Command {
 };
 
 /**
- * \class ImportCommand
- * \brief Imports the metadata of a directory into VSFS.
- */
-class ImportCommand : public Command {
- public:
-  ImportCommand();
-
-  int parse_args(int argc, char* const argv[]);
-
-  void print_help() const;
-
-  vobla::Status run();
-
- private:
-  size_t batch_size_;
-
-  vector<string> dirs_;
-};
-
-/**
  * \class InfoCommand
  * \brief Query the information of various aspects of VSFS.
  */

@@ -77,8 +77,6 @@ Command* Command::create_command(const string &subcmd) {
     return new SearchCommand;
   } else if (subcmd == "index") {
     return new IndexCommand;
-  } else if (subcmd == "import") {
-    return new ImportCommand;
   } else if (subcmd == "info") {
     return new InfoCommand;
   }
@@ -126,7 +124,6 @@ void HelpCommand::print_help() const {
           "  help\t\t\tprint detail help on each command.\n"
           "  search\t\trun complex query.\n"
           "  index\t\t\tindex files.\n"
-          "  import\t\timports a directory into VSFS.\n"
           "  info\t\t\tquery the index information.\n"
           "");
 }
@@ -495,113 +492,6 @@ Status IndexCommand::update_index() {
   }
   return status;
 }
-
-
-ImportCommand::ImportCommand() : batch_size_(FLAGS_batch_size) {
-}
-
-int ImportCommand::parse_args(int argc, char* const argv[]) {
-  int ch;
-  static struct option longopts[] = {
-    { "help", no_argument, NULL, 'h' },
-    { "debug", no_argument, NULL, 1 },
-    { "port", required_argument, NULL, 'p' },
-    { "host", required_argument, NULL, 'H' },
-    { "verbose", optional_argument, NULL, 'v' },
-    { "batch_size", optional_argument, NULL, 'b'},
-    { NULL, 0, NULL, 0 }
-  };
-  static const char* shortopts = "hp:H:v:b:";
-  while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
-    switch (ch) {
-      case 1:
-        debug_ = 1;
-        break;
-      case 'p':
-        port_ = lexical_cast<int>(optarg);
-        break;
-      case 'H':
-        host_ = optarg;
-        break;
-      case 'v':
-        set_verbose_level(optarg);
-        break;
-      case 'b':
-        batch_size_ = lexical_cast<size_t>(optarg);
-        break;
-      case 'h':
-      default:
-        return -1;
-    }
-  }
-  argc -= optind;
-  argv += optind;
-
-  if (!argc) {
-    return -1;
-  }
-
-  for (int i = 0; i < argc; ++i) {
-    dirs_.push_back(argv[i]);
-  }
-  return 0;
-}
-
-void ImportCommand::print_help() const {
-  fprintf(stderr, "Usage: vsfsutil import [options] DIR [DIR...]\n"
-          "Options:\n"
-          "  -h, --help\t\t\tdisplay this help information.\n"
-          "  -d, --debug\t\t\trun in debug mode.\n"
-          "  -v, --verbose[=LEVEL]\t\tRun in verbose mode.\n"
-          "  -H, --host STR\t\tset the address of the master node.\n"
-          "  -p, --port NUM\t\tset the port of the master node.\n"
-          "  -b, --batch_size\tset the size of import RPC size.\n"
-          "\n");
-}
-
-Status ImportCommand::run() {
-  LOG(INFO) << "Import directories into MetaServer...";
-  vector<string> files;
-  for (const auto& dir : dirs_) {
-    VLOG(1) << "  * " << dir;
-    fs::recursive_directory_iterator end;
-    fs::recursive_directory_iterator it(dir);
-    for (; it != end; ++it) {
-      if (fs::is_regular_file(*it)) {
-        // TODO(ziling): call VsfsRpcClient::import()
-        string path = fs::canonical(it->path()).string();
-        files.push_back(path);
-        VLOG(2) << path;
-      }
-      if (files.size() >= batch_size_) {
-        VSFSRpcClient client(host_, port_);
-        Status status = client.init();
-        if (!status.ok()) {
-          LOG(ERROR) << "Failed to init connection to master node: "
-                     << status.message();
-          return status;
-        }
-        client.import(files);
-        LOG(INFO) << "Importing " << batch_size_ << " files into MetaServer";
-        files.clear();
-      }
-    }
-  }
-  if (!files.empty()) {
-    VSFSRpcClient client(host_, port_);
-    Status status = client.init();
-    if (!status.ok()) {
-      LOG(ERROR) << "Failed to init connection to master node: "
-                 << status.message();
-      return status;
-    }
-    client.import(files);
-    LOG(INFO) << "Importing " << files.size() << " files into MetaServer";
-    files.clear();
-  }
-  return Status::OK;
-}
-
 
 // ------- InfoCommand
 InfoCommand::InfoCommand() : recursive_(false) {
