@@ -417,7 +417,6 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
   }
 
   // Recursively creates index directories.
-  // TODO(lxu): pass mode, uid, and gid as well.
   status = mkdir(root + "/.vsfs", mode, uid, gid);
   if (!status.ok() && status.error() != -EEXIST) {
     // Roll back
