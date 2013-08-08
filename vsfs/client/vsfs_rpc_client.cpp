@@ -20,8 +20,9 @@
 #include <thrift/transport/TTransportException.h>
 #include <string>
 #include <vector>
-#include "vsfs/common/types.h"
+#include "vsfs/common/file_object.h"
 #include "vsfs/common/hash_util.h"
+#include "vsfs/common/types.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 
 using apache::thrift::transport::TTransportException;
@@ -182,6 +183,19 @@ Status VSFSRpcClient::open(const string& path, ObjectId* oid) {
     return Status(e.getType(), e.what());
   }
   return Status::OK;
+}
+
+int VSFSRpcClient::read(FileObject* file_obj, char *buf, size_t size,
+                        off_t offset) {
+  CHECK_NOTNULL(file_obj);
+  return file_obj->read(buf, size, offset);
+}
+
+int VSFSRpcClient::write(FileObject* file_obj, char *buf, size_t size,
+                         off_t offset) {
+  CHECK_NOTNULL(file_obj);
+  CHECK_NOTNULL(buf);
+  return file_obj->write(buf, size, offset);
 }
 
 Status VSFSRpcClient::unlink(const string& path) {
