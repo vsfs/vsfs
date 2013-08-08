@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -428,6 +428,14 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
   if (!status.ok()) {
     // Roll back. Note that it does not delete '<root>/.vsfs' directory.
     status = remove_index(root, name);
+  }
+
+  // TODO(lxu): should pass oid to index server to store this index.
+  ObjectId oid;
+  status = create(get_partition_full_path(root, name, 0), 0755, uid, gid, &oid);
+  if (!status.ok()) {
+    rmdir(get_index_full_path(root, name));
+    remove_index(root, name);
   }
   return Status::OK;
 }
