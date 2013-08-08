@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,15 @@
 #include <thrift/transport/TTransportException.h>
 #include <string>
 #include <vector>
-#include "vsfs/common/types.h"
-#include "vsfs/common/hash_util.h"
 #include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/common/hash_util.h"
+#include "vsfs/common/types.h"
+#include "vsfs/rpc/vsfs_types.h"
 
 using apache::thrift::transport::TTransportException;
 using std::string;
 using std::vector;
+using std::to_string;
 using vobla::Status;
 namespace fs = boost::filesystem;
 
@@ -39,6 +41,19 @@ namespace vsfs {
 using rpc::RpcClientFactory;
 
 namespace client {
+
+namespace {
+
+string get_index_full_path(const string& root, const string& name) {
+  return root + "/.vsfs/" + name;
+}
+
+string get_partition_full_path(const string& root, const string& name,
+                               FilePathHashType hash) {
+  return root + "/.vsfs/" + name + "/" + to_string(hash);
+}
+
+}  // namespace
 
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
     : master_client_factory_(new RpcClientFactory<MasterClientType>),
@@ -61,15 +76,8 @@ VSFSRpcClient::~VSFSRpcClient() {
   }
 }
 
-Status VSFSRpcClient::init() {
-  VLOG(0) << "Initialize a VSFSRpcClient.";
-  auto status = connect(host_, port_);
-  if (!status.ok()) {
-    LOG(ERROR) << "Failed to connect to primary master("
-               << host_ << ":" << port_ << "), because: "
-               << status.message();
-  }
-  // Gets a full map of all master servers.
+Status VSFSRpcClient::sync_master_server_map() {
+  VLOG(0) << "Caches master server Consistent Hashing Ring.";
   RpcConsistentHashRing ring;
   try {
     master_client_->handler()->get_all_masters(ring);
@@ -82,6 +90,50 @@ Status VSFSRpcClient::init() {
     node_info.address = sep_and_address.second;
     auto sep = sep_and_address.first;
     master_map_.add(sep, node_info);
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::sync_index_server_map() {
+  VLOG(0) << "Caches index server Consistent Hashing Ring.";
+  RpcConsistentHashRing ring;
+  try {
+    master_client_->handler()->get_all_index_servers(ring);
+  } catch (TTransportException e) {  // NOLINT
+    LOG(ERROR) << "Failed to get_all_index_servers(): " << e.what();
+    return Status(e.getType(), e.what());
+  }
+  for (const auto& sep_and_address : ring) {
+    NodeInfo node_info;
+    node_info.address = sep_and_address.second;
+    auto sep = sep_and_address.first;
+    index_server_map_.add(sep, node_info);
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::init() {
+  VLOG(0) << "Initialize a VSFSRpcClient.";
+  auto status = connect(host_, port_);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to connect to primary master("
+               << host_ << ":" << port_ << "), because: "
+               << status.message();
+    return status;
+  }
+  status = sync_master_server_map();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to synchronize local master server mapping with "
+               << " the primary master server: " << host_ << ":" << port_
+               << ", because: " << status.message();
+    return status;
+  }
+  status = sync_index_server_map();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to synchronize local index server mapping with "
+               << " the primary master server: " << host_ << ":" << port_
+               << ", because: " << status.message();
+    return status;
   }
   return Status::OK;
 }
@@ -123,13 +175,13 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
     return Status(-1, "The client has not initialized yet.");
   }
   auto hash = HashUtil::file_path_to_hash(path);
-  (void) mode;
   NodeInfo file_node;
   auto status = master_map_.get(hash, &file_node);
   if (!status.ok()) {
     VLOG(0) << "Failed to find a master server to create file: " << path;
     return status;
   }
+  mode |= S_IFREG;
   // Number of retries to create file to solve the conflicts.
   int backoff = kNumBackOffs;
   while (backoff) {
@@ -235,7 +287,7 @@ Status VSFSRpcClient::mkdir(
     auto master_client = master_client_factory_->open(node.address.host,
                                                       node.address.port);
     RpcFileInfo dir_info;
-    dir_info.mode = mode;
+    dir_info.mode = mode | S_IFDIR;
     dir_info.uid = uid;
     dir_info.gid = gid;
     master_client->handler()->mkdir(path, dir_info);
@@ -297,21 +349,127 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
     auto client = master_client_factory_->open(node.address);
     client->handler()->readdir(*files, dirpath);
     master_client_factory_->close(client);
-  }  catch (TTransportException e) {  // NOLINT
+  } catch (TTransportException e) {  // NOLINT
     return Status(e.getType(), e.what());
   }
   return Status::OK;
 }
 
-Status VSFSRpcClient::create_index(const string& index_path,
-                                   const string& index_name,
-                                   int index_type,
-                                   int key_type) {
-  (void) index_path;
-  (void) index_name;
-  (void) index_type;
-  (void) key_type;
+Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
+  CHECK_NOTNULL(stbuf);
+  auto hash = HashUtil::file_path_to_hash(path);
+  NodeInfo node;
+  CHECK(master_map_.get(hash, &node).ok());
+  RpcFileInfo file_info;
+  try {
+    auto client = master_client_factory_->open(node.address);
+    client->handler()->getattr(file_info, path);
+    master_client_factory_->close(client);
+  } catch (TTransportException e) {  // NOLINT
+    return Status(e.getType(), e.what());
+  }
+  stbuf->st_mode = file_info.mode;
+  stbuf->st_size = file_info.size;
+  stbuf->st_uid = file_info.uid;
+  stbuf->st_gid = file_info.gid;
+  stbuf->st_atime = file_info.atime;
+  stbuf->st_ctime = file_info.ctime;
+  stbuf->st_mtime = file_info.mtime;
   return Status::OK;
+}
+
+Status VSFSRpcClient::create_index(const string& root, const string& name,
+                                   int index_type, int key_type,
+                                   int64_t mode, int64_t uid, int64_t gid) {
+  struct stat stbuf;
+  auto status = getattr(root, &stbuf);
+  if (!status.ok()) {
+    LOG(ERROR) << "Can not create log: " << status.message();
+    return status;
+  }
+  if (!S_ISDIR(stbuf.st_mode)) {
+    LOG(ERROR) << "Can not create index on an non-dir path.";
+    return Status::system_error(-ENOTDIR);
+  }
+  RpcIndexCreateRequest create_request;
+  create_request.root = root;
+  create_request.name = name;
+  create_request.index_type = index_type;
+  create_request.__set_key_type(key_type);
+
+  string partition_path = get_partition_full_path(root, name, 0);
+  auto hash = HashUtil::file_path_to_hash(partition_path);
+  NodeInfo index_server;
+  status = index_server_map_.get(hash, &index_server);
+  CHECK(status.ok());
+  try {
+    auto index_client = index_client_factory_->open(index_server.address);
+    index_client->handler()->create_index(create_request);
+    index_client_factory_->close(index_client);
+  } catch (TTransportException e) {  // NOLINT
+    status = Status(e.getType(), e.what());
+  }
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to create index on IndexServer: "
+               << index_server.address.host << ":" << index_server.address.port
+               << " because " << status.message();
+    return status;
+  }
+
+  // Recursively creates index directories.
+  status = mkdir(root + "/.vsfs", mode, uid, gid);
+  if (!status.ok() && status.error() != -EEXIST) {
+    // Roll back
+    status = remove_index(root, name);
+    return status;
+  }
+
+  status = mkdir(get_index_full_path(root, name), mode, uid, gid);
+  if (!status.ok()) {
+    // Roll back. Note that it does not delete '<root>/.vsfs' directory.
+    status = remove_index(root, name);
+  }
+
+  // TODO(lxu): should pass oid to index server to store this index.
+  ObjectId oid;
+  status = create(get_partition_full_path(root, name, 0), 0755, uid, gid, &oid);
+  if (!status.ok()) {
+    rmdir(get_index_full_path(root, name));
+    remove_index(root, name);
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::remove_index(const string& root, const string& name) {
+  RpcIndexName request;
+  request.root = root;
+  request.name = name;
+
+  vector<string> partitions;
+  string full_index_path = get_index_full_path(name, root);
+  auto status = this->readdir(full_index_path, &partitions);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to get all partitions: " << status.message();
+    return status;
+  }
+  // Tries the best-efforts to delete all partitions.
+  for (const auto& part : partitions) {
+    auto partition_path = (fs::path(full_index_path) / part).string();
+    unlink(partition_path);
+    auto hash = HashUtil::file_path_to_hash(partition_path);
+    NodeInfo node;
+    CHECK(index_server_map_.get(hash, &node).ok());
+    try {
+      auto index_client = index_client_factory_->open(node.address);
+      index_client->handler()->remove_index(request);
+      index_client_factory_->close(index_client);
+    } catch (TTransportException e) {  // NOLINT
+      LOG(ERROR) << "Failed to remove index from IndexServer: "
+                 << node.address.host << ":" << node.address.port
+                 << " : " << e.what();
+    }
+  }
+  return status;
 }
 
 Status VSFSRpcClient::search(const ComplexQuery& query,

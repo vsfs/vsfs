@@ -18,6 +18,8 @@
 #define VSFS_CLIENT_VSFS_RPC_CLIENT_H_
 
 #include <boost/shared_ptr.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <transport/TBufferTransports.h>
 #include <memory>
 #include <string>
@@ -114,10 +116,14 @@ class VSFSRpcClient : public VSFSClient {
   /// Reads all subfiles from a directory.
   Status readdir(const string& dirpath, vector<string>* files);  // NOLINT
 
+  Status getattr(const string& path, struct stat* stbuf);
+
   Status create_index(const string& index_path,
                       const string& index_name,
-                      int index_type,
-                      int key_type);
+                      int index_type, int key_type,
+                      int64_t mode, int64_t uid, int64_t gid);
+
+  Status remove_index(const string& root, const string& name);
 
   Status search(const ComplexQuery& query,
                 vector<string>* results);
@@ -132,6 +138,12 @@ class VSFSRpcClient : public VSFSClient {
   /// Returns true if this client has been initialized.
   bool is_initialized();
 
+  /// Synchronize the master server's CH ring.
+  Status sync_master_server_map();
+
+  /// Synchronize the index server's CH ring.
+  Status sync_index_server_map();
+
   Status add_subfile(const string& filepath);
 
   unique_ptr<MasterClientFactory> master_client_factory_;
@@ -140,7 +152,11 @@ class VSFSRpcClient : public VSFSClient {
 
   boost::shared_ptr<MasterClientType> master_client_;  // primary master
 
+  /// Caches a copy of master map.
   ServerMap master_map_;
+
+  /// Caches a copy of index server map.
+  ServerMap index_server_map_;
 
   std::mutex master_lock_;
 

@@ -53,6 +53,8 @@ class MasterServer : public vsfs::MasterServerIf {
 
   void get_all_masters(RpcConsistentHashRing& ring);  // NOLINT
 
+  void get_all_index_servers(RpcConsistentHashRing& ring);  // NOLINT
+
   void mkdir(const string& path, const RpcFileInfo& info);
 
   void rmdir(const string& path);
@@ -78,6 +80,9 @@ class MasterServer : public vsfs::MasterServerIf {
    * \brief Creates index in the master server and assign a IndexServer to it.
    */
   void create_index(RpcIndexLocation&, const RpcIndexCreateRequest&);
+
+  /// Removes an index by given {root, name} pair.
+  void remove_index(const string& root, const string& name);
 
   /**
    * \brief Locate Index Servers.
