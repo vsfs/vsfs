@@ -125,10 +125,9 @@ class VSFSClient : boost::noncopyable {
 
   */
 
-  virtual Status create_index(const string& index_path,
-                              const string& index_name,
-                              int index_type,
-                              int key_type) = 0;
+  virtual Status create_index(
+      const string& root, const string& name, int index_type, int key_type,
+      int64_t mode, int64_t uid, int64_t gid) = 0;
 
   virtual Status search(const ComplexQuery& query,
                         vector<string>* results) = 0;

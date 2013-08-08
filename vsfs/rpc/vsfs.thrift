@@ -80,7 +80,7 @@ struct RpcComplexQuery {
 
 // Operation on a named index
 struct RpcIndexName {
-  1: required string root_path,
+  1: required string root,
   2: required string name,
 }
 
@@ -223,6 +223,9 @@ service MasterServer {
   /// Obtains the C.H ring of all masters.
   RpcConsistentHashRing get_all_masters() throws (1:RpcInvalidOp ouch);
 
+  /// Obtains the C.H ring of all index servers.
+  RpcConsistentHashRing get_all_index_servers() throws (1:RpcInvalidOp ouch);
+
   /**
    * \brief Makes a new directory.
    */
@@ -265,6 +268,9 @@ service MasterServer {
    */
   RpcIndexLocation create_index(1:RpcIndexCreateRequest index)
     throws (1:RpcInvalidOp ouch);
+
+  /// Removes the related items of an index completely.
+  void remove_index(1:string root, 2:string name) throws (1:RpcInvalidOp ouch);
 
   /// Locates index servers for files.
   RpcIndexLocationList locate_index(1: RpcIndexLookupRequest lookup)

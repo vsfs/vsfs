@@ -74,7 +74,8 @@ void LocalMasterdCluster::start() {
         thread(&MasterController::start, cluster_.back().get()));
   }
   while (true) {
-    auto all_masters = cluster_[0]->get_all_masters();
+    RpcConsistentHashRing all_masters;
+    cluster_[0]->get_all_masters(&all_masters);
     if (all_masters.size() == static_cast<size_t>(num_masterds_)) {
       break;
     }

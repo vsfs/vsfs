@@ -215,15 +215,6 @@ Status MasterController::join_master_server(const NodeInfo& node) {
   return status;
 }
 
-RpcConsistentHashRing MasterController::get_all_masters() {
-  RpcConsistentHashRing ring;
-  auto ch_ring_map = master_server_manager_->get_ch_ring_as_map();
-  for (const auto& sep_and_node : ch_ring_map) {
-    ring[sep_and_node.first] = sep_and_node.second.address;
-  }
-  return ring;
-}
-
 Status MasterController::join_index_server(const NodeInfo &node,
                                            RpcNodeAddressList *replicas) {
   CHECK_NOTNULL(replicas);
@@ -243,6 +234,32 @@ Status MasterController::join_index_server(const NodeInfo &node,
     replicas->emplace_back(node.address);
   }
   return status;
+}
+
+Status MasterController::get_all_masters(RpcConsistentHashRing* ring) {
+  CHECK_NOTNULL(ring);
+  if (!is_primary_node_) {
+    return Status(-1, "This is not the primary node.");
+  }
+  auto ch_ring_map = master_server_manager_->get_ch_ring_as_map();
+  for (const auto& sep_and_node : ch_ring_map) {
+    ring->insert(std::make_pair(sep_and_node.first,
+                                sep_and_node.second.address));
+  }
+  return Status::OK;
+}
+
+Status MasterController::get_all_index_servers(RpcConsistentHashRing* ring) {
+  CHECK_NOTNULL(ring);
+  if (!is_primary_node_) {
+    return Status(-1, "This is not the primary node.");
+  }
+  auto ch_ring_map = index_server_manager_->get_ch_ring_as_map();
+  for (const auto& sep_and_node : ch_ring_map) {
+    ring->insert(std::make_pair(sep_and_node.first,
+                                 sep_and_node.second.address));
+  }
+  return Status::OK;
 }
 
 namespace {
@@ -340,7 +357,7 @@ Status MasterController::create_index(const RpcIndexCreateRequest &request,
   // The first partition always starts from hash value 0.
   string partition_path =
       index_partition_manager_->get_partition_path(full_path, 0);
-  size_t path_hash = HashUtil::file_path_to_hash(partition_path);
+  auto path_hash = HashUtil::file_path_to_hash(partition_path);
   status = index_server_manager_->get(path_hash, &node);
   if (!status.ok()) {
     // Roll back.
@@ -354,6 +371,20 @@ Status MasterController::create_index(const RpcIndexCreateRequest &request,
   index_location->server_addr.host = node.address.host;
   index_location->server_addr.port = node.address.port;
   return Status::OK;
+}
+
+Status MasterController::remove_index(const string& root, const string& name) {
+  VLOG(0) << "Remove index: " << root << ", name: " << name;
+  auto status = index_namespace_->remove(root, name);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to remove index record from index namespace:"
+               << status.message();
+  }
+  // Even if removing from index namespace fails, we will try our best-efforts
+  // to remove any related records.
+  string full_path = get_full_index_path(root, name);
+  index_partition_manager_->remove_index(full_path);
+  return status;
 }
 
 Status MasterController::locate_index(const RpcIndexLookupRequest &request,

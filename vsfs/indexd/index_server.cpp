@@ -39,9 +39,9 @@ void IndexServer::create_index(const RpcIndexCreateRequest &index) {
             << " type: " << index.index_type
             << " key: " << index.key_type;
   ThriftUtils::check_status(server_->create_index(index.root,
-                                                 index.name,
-                                                 index.index_type,
-                                                 index.key_type));
+                                                  index.name,
+                                                  index.index_type,
+                                                  index.key_type));
 }
 
 void IndexServer::remove_index(const RpcIndexName &name) {

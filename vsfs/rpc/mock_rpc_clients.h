@@ -45,12 +45,18 @@ class MockMasterServerClient : public MasterServerClient {
   MOCK_METHOD1(join_master_server, void(const RpcNodeInfo&));
   MOCK_METHOD1(join_index_server, void(const RpcNodeInfo&));
   MOCK_METHOD1(get_all_masters, void(RpcConsistentHashRing&));
+  MOCK_METHOD1(get_all_index_servers, void(RpcConsistentHashRing&));
+
+  MOCK_METHOD2(getattr, void(RpcFileInfo&, const string&));
   MOCK_METHOD2(mkdir, void(const string&, const RpcFileInfo&));
   MOCK_METHOD1(rmdir, void(const string&));
   MOCK_METHOD4(create, RpcObjectId(const string&, const int64_t, const int64_t,
                                    const int64_t));
   MOCK_METHOD1(remove, void(const string&));
   MOCK_METHOD2(add_subfile, void(const string&, const string&));
+
+  MOCK_METHOD2(create_index, void(RpcIndexLocation&,
+                                  const RpcIndexCreateRequest&));
 };
 
 /**
@@ -62,6 +68,7 @@ class MockIndexServerClient : public IndexServerClient {
   MockIndexServerClient() : IndexServerClient(shared_ptr<TProtocol>()) {
   }
 
+  MOCK_METHOD1(create_index, void(const RpcIndexCreateRequest&));
   MOCK_METHOD1(update, void(const RpcIndexUpdate&));
 };
 

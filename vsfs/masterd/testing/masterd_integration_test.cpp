@@ -62,7 +62,8 @@ class MasterServerIntegrationTest : public ::testing::Test {
 
 TEST_F(MasterServerIntegrationTest, TestStartMasterServerCluster) {
   start_cluster(4);
-  RpcConsistentHashRing ring = test_cluster_->primary()->get_all_masters();
+  RpcConsistentHashRing ring;
+  EXPECT_TRUE(test_cluster_->primary()->get_all_masters(&ring).ok());
   EXPECT_EQ(4u, ring.size());
 }
 
