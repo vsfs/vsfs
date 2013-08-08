@@ -32,7 +32,6 @@ using vobla::Status;
 namespace vsfs {
 
 class ComplexQuery;
-class FileInfo;
 class FileObject;
 
 namespace index {
@@ -112,12 +111,12 @@ class VSFSClient : boost::noncopyable {
   virtual Status open(const string& path, ObjectId* id) = 0;
 
   /// Read a file and return the bytes that have been read
-  virtual int read(const FileObject& file_obj, char *buf, size_t size,
+  virtual int read(FileObject* file_obj, char *buf, size_t size,
                    off_t offset) = 0;
 
   /// Write to a file and return the bytes that have been written
-  virtual int write(const FileObject& file_obj, char *buf, size_t size,
-                    off_t offset, FileInfo *file) = 0;
+  virtual int write(FileObject* file_obj, char *buf, size_t size,
+                    off_t offset) = 0;
 
   /*
   // Updates the index of FileInfo
