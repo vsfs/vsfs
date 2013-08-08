@@ -143,8 +143,10 @@ TEST_F(VsfsRpcClientTest, TestCreateIndexSuccess) {
   init_client(2, 1);
   RpcIndexLocation loc;
   loc.full_index_path = "/foo/bar/.vsfs/index/0";
-  EXPECT_CALL(*mock_master_, create_index(_, _))
-      .WillOnce(SetArgReferee<0>(loc));
+  EXPECT_CALL(*mock_master_, mkdir(_, _))
+      .Times(3);
+  EXPECT_CALL(*mock_master_, add_subfile(_, _))
+      .Times(3);
   EXPECT_CALL(*mock_index_, create_index(_));
 
   RpcFileInfo dir_info;
@@ -153,7 +155,7 @@ TEST_F(VsfsRpcClientTest, TestCreateIndexSuccess) {
       .WillOnce(SetArgReferee<0>(dir_info));
 
   EXPECT_TRUE(test_client_->create_index(
-      "/foo/bar", "index", IndexInfo::BTREE, INT64).ok());
+      "/foo/bar", "index", IndexInfo::BTREE, INT64, 0755, 100, 100).ok());
 }
 
 }  // namespace client

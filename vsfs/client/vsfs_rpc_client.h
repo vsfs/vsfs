@@ -120,8 +120,10 @@ class VSFSRpcClient : public VSFSClient {
 
   Status create_index(const string& index_path,
                       const string& index_name,
-                      int index_type,
-                      int key_type);
+                      int index_type, int key_type,
+                      int64_t mode, int64_t uid, int64_t gid);
+
+  Status remove_index(const string& root, const string& name);
 
   Status search(const ComplexQuery& query,
                 vector<string>* results);

@@ -24,6 +24,8 @@
 #include <getopt.h>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <cstdio>
 #include <functional>
 #include <iostream>  // NOLINT
@@ -417,7 +419,8 @@ Status IndexCommand::create_index() {
     return status;
   }
   return client.create_index(canonical_root, index_name_,
-                             index_type_, key_type_);
+                             index_type_, key_type_,
+                             0755, getuid(), getgid());
 }
 
 Status IndexCommand::update_index() {

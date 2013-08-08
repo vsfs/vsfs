@@ -81,6 +81,9 @@ class MasterServer : public vsfs::MasterServerIf {
    */
   void create_index(RpcIndexLocation&, const RpcIndexCreateRequest&);
 
+  /// Removes an index by given {root, name} pair.
+  void remove_index(const string& root, const string& name);
+
   /**
    * \brief Locate Index Servers.
    */

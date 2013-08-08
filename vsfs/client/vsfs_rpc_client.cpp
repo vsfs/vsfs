@@ -28,6 +28,7 @@
 using apache::thrift::transport::TTransportException;
 using std::string;
 using std::vector;
+using std::to_string;
 using vobla::Status;
 namespace fs = boost::filesystem;
 
@@ -40,6 +41,19 @@ namespace vsfs {
 using rpc::RpcClientFactory;
 
 namespace client {
+
+namespace {
+
+string get_index_full_path(const string& root, const string& name) {
+  return root + "/.vsfs/" + name;
+}
+
+string get_partition_full_path(const string& root, const string& name,
+                               FilePathHashType hash) {
+  return root + "/.vsfs/" + name + "/" + to_string(hash);
+}
+
+}  // namespace
 
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
     : master_client_factory_(new RpcClientFactory<MasterClientType>),
@@ -364,12 +378,11 @@ Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   return Status::OK;
 }
 
-Status VSFSRpcClient::create_index(const string& index_path,
-                                   const string& index_name,
-                                   int index_type,
-                                   int key_type) {
+Status VSFSRpcClient::create_index(const string& root, const string& name,
+                                   int index_type, int key_type,
+                                   int64_t mode, int64_t uid, int64_t gid) {
   struct stat stbuf;
-  auto status = getattr(index_path, &stbuf);
+  auto status = getattr(root, &stbuf);
   if (!status.ok()) {
     LOG(ERROR) << "Can not create log: " << status.message();
     return status;
@@ -379,32 +392,88 @@ Status VSFSRpcClient::create_index(const string& index_path,
     return Status::system_error(-ENOTDIR);
   }
   RpcIndexCreateRequest create_request;
-  create_request.root = index_path;
-  create_request.name = index_name;
+  create_request.root = root;
+  create_request.name = name;
   create_request.index_type = index_type;
   create_request.__set_key_type(key_type);
 
-  // Asks the primary masterd for the index location.
-  RpcIndexLocation index_loc;
+  string partition_path = get_partition_full_path(root, name, 0);
+  auto hash = HashUtil::file_path_to_hash(partition_path);
+  NodeInfo index_server;
+  status = index_server_map_.get(hash, &index_server);
+  CHECK(status.ok());
   try {
-    master_client_->handler()->create_index(index_loc, create_request);
-  } catch (RpcInvalidOp e) {  // NOLINT
-    LOG(ERROR) << "Rpc Invalid Op: " << e.what << ":" << e.why;
-    return Status(e.what, e.why);
-  }
-
-  create_request.root = index_loc.full_index_path;
-  try {
-    auto index_client = index_client_factory_->open(index_loc.server_addr);
+    auto index_client = index_client_factory_->open(index_server.address);
     index_client->handler()->create_index(create_request);
     index_client_factory_->close(index_client);
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
   }
   if (!status.ok()) {
-    // Roll back.
+    LOG(ERROR) << "Failed to create index on IndexServer: "
+               << index_server.address.host << ":" << index_server.address.port
+               << " because " << status.message();
+    return status;
+  }
+
+  // Recursively creates index directories.
+  // TODO(lxu): pass mode, uid, and gid as well.
+  status = mkdir(root + "/.vsfs", mode, uid, gid);
+  if (!status.ok() && status.error() != -EEXIST) {
+    // Roll back
+    RpcIndexName remove_request;
+    remove_request.root = root;
+    remove_request.name = name;
+    try {
+      auto index_client = index_client_factory_->open(index_server.address);
+      index_client->handler()->remove_index(remove_request);
+      index_client_factory_->close(index_client);
+    } catch (TTransportException e) {  // NOLINT
+      status = Status(e.getType(), e.what());
+    }
+  }
+
+  status = mkdir(get_index_full_path(root, name), mode, uid, gid);
+  if (!status.ok()) {
+    // Roll back
+    return status;
+  }
+  status = mkdir(get_partition_full_path(root, name, 0), mode, uid, gid);
+  if (!status.ok()) {
   }
   return Status::OK;
+}
+
+Status VSFSRpcClient::remove_index(const string& root, const string& name) {
+  RpcIndexName request;
+  request.root = root;
+  request.name = name;
+
+  vector<string> partitions;
+  string full_index_path = get_index_full_path(name, root);
+  auto status = this->readdir(full_index_path, &partitions);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to get all partitions: " << status.message();
+    return status;
+  }
+  // Tries the best-efforts to delete all partitions.
+  for (const auto& part : partitions) {
+    auto partition_path = (fs::path(full_index_path) / part).string();
+    unlink(partition_path);
+    auto hash = HashUtil::file_path_to_hash(partition_path);
+    NodeInfo node;
+    CHECK(index_server_map_.get(hash, &node).ok());
+    try {
+      auto index_client = index_client_factory_->open(node.address);
+      index_client->handler()->remove_index(request);
+      index_client_factory_->close(index_client);
+    } catch (TTransportException e) {  // NOLINT
+      LOG(ERROR) << "Failed to remove index from IndexServer: "
+                 << node.address.host << ":" << node.address.port
+                 << " : " << e.what();
+    }
+  }
+  return status;
 }
 
 Status VSFSRpcClient::search(const ComplexQuery& query,
