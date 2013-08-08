@@ -426,13 +426,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
 
   status = mkdir(get_index_full_path(root, name), mode, uid, gid);
   if (!status.ok()) {
-    // Roll back
-    status = remove_index(root, name);
-    return status;
-  }
-  status = mkdir(partition_path, mode, uid, gid);
-  if (!status.ok()) {
-    status = this->rmdir(get_index_full_path(root, name));
+    // Roll back. Note that it does not delete '<root>/.vsfs' directory.
     status = remove_index(root, name);
   }
   return Status::OK;
