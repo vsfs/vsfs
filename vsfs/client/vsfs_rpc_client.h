@@ -18,13 +18,15 @@
 #define VSFS_CLIENT_VSFS_RPC_CLIENT_H_
 
 #include <boost/shared_ptr.hpp>
+#include <gtest/gtest_prod.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <transport/TBufferTransports.h>
+#include <map>
 #include <memory>
+#include <mutex>  // NOLINT
 #include <string>
 #include <vector>
-#include <mutex>  // NOLINT
 #include "vobla/thread_pool.h"
 #include "vsfs/client/vsfs_client.h"
 #include "vsfs/common/types.h"
@@ -34,8 +36,10 @@
 #include "vsfs/rpc/rpc_client.h"
 #include "vsfs/rpc/rpc_client_factory.h"
 
+using std::map;
 using std::string;
 using std::unique_ptr;
+using std::vector;
 using apache::thrift::transport::TFramedTransport;
 using vobla::Status;
 
@@ -133,6 +137,40 @@ class VSFSRpcClient : public VSFSClient {
   Status info(const string& path, vector<index::IndexInfo>* infos);
 
  private:
+  FRIEND_TEST(VsfsRpcClientTest, TestGetParentPathToIndexPathMap);
+  FRIEND_TEST(VsfsRpcClientTest, TestReorderRequests);
+
+  class IndexUpdateTask : boost::noncopyable {
+   public:
+    explicit IndexUpdateTask(VSFSRpcClient *parent);
+
+    /**
+     * \brief Adds a request to this task.
+     * All requests must be added before calling 'run()'.
+     */
+    void add(const IndexUpdateRequest* request);
+
+    /// Run this thread and upload requests to the VSFS cluster.
+    Status run();
+
+    /// Returns the number of requests.
+    size_t size() const;
+
+    // Make the folloing 'private' functions public for easiler unit testing.
+
+    // map<parent path, map<index name, actual index path>>
+    typedef map<string, map<string, string>> ParentPathToIndexPathMap;
+    Status get_parent_path_to_index_path_map(
+        ParentPathToIndexPathMap *index_map);
+
+    Status reorder_requests_to_index_servers();
+
+   private:
+    VSFSRpcClient* parent_;
+
+    vector<const IndexUpdateRequest*> requests_;
+  };
+
   /// Returns true if this client has been initialized.
   bool is_initialized();
 
