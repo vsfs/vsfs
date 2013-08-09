@@ -15,9 +15,12 @@
  */
 
 #include <boost/filesystem.hpp>
+#include <boost/utility.hpp>
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <thrift/transport/TTransportException.h>
+#include <map>
+#include <set>
 #include <string>
 #include <vector>
 #include "vsfs/client/vsfs_rpc_client.h"
@@ -26,9 +29,11 @@
 #include "vsfs/rpc/vsfs_types.h"
 
 using apache::thrift::transport::TTransportException;
+using std::map;
+using std::set;
 using std::string;
-using std::vector;
 using std::to_string;
+using std::vector;
 using vobla::Status;
 namespace fs = boost::filesystem;
 
@@ -365,7 +370,11 @@ Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
     auto client = master_client_factory_->open(node.address);
     client->handler()->getattr(file_info, path);
     master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
+    LOG(ERROR) << "Thrift Transport Exception: (" << e.getType() << "): "
+               << e.what();
     return Status(e.getType(), e.what());
   }
   stbuf->st_mode = file_info.mode;
@@ -476,6 +485,65 @@ Status VSFSRpcClient::search(const ComplexQuery& query,
                              vector<string>* results) {
   (void) query;
   CHECK_NOTNULL(results);
+  return Status::OK;
+}
+
+VSFSRpcClient::IndexUpdateTask::IndexUpdateTask(VSFSRpcClient* parent)
+    : parent_(parent) {
+  CHECK_NOTNULL(parent);
+}
+
+void VSFSRpcClient::IndexUpdateTask::add(const IndexUpdateRequest* request) {
+  CHECK_NOTNULL(request);
+  requests_.emplace_back(request);
+}
+
+Status VSFSRpcClient::IndexUpdateTask::get_parent_path_to_index_path_map(
+    ParentPathToIndexPathMap *index_map) {
+  CHECK_NOTNULL(index_map);
+  // map<parent path, vector<index names>>
+  map<string, set<string>> parent_to_index_names_map;
+  for (const auto request : requests_) {
+    auto parent = fs::path(request->file_path).parent_path().string();
+    parent_to_index_names_map[parent].insert(request->index_name);
+  }
+
+  // map<parent path, map<index name, actual index path>>
+  for (const auto& parent_and_names : parent_to_index_names_map) {
+    auto parent = parent_and_names.first;
+    for (const auto& index_name : parent_and_names.second) {
+      auto tmp_parent = parent;
+      while (true) {
+        auto index_path = get_index_full_path(tmp_parent, index_name);
+        struct stat stbuf;
+        auto status = parent_->getattr(index_path, &stbuf);
+        if (status.ok() && S_ISDIR(stbuf.st_mode)) {
+          (*index_map)[parent][index_name] = index_path;
+          break;
+        }
+        if (!status.ok() && status.error() != -ENOENT) {
+          LOG(ERROR) << "Failed to reorder requests because can not check the "
+              << "existence of index: " << status.message();
+          return status;
+        }
+        if (tmp_parent == "/") {
+          LOG(ERROR) << "Failed to find a valid index for index name: "
+                     << index_name;
+          return Status(-1, "Failed to find valid index.");
+        }
+        tmp_parent = fs::path(tmp_parent).parent_path().string();
+      }
+    }
+  }
+
+  return Status::OK;
+}
+
+Status VSFSRpcClient::IndexUpdateTask::run() {
+  // Find the index server mapping of requests.
+
+  // Map<Index Path, Request>
+  map<string, const IndexUpdateRequest*> index_to_request_map;
   return Status::OK;
 }
 
