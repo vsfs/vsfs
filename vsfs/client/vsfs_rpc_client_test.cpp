@@ -182,6 +182,7 @@ TEST_F(VsfsRpcClientTest, TestUpdateIndex) {
   info.mode = 0666 | S_IFDIR;
   RpcInvalidOp ouch;
   ouch.what = -ENOENT;
+  // Index "red" is on "/foo"
   EXPECT_CALL(*mock_master_, getattr(_, "/foo/.vsfs/red"))
       .Times(2)
       .WillRepeatedly(SetArgReferee<0>(info));
@@ -189,6 +190,7 @@ TEST_F(VsfsRpcClientTest, TestUpdateIndex) {
       .WillRepeatedly(Throw(ouch));
   EXPECT_CALL(*mock_master_, getattr(_, "/foo/bar/zoo/.vsfs/red"))
       .WillOnce(Throw(ouch));
+  // Index "blue" is on "/foo/some/test'
   EXPECT_CALL(*mock_master_, getattr(_, "/foo/some/test/path/.vsfs/blue"))
       .WillOnce(Throw(ouch));
   EXPECT_CALL(*mock_master_, getattr(_, "/foo/some/test/.vsfs/blue"))
