@@ -30,7 +30,7 @@
 #include <set>
 #include "vobla/file.h"
 #include "vsfs/client/vsfs_rpc_client.h"
-#include "vsfs/masterd/testing/local_masterd_cluster.h"
+#include "vsfs/testing/local_vsfs_cluster.h"
 
 using ::testing::ContainerEq;
 using std::set;
@@ -40,7 +40,7 @@ using std::unique_ptr;
 using std::vector;
 using vobla::TemporaryDirectory;
 using vsfs::client::VSFSRpcClient;
-using vsfs::masterd::LocalMasterdCluster;
+using vsfs::LocalVsfsCluster;
 
 namespace vsfs {
 
@@ -55,17 +55,18 @@ class ClientMetadataTest : public ::testing::Test {
     tmpdir_.reset();
   }
 
-  void start(int num_masters) {
-    cluster_.reset(new LocalMasterdCluster(tmpdir_->path(), num_masters));
+  void start(int num_masters, int num_indices) {
+    cluster_.reset(new LocalVsfsCluster(
+            tmpdir_->path(), num_masters, num_indices));
     cluster_->start();
   }
 
   unique_ptr<TemporaryDirectory> tmpdir_;
-  unique_ptr<LocalMasterdCluster> cluster_;
+  unique_ptr<LocalVsfsCluster> cluster_;
 };
 
 TEST_F(ClientMetadataTest, TestMakeDirs) {
-  start(4);
+  start(4, 2);
 
   VSFSRpcClient client(cluster_->host(0), cluster_->port(0));
   EXPECT_TRUE(client.init().ok());
