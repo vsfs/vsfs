@@ -18,6 +18,7 @@
 #include <glog/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <limits>
 #include <map>
 #include <memory>
 #include <string>
@@ -96,11 +97,12 @@ class VsfsRpcClientTest : public ::testing::Test {
       address.port = 10000 + i;
       master_ring[i * 10000] = address;
     }
+    uint64_t segment = std::numeric_limits<uint64_t>::max() / num_index_servers;
     for (int i = 0; i < num_index_servers; ++i) {
       RpcNodeAddress address;
       address.host = "localhost";
       address.port = 12000 + i;
-      index_ring[i * 12000] = address;
+      index_ring[i * segment] = address;
     }
     EXPECT_CALL(*mock_master_, get_all_masters(_))
         .WillOnce(SetArgReferee<0>(master_ring));
@@ -196,6 +198,37 @@ TEST_F(VsfsRpcClientTest, TestGetParentPathToIndexPathMap) {
   IndexUpdateTask::ParentPathToIndexPathMap expected_map;
   expected_map["/foo/bar"]["index"] = "/foo/.vsfs/index";
   EXPECT_THAT(index_map, ContainerEq(expected_map));
+}
+
+TEST_F(VsfsRpcClientTest, TestReorderRequests) {
+  init_client(1, 4);
+
+  typedef VSFSRpcClient::IndexUpdateTask IndexUpdateTask;
+  IndexUpdateTask task(test_client_.get());
+
+  vector<IndexUpdateRequest> requests;
+  requests.emplace_back(IndexUpdateRequest::INSERT,
+                        "/foo/bar/abc/def/test0", "dog", "0");
+  requests.emplace_back(IndexUpdateRequest::INSERT,
+                        "/foo/bar/abc/def/test1", "dog", "1");
+  requests.emplace_back(IndexUpdateRequest::INSERT,
+                        "/foo/bar/bla/bla/test3", "cat", "2");
+  for (const auto& req : requests) {
+    task.add(&req);
+  }
+
+  IndexUpdateTask::ParentPathToIndexPathMap index_map;
+  index_map["/foo/bar/abc/def"]["dog"] = "/foo/bar/.vsfs/dog";
+  index_map["/foo/bar/bla/bla"]["cat"] = "/foo/bar/.vsfs/cat";
+
+  IndexUpdateTask::ServerToRequestMap request_map;
+  EXPECT_TRUE(task.reorder_requests_to_index_servers(index_map,
+                                                     &request_map).ok());
+  IndexUpdateTask::ServerToRequestMap expected_map;
+  expected_map["localhost:12001"].push_back(&requests[0]);
+  expected_map["localhost:12001"].push_back(&requests[1]);
+  expected_map["localhost:12002"].push_back(&requests[2]);
+  EXPECT_THAT(request_map, ContainerEq(expected_map));
 }
 
 }  // namespace client

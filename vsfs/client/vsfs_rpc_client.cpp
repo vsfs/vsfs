@@ -539,6 +539,27 @@ Status VSFSRpcClient::IndexUpdateTask::get_parent_path_to_index_path_map(
   return Status::OK;
 }
 
+Status VSFSRpcClient::IndexUpdateTask::reorder_requests_to_index_servers(
+    const ParentPathToIndexPathMap& index_map,
+    ServerToRequestMap* request_map) {
+  CHECK_NOTNULL(request_map);
+
+  for (const auto request : requests_) {
+    // The index path must exist, otherwise an exception will raise.
+    string parent = fs::path(request->file_path).parent_path().string();
+    const auto& index_path = index_map.at(parent)
+                                      .at(request->index_name);
+    // TODO(lxu): the current solution only works for one partition.
+    auto partition_path = index_path + "/0";
+    auto hash = HashUtil::file_path_to_hash(partition_path);
+    NodeInfo node;
+    CHECK(parent_->index_server_map_.get(hash, &node).ok());
+    string addr = node.address.host + ":" + to_string(node.address.port);
+    (*request_map)[addr].push_back(request);
+  }
+  return Status::OK;
+}
+
 Status VSFSRpcClient::IndexUpdateTask::run() {
   // Find the index server mapping of requests.
 
