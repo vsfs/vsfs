@@ -30,8 +30,10 @@
 #include "vsfs/rpc/mock_rpc_clients.h"
 #include "vsfs/rpc/vsfs_types.h"
 
+using ::testing::ContainerEq;
 using ::testing::Return;
 using ::testing::SetArgReferee;
+using ::testing::Throw;
 using ::testing::_;
 using boost::shared_ptr;
 using std::map;
@@ -182,10 +184,18 @@ TEST_F(VsfsRpcClientTest, TestGetParentPathToIndexPathMap) {
 
   RpcFileInfo info;
   info.mode = 0666 | S_IFDIR;
+  RpcInvalidOp ouch;
+  ouch.what = -ENOENT;
   EXPECT_CALL(*mock_master_, getattr(_, "/foo/bar/.vsfs/index"))
+      .WillRepeatedly(Throw(ouch));
+  EXPECT_CALL(*mock_master_, getattr(_, "/foo/.vsfs/index"))
       .WillOnce(SetArgReferee<0>(info));
   IndexUpdateTask::ParentPathToIndexPathMap index_map;
   EXPECT_TRUE(task.get_parent_path_to_index_path_map(&index_map).ok());
+
+  IndexUpdateTask::ParentPathToIndexPathMap expected_map;
+  expected_map["/foo/bar"]["index"] = "/foo/.vsfs/index";
+  EXPECT_THAT(index_map, ContainerEq(expected_map));
 }
 
 }  // namespace client

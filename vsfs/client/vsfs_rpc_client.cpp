@@ -370,7 +370,11 @@ Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
     auto client = master_client_factory_->open(node.address);
     client->handler()->getattr(file_info, path);
     master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
+    LOG(ERROR) << "Thrift Transport Exception: (" << e.getType() << "): "
+               << e.what();
     return Status(e.getType(), e.what());
   }
   stbuf->st_mode = file_info.mode;
@@ -510,7 +514,7 @@ Status VSFSRpcClient::IndexUpdateTask::get_parent_path_to_index_path_map(
     for (const auto& index_name : parent_and_names.second) {
       auto tmp_parent = parent;
       while (true) {
-        auto index_path = get_index_full_path(parent, index_name);
+        auto index_path = get_index_full_path(tmp_parent, index_name);
         struct stat stbuf;
         auto status = parent_->getattr(index_path, &stbuf);
         if (status.ok() && S_ISDIR(stbuf.st_mode)) {
