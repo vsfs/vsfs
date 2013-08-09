@@ -198,5 +198,8 @@ TEST_F(VsfsRpcClientTest, TestGetParentPathToIndexPathMap) {
   EXPECT_THAT(index_map, ContainerEq(expected_map));
 }
 
+TEST_F(VsfsRpcClientTest, TestReorderRequests) {
+}
+
 }  // namespace client
 }  // namespace vsfs

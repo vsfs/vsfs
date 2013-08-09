@@ -138,7 +138,7 @@ class VSFSRpcClient : public VSFSClient {
 
  private:
   FRIEND_TEST(VsfsRpcClientTest, TestGetParentPathToIndexPathMap);
-  // FRIEND_TEST(VsfsRpcClientTest, TestReorderRequests);
+  FRIEND_TEST(VsfsRpcClientTest, TestReorderRequests);
 
   /**
    * \brief A callable class to update index in thread.
@@ -170,7 +170,13 @@ class VSFSRpcClient : public VSFSClient {
     Status get_parent_path_to_index_path_map(
         ParentPathToIndexPathMap *index_map);
 
-    // Status reorder_requests_to_index_servers();
+    /// map<"host:port", vector<Request*>>
+    typedef map<string, vector<const IndexUpdateRequest*>> ServerToRequestMap;
+
+    /// Reorder the requests and categorize them by the targeting index servers.
+    Status reorder_requests_to_index_servers(
+        const ParentPathToIndexPathMap& index_map,
+        ServerToRequestMap* request_map);
 
    private:
     VSFSRpcClient* parent_;
