@@ -15,10 +15,13 @@
  */
 
 #include <boost/shared_ptr.hpp>
+#include <glog/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <map>
 #include <memory>
 #include <string>
+#include <vector>
 #include "vobla/status.h"
 #include "vobla/traits.h"
 #include "vsfs/client/vsfs_rpc_client.h"
@@ -27,12 +30,15 @@
 #include "vsfs/rpc/mock_rpc_clients.h"
 #include "vsfs/rpc/vsfs_types.h"
 
+using ::testing::ContainerEq;
 using ::testing::Return;
 using ::testing::SetArgReferee;
+using ::testing::Throw;
 using ::testing::_;
 using boost::shared_ptr;
 using std::map;
 using std::string;
+using std::to_string;
 using std::unique_ptr;
 using vobla::Status;
 using vsfs::index::IndexInfo;
@@ -42,6 +48,8 @@ using vsfs::rpc::TestRpcClientFactory;
 
 namespace vsfs {
 namespace client {
+
+typedef VSFSClient::IndexUpdateRequest IndexUpdateRequest;
 
 namespace {
 
@@ -157,6 +165,37 @@ TEST_F(VsfsRpcClientTest, TestCreateIndexSuccess) {
 
   EXPECT_TRUE(test_client_->create_index(
       "/foo/bar", "index", IndexInfo::BTREE, INT64, 0755, 100, 100).ok());
+}
+
+TEST_F(VsfsRpcClientTest, TestGetParentPathToIndexPathMap) {
+  typedef VSFSRpcClient::IndexUpdateTask IndexUpdateTask;
+  IndexUpdateTask task(test_client_.get());
+
+  vector<IndexUpdateRequest> requests;
+  for (int i = 0; i < 100; i++) {
+    requests.emplace_back(IndexUpdateRequest::UPDATE,
+                          string("/foo/bar/test") + to_string(i),
+                          "index", to_string(i));
+  }
+  for (const auto& request : requests) {
+    task.add(&request);
+  }
+  init_client(2, 1);
+
+  RpcFileInfo info;
+  info.mode = 0666 | S_IFDIR;
+  RpcInvalidOp ouch;
+  ouch.what = -ENOENT;
+  EXPECT_CALL(*mock_master_, getattr(_, "/foo/bar/.vsfs/index"))
+      .WillRepeatedly(Throw(ouch));
+  EXPECT_CALL(*mock_master_, getattr(_, "/foo/.vsfs/index"))
+      .WillOnce(SetArgReferee<0>(info));
+  IndexUpdateTask::ParentPathToIndexPathMap index_map;
+  EXPECT_TRUE(task.get_parent_path_to_index_path_map(&index_map).ok());
+
+  IndexUpdateTask::ParentPathToIndexPathMap expected_map;
+  expected_map["/foo/bar"]["index"] = "/foo/.vsfs/index";
+  EXPECT_THAT(index_map, ContainerEq(expected_map));
 }
 
 }  // namespace client
