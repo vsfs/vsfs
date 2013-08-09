@@ -90,6 +90,10 @@ class MasterServer : public vsfs::MasterServerIf {
   void locate_index(RpcIndexLocationList& loc_list,  // NOLINT
                     const RpcIndexLookupRequest& request);
 
+  /// Locate index servers for a query.
+  void locate_indices_for_search(
+      vector<string>& results, const string& root, const vector<string>& names);
+
  private:
   MasterController* controller_;
 

@@ -442,6 +442,20 @@ Status MasterController::locate_index(const RpcIndexLookupRequest &request,
   return Status::OK;
 }
 
+Status MasterController::locate_indices(
+    const string& root, const vector<string>& names, vector<string>* indices) {
+  CHECK_NOTNULL(indices);
+  for (const auto& name : names) {
+    auto index_roots = index_namespace_->collect(root, name);
+    for (const auto& idx_root : index_roots) {
+      // TODO(lxu): provide a central place to build index path.
+      auto idx_path = (fs::path(idx_root) / ".vsfs" / name).string();
+      indices->push_back(idx_path);
+    }
+  }
+  return Status::OK;
+}
+
 string MasterController::host() const {
   return host_;
 }

@@ -132,7 +132,6 @@ struct RpcIndexLocation {
   3: required list<i64> file_ids
 }
 
-
 typedef list<RpcIndexLocation> RpcIndexLocationList
 
 /**
@@ -275,6 +274,14 @@ service MasterServer {
   /// Locates index servers for files.
   RpcIndexLocationList locate_index(1: RpcIndexLookupRequest lookup)
 	throws (1:RpcInvalidOp ouch);
+
+  /**
+   * \brief Returns the index paths for all index that have 'names', which also
+   * includes files under 'root' path.
+   * \return a list of index paths.
+   */
+  list<string> locate_indices_for_search(
+	  1:string root, 2:list<string> names) throws (1:RpcInvalidOp ouch);
 }
 
 /**

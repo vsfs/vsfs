@@ -195,6 +195,13 @@ class MasterController : boost::noncopyable {
   Status locate_index(const RpcIndexLookupRequest &lookup_request,
                       RpcIndexLocationList *results);
 
+  /**
+   * \brief Locates all indices with `names` that have files under
+   * `root` path, for search request.
+   */
+  Status locate_indices(const string& root, const vector<string>& names,
+                        vector<string>* indices);
+
   string host() const;
 
   int port() const;

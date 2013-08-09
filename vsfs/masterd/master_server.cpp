@@ -117,5 +117,10 @@ void MasterServer::locate_index(RpcIndexLocationList& loc_list,  // NOLINT
   ThriftUtils::check_status(controller_->locate_index(request, &loc_list));
 }
 
+void MasterServer::locate_indices_for_search(
+    vector<string>& results, const string& root, const vector<string>& names) {
+  ThriftUtils::check_status(controller_->locate_indices(root, names, &results));
+}
+
 }  // namespace masterd
 }  // namespace vsfs
