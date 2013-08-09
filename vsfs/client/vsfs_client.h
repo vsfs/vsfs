@@ -132,7 +132,7 @@ class VSFSClient : boost::noncopyable {
   virtual Status search(const ComplexQuery& query,
                         vector<string>* results) = 0;
 
-  /// Encapsures the request to updating an index record.
+  /// Encapsulate the request to updating an index record.
   struct IndexUpdateRequest {
     enum { UNKNOWN, INSERT, UPDATE, REMOVE };
 
