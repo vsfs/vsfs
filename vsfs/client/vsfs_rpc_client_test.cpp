@@ -169,6 +169,35 @@ TEST_F(VsfsRpcClientTest, TestCreateIndexSuccess) {
       "/foo/bar", "index", IndexInfo::BTREE, INT64, 0755, 100, 100).ok());
 }
 
+TEST_F(VsfsRpcClientTest, TestUpdateIndex) {
+  init_client(2, 4);
+
+  vector<IndexUpdateRequest> requests;
+  int op = IndexUpdateRequest::INSERT;
+  requests.emplace_back(op, "/foo/bar/test0", "red", "0");
+  requests.emplace_back(op, "/foo/bar/zoo/test1", "red", "1");
+  requests.emplace_back(op, "/foo/some/test/path/test2", "blue", "2");
+
+  RpcFileInfo info;
+  info.mode = 0666 | S_IFDIR;
+  RpcInvalidOp ouch;
+  ouch.what = -ENOENT;
+  EXPECT_CALL(*mock_master_, getattr(_, "/foo/.vsfs/red"))
+      .Times(2)
+      .WillRepeatedly(SetArgReferee<0>(info));
+  EXPECT_CALL(*mock_master_, getattr(_, "/foo/bar/.vsfs/red"))
+      .WillRepeatedly(Throw(ouch));
+  EXPECT_CALL(*mock_master_, getattr(_, "/foo/bar/zoo/.vsfs/red"))
+      .WillOnce(Throw(ouch));
+  EXPECT_CALL(*mock_master_, getattr(_, "/foo/some/test/path/.vsfs/blue"))
+      .WillOnce(Throw(ouch));
+  EXPECT_CALL(*mock_master_, getattr(_, "/foo/some/test/.vsfs/blue"))
+      .WillOnce(SetArgReferee<0>(info));
+
+  EXPECT_CALL(*mock_index_, update(_)).Times(2);
+  EXPECT_TRUE(test_client_->update(requests).ok());
+}
+
 TEST_F(VsfsRpcClientTest, TestGetParentPathToIndexPathMap) {
   typedef VSFSRpcClient::IndexUpdateTask IndexUpdateTask;
   IndexUpdateTask task(test_client_.get());

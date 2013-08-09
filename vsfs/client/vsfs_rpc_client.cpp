@@ -56,7 +56,7 @@ namespace client {
 namespace {
 
 string get_index_full_path(const string& root, const string& name) {
-  return root + "/.vsfs/" + name;
+  return (fs::path(root) / ".vsfs" / name).string();
 }
 
 string get_partition_full_path(const string& root, const string& name,
