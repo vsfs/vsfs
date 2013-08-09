@@ -138,7 +138,7 @@ class VSFSRpcClient : public VSFSClient {
 
  private:
   FRIEND_TEST(VsfsRpcClientTest, TestGetParentPathToIndexPathMap);
-  FRIEND_TEST(VsfsRpcClientTest, TestReorderRequests);
+  // FRIEND_TEST(VsfsRpcClientTest, TestReorderRequests);
 
   /**
    * \brief A callable class to update index in thread.
@@ -170,7 +170,7 @@ class VSFSRpcClient : public VSFSClient {
     Status get_parent_path_to_index_path_map(
         ParentPathToIndexPathMap *index_map);
 
-    Status reorder_requests_to_index_servers();
+    // Status reorder_requests_to_index_servers();
 
    private:
     VSFSRpcClient* parent_;
