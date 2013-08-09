@@ -47,18 +47,21 @@ class MasterController;
 class LocalVsfsCluster : boost::noncopyable {
  public:
   /**
-   * \brief Constructs a Masterd cluster with 'num_masterd' nodes. The first
-   * node will be the primary one.
+   * \brief Constructs a VSFS cluster locally and run each server in a separate
+   * thread.
+   * \param basedir the basedir to store all metadata/index/data.
+   * \param num_masters the number of master servers to launch.
+   * \param num_indices the number of index servers to launch.
    */
   LocalVsfsCluster(const string& basedir, int num_masters, int num_indices);
 
   /// Destructs the cluster and stop / reclaim resources.
   virtual ~LocalVsfsCluster();
 
-  /// Starts the cluster.
+  /// Starts the VSFS cluster.
   void start();
 
-  /// Stops the cluster.
+  /// Stops the VSFS cluster.
   void stop();
 
   /// Returns the instance of the primary masterd.
@@ -76,8 +79,10 @@ class LocalVsfsCluster : boost::noncopyable {
  private:
   string basedir_;
 
+  /// Number of master servers.
   int num_masterds_;
 
+  /// Number of index servers.
   int num_index_servers_;
 
   vector<unique_ptr<masterd::MasterController>> master_servers_;
@@ -87,6 +92,7 @@ class LocalVsfsCluster : boost::noncopyable {
   /// Threads to run MasterController.
   vector<thread> master_threads_;
 
+  /// Threads to run IndexController.
   vector<thread> index_threads_;
 };
 

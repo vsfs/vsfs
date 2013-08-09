@@ -51,9 +51,9 @@ void LocalVsfsCluster::start() {
   typedef rpc::RpcClient<MasterServerClient> MasterClientType;
   const int kPrimaryPort = 10100;
   const int kIndexPort = 12000;
-  fs::create_directories(basedir_ + "/0");
+  fs::create_directories(basedir_ + "/m/0");
   master_servers_.emplace_back(unique_ptr<MasterController>(
-          new MasterController(basedir_ + "/0", "", kPrimaryPort, true)));
+          new MasterController(basedir_ + "/m/0", "", kPrimaryPort, true)));
   CHECK(master_servers_.back()->init().ok());
   master_threads_.emplace_back(
       thread(&MasterController::start, master_servers_.back().get()));
@@ -71,7 +71,7 @@ void LocalVsfsCluster::start() {
 
   // Starts the secondary masters.
   for (int i = 1; i < num_masterds_; ++i) {
-    string basedir = basedir_ + "/" + std::to_string(i);
+    string basedir = basedir_ + "/m/" + std::to_string(i);
     fs::create_directories(basedir);
     master_servers_.emplace_back(unique_ptr<MasterController>(
             new MasterController(basedir, "", kPrimaryPort + i,
@@ -91,7 +91,7 @@ void LocalVsfsCluster::start() {
   }
   VLOG(0) << "Masterd(s) have fully started.";
   for (int i = 0; i < num_index_servers_; ++i) {
-    string basedir = basedir_ + "/indexd/" + std::to_string(i);
+    string basedir = basedir_ + "/i/" + std::to_string(i);
     fs::create_directories(basedir);
     index_servers_.emplace_back(unique_ptr<IndexController>(
             new IndexController(basedir, "localhost", kIndexPort + i,
