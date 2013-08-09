@@ -36,10 +36,15 @@ using std::string;
 using std::to_string;
 using std::vector;
 using vobla::Status;
+using vobla::ThreadPool;
 namespace fs = boost::filesystem;
 
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
              "VSFS client can use.");
+
+DEFINE_int32(vsfs_client_batch_size, 2048, "Sets the batch size of sending "
+             "index update requests.");
+
 const int kNumBackOffs = 3;
 
 namespace vsfs {
@@ -499,6 +504,10 @@ void VSFSRpcClient::IndexUpdateTask::add(const IndexUpdateRequest* request) {
   requests_.emplace_back(request);
 }
 
+size_t VSFSRpcClient::IndexUpdateTask::size() const {
+  return requests_.size();
+}
+
 Status VSFSRpcClient::IndexUpdateTask::get_parent_path_to_index_path_map(
     ParentPathToIndexPathMap *index_map) {
   CHECK_NOTNULL(index_map);
@@ -632,8 +641,32 @@ Status VSFSRpcClient::IndexUpdateTask::run() {
   return Status::OK;
 }
 
-Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& updates) {
-  (void) updates;
+Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& requests) {
+  vector<unique_ptr<IndexUpdateTask>> tasks;
+  tasks.emplace_back(unique_ptr<IndexUpdateTask>(new IndexUpdateTask(this)));
+  vector<ThreadPool::FutureType> futures;
+  size_t tasks_in_pool = 0;
+  for (const auto& request : requests) {
+    tasks.back()->add(&request);
+    if (tasks.back()->size() >
+        static_cast<size_t>(FLAGS_vsfs_client_batch_size)) {
+      futures.emplace_back(
+          thread_pool_.add_task(
+              std::bind(&IndexUpdateTask::run, tasks.back().get())));
+      tasks.emplace_back(unique_ptr<IndexUpdateTask>(
+              new IndexUpdateTask(this)));
+    }
+  }
+  if (tasks_in_pool < tasks.size()) {
+    futures.emplace_back(
+        thread_pool_.add_task(std::bind(&IndexUpdateTask::run,
+                                        tasks.back().get())));
+  }
+  for (auto& future : futures) {
+    if (!future.get().ok()) {
+      return future.get();
+    }
+  }
   return Status::OK;
 }
 
