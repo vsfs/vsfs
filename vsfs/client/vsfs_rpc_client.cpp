@@ -546,7 +546,8 @@ Status VSFSRpcClient::IndexUpdateTask::reorder_requests_to_index_servers(
 
   for (const auto request : requests_) {
     // The index path must exist, otherwise an exception will raise.
-    const auto& index_path = index_map.at(request->file_path)
+    string parent = fs::path(request->file_path).parent_path().string();
+    const auto& index_path = index_map.at(parent)
                                       .at(request->index_name);
     // TODO(lxu): the current solution only works for one partition.
     auto partition_path = index_path + "/0";
