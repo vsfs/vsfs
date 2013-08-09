@@ -159,7 +159,7 @@ class VSFSRpcClient : public VSFSClient {
     /// Returns the number of requests.
     size_t size() const;
 
-    // Make the folloing 'private' functions public for easiler unit testing.
+    // Make the following 'private' functions public for easiler unit testing.
     // These functions are only 'public' to VsfsRpcClient, and are not public
     // to other classes (except VsfsRpcClientTest).
 
