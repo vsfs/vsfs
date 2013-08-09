@@ -17,6 +17,7 @@
 #ifndef VSFS_INDEXD_INDEX_CONTROLLER_H_
 #define VSFS_INDEXD_INDEX_CONTROLLER_H_
 
+#include <transport/TBufferTransports.h>
 #include <boost/shared_ptr.hpp>
 #include <gtest/gtest_prod.h>
 #include <server/TServer.h>
@@ -37,13 +38,14 @@
 #include "vsfs/indexd/index_manager.h"
 
 using apache::thrift::server::TServer;
+using apache::thrift::transport::TFramedTransport;
 using boost::shared_ptr;
 using std::condition_variable;
-using std::unordered_map;
 using std::mutex;
 using std::string;
 using std::thread;
 using std::unique_ptr;
+using std::unordered_map;
 using std::vector;
 using vsfs::MasterServerClient;
 using vsfs::rpc::RpcClient;
@@ -64,11 +66,12 @@ class IndexManager;
  */
 class IndexController : public IndexControllerInterface {
  public:
-  typedef RpcClient<MasterServerClient> MasterClientType;
+  typedef RpcClient<MasterServerClient, TFramedTransport> MasterClientType;
 
   explicit IndexController(const string &basedir);
 
-  IndexController(const string &basedir, const string &host, int port);
+  IndexController(const string& basedir, const string& host, int port,
+                  const string& master_addr = "", int master_port = 0);
 
   /// Dependency injection.
   IndexController(const string &basedir, const string &host, int port,
