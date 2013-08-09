@@ -140,6 +140,9 @@ class VSFSRpcClient : public VSFSClient {
   FRIEND_TEST(VsfsRpcClientTest, TestGetParentPathToIndexPathMap);
   FRIEND_TEST(VsfsRpcClientTest, TestReorderRequests);
 
+  /**
+   * \brief A callable class to update index in thread.
+   */
   class IndexUpdateTask : boost::noncopyable {
    public:
     explicit IndexUpdateTask(VSFSRpcClient *parent);
@@ -157,9 +160,13 @@ class VSFSRpcClient : public VSFSClient {
     size_t size() const;
 
     // Make the folloing 'private' functions public for easiler unit testing.
+    // These functions are only 'public' to VsfsRpcClient, and are not public
+    // to other classes (except VsfsRpcClientTest).
 
     // map<parent path, map<index name, actual index path>>
     typedef map<string, map<string, string>> ParentPathToIndexPathMap;
+
+    /// Calculates the index path for every pair of <parent path, index name>
     Status get_parent_path_to_index_path_map(
         ParentPathToIndexPathMap *index_map);
 
