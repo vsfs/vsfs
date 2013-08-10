@@ -24,7 +24,7 @@
 #include <set>
 #include <string>
 #include <vector>
-#include "vsfs/common/hash_util.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/server_map.h"
 #include "vsfs/common/test_leveldb_store.h"
 #include "vsfs/masterd/namespace.h"
@@ -204,7 +204,7 @@ TEST_F(NamespaceTest, TestFindFiles) {
 TEST_F(NamespaceTest, TestObjectIdDistribution) {
   string path = "/foo/bar/dogs/dog56";
   ObjectId oid = test_ns_->get_object_id(path);
-  auto hash = HashUtil::file_path_to_hash(path);
+  auto hash = PathUtil::path_to_hash(path);
 
   int64_t part_size = std::numeric_limits<int64_t>::max() / 4;
   ServerMap servers;

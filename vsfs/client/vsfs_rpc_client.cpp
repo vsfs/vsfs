@@ -573,7 +573,7 @@ Status VSFSRpcClient::search(const ComplexQuery& query,
     return status;
   }
 
-  status = resolve_file_path(objects, results);
+  status = get_file_paths_from_objects(objects, results);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to resolve file path: " << status.message();
     return status;
@@ -785,10 +785,8 @@ Status VSFSRpcClient::find_objects(const vector<string>& paths,
 
   map<string, vector<size_t>> reordered_path_pos_map;
   for (size_t i = 0; i < paths.size(); ++i) {
-    // TODO(lxu): add ServerMap::get(string);
-    auto hash = HashUtil::file_path_to_hash(paths[i]);
     NodeInfo node;
-    CHECK(master_map_.get(hash, &node).ok());
+    CHECK(master_map_.get(paths[i], &node).ok());
     auto addr = address_to_string(node.address);
     reordered_path_pos_map[addr].push_back(i);
   }
@@ -902,8 +900,8 @@ Status VSFSRpcClient::gen_search_plan(const ComplexQuery& query,
   return Status::OK;
 }
 
-Status VSFSRpcClient::resolve_file_path(const vector<ObjectId>& objects,
-                                        vector<string>* paths) {
+Status VSFSRpcClient::get_file_paths_from_objects(
+    const vector<ObjectId>& objects, vector<string>* paths) {
   CHECK_NOTNULL(paths);
   map<string, RpcObjectList> plan;
   for (auto obj : objects) {
