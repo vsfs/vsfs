@@ -98,6 +98,11 @@ void MasterServer::getattr(RpcFileInfo& info, const string& path) {  // NOLINT
   ThriftUtils::check_status(controller_->getattr(path, &info));
 }
 
+void MasterServer::find_objects(RpcObjectList& results,  // NOLINT
+                                const RpcFileList& files) {
+  controller_->find_objects(files, &results);
+}
+
 void MasterServer::find_files(RpcFileList& files,  // NOLINT
                               const RpcObjectList& objects) {
   ThriftUtils::check_status(controller_->find_files(objects, &files));

@@ -252,6 +252,9 @@ service MasterServer {
   /// Obtains the object ID for a file.
   RpcObjectId object_id(1:string path) throws (1:RpcInvalidOp ouch);
 
+  /// Find the objects IDs for given files.
+  RpcObjectList find_objects(1:RpcFileList files) throws (1:RpcInvalidOp ouch);
+
   /// Removes a file.
   void remove(1:string path)
     throws (1:RpcInvalidOp ouch);

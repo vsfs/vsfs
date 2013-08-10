@@ -543,27 +543,49 @@ Status VSFSRpcClient::search(const ComplexQuery& query,
     return status;
   }
 
-  auto rpc_query = ThriftUtils::complex_query_to_rpc_complex_query(query);
   vector<ObjectId> objects;
   // TODO(lxu): use multithread to do parallel query.
   for (const auto& addr_and_partitions : plan) {
     auto address = string_to_address(addr_and_partitions.first);
+    RpcComplexQuery rpc_query;
+    rpc_query.root = query.root();
+    for (const auto& part : addr_and_partitions.second) {
+      auto index_name = fs::path(part).parent_path().filename().string();
+      auto range = query.range_query(index_name);
+      rpc_query.range_queries.emplace_back();
+      auto& sub_query = rpc_query.range_queries.back();
+      sub_query.index_path = part;
+      sub_query.name = index_name;
+      sub_query.upper = range->upper;
+      sub_query.upper_open = !range->upper_closed;
+      sub_query.lower = range->lower;
+      sub_query.lower_open = !range->lower_closed;
+    }
+    vector<ObjectId> tmp;
     try {
       auto client = index_client_factory_->open(address);
-      for (const auto& part : addr_and_partitions.second) {
-        vector<ObjectId> tmp;
-        rpc_query.root = part;
-        client->handler()->search(tmp, rpc_query);
-        objects.insert(end(objects), begin(tmp), end(tmp));
-      }
+      client->handler()->search(tmp, rpc_query);
       index_client_factory_->close(client);
+      objects.insert(end(objects), begin(tmp), end(tmp));
     } catch (RpcInvalidOp ouch) {  // NOLINT
-      return Status(ouch.what, ouch.why);
+      status.set(ouch.what, ouch.why);
+      break;
     } catch (TTransportException e) {  // NOLINT
-      return Status(e.getType(), e.what());
+      status.set(e.getType(), e.what());
+      break;
     }
   }
+  if (!status.ok()) {
+    LOG(ERROR) << "VsfsRpcClient::search(): failed to search object ID: "
+               << status.message();
+    return status;
+  }
 
+  status = resolve_file_path(objects, results);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to resolve file path: " << status.message();
+    return status;
+  }
   return Status::OK;
 }
 
@@ -627,7 +649,8 @@ Status VSFSRpcClient::IndexUpdateTask::reorder_requests_to_index_servers(
     ServerToRequestMap* request_map) {
   CHECK_NOTNULL(request_map);
 
-  for (const auto request : requests_) {
+  for (size_t pos = 0; pos < requests_.size(); ++pos) {
+    const auto request = requests_[pos];
     // The index path must exist, otherwise an exception will raise.
     string parent = fs::path(request->file_path).parent_path().string();
     const auto& index_path = index_map.at(parent)
@@ -638,7 +661,7 @@ Status VSFSRpcClient::IndexUpdateTask::reorder_requests_to_index_servers(
     NodeInfo node;
     CHECK(parent_->index_server_map_.get(hash, &node).ok());
     string addr = node.address.host + ":" + to_string(node.address.port);
-    (*request_map)[addr][index_path].push_back(request);
+    (*request_map)[addr][partition_path].push_back(pos);
   }
   return Status::OK;
 }
@@ -660,14 +683,27 @@ Status VSFSRpcClient::IndexUpdateTask::run() {
     return status;
   }
 
+  vector<ObjectId> object_ids;
+  vector<string> paths;
+  for (const auto& req : requests_) {
+    paths.push_back(req->file_path);
+  }
+  status = parent_->find_objects(paths, &object_ids);
+  if (!status.ok()) {
+    LOG(ERROR) << "IndexUpdateTask::run(): failed to resolve object IDs."
+               << status.message();
+    return status;
+  }
+
   for (const auto& server_and_requests : request_map) {
     RpcIndexUpdate update_request;
     // TODO(lxu): clean up the confusion names in Rpc structurs.
-    for (const auto& index_path_and_requests : server_and_requests.second) {
+    for (const auto& index_path_and_pos : server_and_requests.second) {
       update_request.updates.emplace_back();
       auto& record_list = update_request.updates.back();
-      record_list.root_path = index_path_and_requests.first;
-      for (const auto& req : index_path_and_requests.second) {
+      record_list.root_path = index_path_and_pos.first;
+      for (const auto& pos : index_path_and_pos.second) {
+        auto req = requests_[pos];
         record_list.record_updates.emplace_back();
         auto& record = record_list.record_updates.back();
         // TODO(lxu): merges IndexUpdateRequest::OP with RpcIndexUpdateOpCode.
@@ -687,11 +723,10 @@ Status VSFSRpcClient::IndexUpdateTask::run() {
             break;
         }
         record.key = req->key;
-        auto hash = HashUtil::file_path_to_hash(req->file_path);
-        record.__set_value(to_string(hash));
+        record.__set_value(to_string(object_ids[pos]));
         VLOG(3) << "Index update record: key:" << req->key
-                << " value: " << req->file_path << "(H:" << hash << ")"
-                << " root: " << record_list.root_path
+                << " value: " << req->file_path << "(OBJ:" << record.value
+                << ") root: " << record_list.root_path
                 << " name: " << record_list.name;
       }
     }
@@ -749,6 +784,46 @@ Status VSFSRpcClient::info(const string& path,
 
 bool VSFSRpcClient::is_initialized() {
   return !master_map_.empty();
+}
+
+Status VSFSRpcClient::find_objects(const vector<string>& paths,
+                                   vector<ObjectId>* objects) {
+  CHECK_NOTNULL(objects);
+  objects->reserve(paths.size());
+
+  map<string, vector<size_t>> reordered_path_pos_map;
+  for (size_t i = 0; i < paths.size(); ++i) {
+    // TODO(lxu): add ServerMap::get(string);
+    auto hash = HashUtil::file_path_to_hash(paths[i]);
+    NodeInfo node;
+    CHECK(master_map_.get(hash, &node).ok());
+    auto addr = address_to_string(node.address);
+    reordered_path_pos_map[addr].push_back(i);
+  }
+
+  for (const auto& addr_and_pos : reordered_path_pos_map) {
+    vector<string> tmp_files;
+    vector<ObjectId> tmp_objs;
+    const auto& positions = addr_and_pos.second;
+    for (auto pos : positions) {
+      tmp_files.push_back(paths[pos]);
+    }
+    RpcNodeAddress addr = string_to_address(addr_and_pos.first);
+    try {
+      auto client = master_client_factory_->open(addr);
+      client->handler()->find_objects(tmp_objs, tmp_files);
+      master_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      return Status(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      return Status(e.getType(), e.what());
+    }
+    size_t num_files = tmp_files.size();
+    for (size_t i = 0; i < num_files; ++i) {
+      (*objects)[positions[i]] = tmp_objs[i];
+    }
+  }
+  return Status::OK;
 }
 
 Status VSFSRpcClient::add_subfile(const string& path) {
@@ -861,7 +936,6 @@ Status VSFSRpcClient::resolve_file_path(const vector<ObjectId>& objects,
   }
   return Status::OK;
 }
-
 
 }  // namespace client
 }  // namespace vsfs

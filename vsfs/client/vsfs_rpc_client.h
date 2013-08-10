@@ -174,8 +174,8 @@ class VSFSRpcClient : public VSFSClient {
     Status get_parent_path_to_index_path_map(
         ParentPathToIndexPathMap *index_map);
 
-    /// map<"host:port", map<index path, vector<Request*>>>
-    typedef map<string, map<string, vector<const IndexUpdateRequest*>>>
+    /// map<"host:port", map<index path, vector<ReqPosition>>>
+    typedef map<string, map<string, vector<size_t>>>
         ServerToRequestMap;
 
     /// Reorder the requests and categorize them by the targeting index servers.
@@ -197,6 +197,8 @@ class VSFSRpcClient : public VSFSClient {
 
   /// Synchronize the index server's CH ring.
   Status sync_index_server_map();
+
+  Status find_objects(const vector<string>& paths, vector<ObjectId>* objects);
 
   Status add_subfile(const string& filepath);
 
