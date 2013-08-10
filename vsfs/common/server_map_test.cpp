@@ -116,6 +116,22 @@ TEST(ServerMapTest, TestGetIndexServer) {
   EXPECT_NEAR(node4_count, 500, 50);*/
 }
 
+TEST(ServerMapTest, TestGetByPath) {
+  ServerMap test_map;
+  for (int i = 0; i < 10; i++) {
+    NodeInfo node;
+    node.server_id = "node" + std::to_string(i);
+    test_map.add(node);
+  }
+
+  string path = "/abc/def/ghi";
+  auto hash = HashUtil::file_path_to_hash(path);
+  NodeInfo hash_node, path_node;
+  EXPECT_TRUE(test_map.get(hash, &hash_node).ok());
+  EXPECT_TRUE(test_map.get(path, &path_node).ok());
+  EXPECT_EQ(hash_node.server_id, path_node.server_id);
+}
+
 TEST(ServerMapTest, TestGetReplicaServers) {
   ServerMap test_map;
   for (int i = 0; i < 10; i++) {
