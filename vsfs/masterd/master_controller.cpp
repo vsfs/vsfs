@@ -192,6 +192,7 @@ void MasterController::start() {
 }
 
 void MasterController::stop() {
+  runtime_status_ = RuntimeStatus::STOPPED;
   if (background_thread_.joinable()) {
     background_cv_.notify_all();
     background_thread_.join();
