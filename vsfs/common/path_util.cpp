@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
+#include <boost/filesystem.hpp>
 #include <string.h>
 #include <string>
 #include "vobla/hash.h"
 #include "vsfs/common/path_util.h"
 
 using std::string;
+using std::to_string;
 using vobla::MD5Digest;
+namespace fs = boost::filesystem;
 
 namespace vsfs {
 
@@ -30,6 +33,15 @@ HashValueType PathUtil::path_to_hash(const string& path) {
   MD5Digest hash_value(path);
   memcpy(&ret, hash_value.digest(), sizeof(ret));
   return ret;
+}
+
+string PathUtil::index_path(const string& root, const string& name) {
+  return (fs::path(root) / ".vsfs" / name).string();
+}
+
+string PathUtil::partition_path(const string& root, const string& name,
+                                HashValueType sep) {
+  return (fs::path(root) / ".vsfs" / name / to_string(sep)).string();
 }
 
 }  // namespace vsfs

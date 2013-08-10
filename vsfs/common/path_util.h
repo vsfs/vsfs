@@ -26,8 +26,16 @@ namespace vsfs {
 
 class PathUtil {
  public:
+  /// Calculates the hash value (MD5) of the path.
   static HashValueType path_to_hash(const string& path);
 
+  /// Generates the index path for the index on 'root' with index 'name'.
+  static string index_path(const string& root, const string& name);
+
+  /// Generates the partition path with index 'root', 'name' and partition
+  /// hash range starting point.
+  static string partition_path(const string& root, const string& name,
+                               HashValueType sep);
  private:
   PathUtil() = delete;
 };
