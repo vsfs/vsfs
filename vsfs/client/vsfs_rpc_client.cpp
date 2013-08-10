@@ -25,6 +25,7 @@
 #include <string>
 #include <vector>
 #include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/common/complex_query.h"
 #include "vsfs/common/hash_util.h"
 #include "vsfs/common/types.h"
 #include "vsfs/rpc/vsfs_types.h"
@@ -303,6 +304,9 @@ Status VSFSRpcClient::mkdir(
     dir_info.gid = gid;
     master_client->handler()->mkdir(path, dir_info);
     master_client_factory_->close(master_client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    status = Status(ouch.what, ouch.why);
+    return status;
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
     LOG(ERROR) << "Failed to run mkdir RPC to master node {"
@@ -360,6 +364,8 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
     auto client = master_client_factory_->open(node.address);
     client->handler()->readdir(*files, dirpath);
     master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     return Status(e.getType(), e.what());
   }
@@ -406,13 +412,17 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     LOG(ERROR) << "Can not create index on an non-dir path.";
     return Status::system_error(-ENOTDIR);
   }
-  RpcIndexCreateRequest create_request;
-  create_request.root = root;
-  create_request.name = name;
-  create_request.index_type = index_type;
-  create_request.__set_key_type(key_type);
 
   string partition_path = get_partition_full_path(root, name, 0);
+  RpcIndexCreateRequest create_request;
+  create_request.root = partition_path;
+  create_request.name = name;
+  create_request.index_type = index_type;
+  create_request.key_type = key_type;
+  create_request.mode = mode;
+  create_request.uid = uid;
+  create_request.gid = gid;
+
   auto hash = HashUtil::file_path_to_hash(partition_path);
   NodeInfo index_server;
   status = index_server_map_.get(hash, &index_server);
@@ -421,6 +431,8 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     auto index_client = index_client_factory_->open(index_server.address);
     index_client->handler()->create_index(create_request);
     index_client_factory_->close(index_client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    status = Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
   }
@@ -439,9 +451,25 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     return status;
   }
 
-  status = mkdir(get_index_full_path(root, name), mode, uid, gid);
+  auto full_path = get_index_full_path(root, name);
+  hash = HashUtil::file_path_to_hash(full_path);
+  NodeInfo master_server;
+  CHECK(master_map_.get(hash, &master_server).ok());
+  try {
+    auto client = master_client_factory_->open(master_server.address);
+    create_request.root = root;
+    client->handler()->create_index(create_request);
+    master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    status = Status(ouch.what, ouch.why);
+  } catch (TTransportException e) {  // NOLINT
+    status = Status(e.getType(), e.what());
+  }
   if (!status.ok()) {
     // Roll back. Note that it does not delete '<root>/.vsfs' directory.
+    LOG(ERROR) << "Failed to create index: " << root << ":" << name
+               << " because: " << status.message()
+               << "\nRolling back...";
     status = remove_index(root, name);
   }
 
@@ -478,10 +506,13 @@ Status VSFSRpcClient::remove_index(const string& root, const string& name) {
       auto index_client = index_client_factory_->open(node.address);
       index_client->handler()->remove_index(request);
       index_client_factory_->close(index_client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set(ouch.what, ouch.why);
     } catch (TTransportException e) {  // NOLINT
       LOG(ERROR) << "Failed to remove index from IndexServer: "
                  << node.address.host << ":" << node.address.port
                  << " : " << e.what();
+      status.set(e.getType(), e.what());
     }
   }
   return status;
@@ -698,15 +729,50 @@ Status VSFSRpcClient::add_subfile(const string& path) {
       client->handler()->add_subfile(parent, filename);
       master_client_factory_->close(client);
       break;
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set(ouch.what, ouch.why);
     } catch (TTransportException e) {  // NOLINT
       // TODO(eddyxu): clear the conflict resolving algorithm later.
-      status.set_error(e.getType());
-      status.set_message(e.what());
+      status.set(e.getType(), e.what());
       backoff--;
       continue;
     }
   }
   return status;
+}
+
+Status VSFSRpcClient::locate_index_for_search(const ComplexQuery& query,
+                                              vector<string>* indices) {
+  CHECK_NOTNULL(indices);
+
+  auto root = query.root();
+  auto names = query.get_names_of_range_queries();
+  // TODO(lxu): use iterator to avoid data copy.
+  auto master_map = master_map_.get_ch_ring_as_map();
+
+  Status status;
+  // TODO(lxu): use threads to do parallel query.
+  for (const auto& hash_and_node : master_map) {
+    const auto& node = hash_and_node.second;
+    vector<string> results;
+    try {
+      auto client = master_client_factory_->open(node.address);
+      client->handler()->locate_indices_for_search(results, root, names);
+      master_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      status.set(e.getType(), e.what());
+    }
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to locate indices on MasterNode: "
+                 << node.address.host << ":" << node.address.port
+                 << " because: " << status.message();
+      return status;
+    }
+    indices->insert(end(*indices), begin(results), end(results));
+  }
+  return Status::OK;
 }
 
 }  // namespace client

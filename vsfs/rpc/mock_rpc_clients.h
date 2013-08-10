@@ -55,8 +55,7 @@ class MockMasterServerClient : public MasterServerClient {
   MOCK_METHOD1(remove, void(const string&));
   MOCK_METHOD2(add_subfile, void(const string&, const string&));
 
-  MOCK_METHOD2(create_index, void(RpcIndexLocation&,
-                                  const RpcIndexCreateRequest&));
+  MOCK_METHOD1(create_index, void(const RpcIndexCreateRequest&));
 };
 
 /**

@@ -174,12 +174,9 @@ class MasterController : boost::noncopyable {
   /**
    * \brief Creates an File Index and returns the index server locations.
    * \param[in] request the index creation request.
-   * \param[out] filled by the index server's location.
    * \return Status::OK if success.
    */
-  Status create_index(const RpcIndexCreateRequest &request,
-                      RpcIndexLocation *index_location);
-
+  Status create_index(const RpcIndexCreateRequest& request);
 
   /**
    * \brief Removes a file index.
@@ -187,13 +184,11 @@ class MasterController : boost::noncopyable {
   Status remove_index(const string& root, const string& name);
 
   /**
-   * \brief Locates the index servers as well as the index roots for files.
-   * \param[in] lookup_request The request of index lookup.
-   * \param[out] results a list of RpcIndexLocation corresponding to every
-   * input file path.
+   * \brief Locates all indices with `names` that have files under
+   * `root` path, for search request.
    */
-  Status locate_index(const RpcIndexLookupRequest &lookup_request,
-                      RpcIndexLocationList *results);
+  Status locate_indices(const string& root, const vector<string>& names,
+                        vector<string>* indices);
 
   string host() const;
 
