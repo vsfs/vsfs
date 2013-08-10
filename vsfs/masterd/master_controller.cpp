@@ -138,7 +138,6 @@ Status MasterController::init() {
 }
 
 void MasterController::background_task() {
-  const int kSleepSeconds = 30;
   if (!is_primary_node_) {
     LOG(INFO) << "A secondary master node: " << host_ << ":" << port_
               << " joins the metadata cluster.";
@@ -156,11 +155,14 @@ void MasterController::background_task() {
               << ":" << primary_port_ << ").";
   }
 
+  /*
+  const int kSleepSeconds = 30;
   while (runtime_status_ == RuntimeStatus::RUNNING) {
     std::unique_lock<mutex> lock(background_mutex_);
     background_cv_.wait_for(lock, std::chrono::seconds(kSleepSeconds));
     LOG(INFO) << "Masterd Background Task...";
   }
+  */
 }
 
 void MasterController::start() {
@@ -184,6 +186,7 @@ void MasterController::start() {
   }
   background_thread_ = thread(&MasterController::background_task, this);
   server_->serve();
+  thread_manager->stop();
   if (is_primary_node_) {
     LOG(INFO) << "Primary master server quits...";
   } else {
@@ -192,6 +195,7 @@ void MasterController::start() {
 }
 
 void MasterController::stop() {
+  runtime_status_ = RuntimeStatus::STOPPED;
   if (background_thread_.joinable()) {
     background_cv_.notify_all();
     background_thread_.join();
@@ -331,9 +335,7 @@ Status MasterController::find_files(const vector<ObjectId>& objects,
   return namespace_->find_files(objects, files);
 }
 
-Status MasterController::create_index(const RpcIndexCreateRequest &request,
-                                      RpcIndexLocation *index_location) {
-  CHECK_NOTNULL(index_location);
+Status MasterController::create_index(const RpcIndexCreateRequest &request) {
   // TODO(eddyxu): move IndexNamespace into IndexPartitionManager, so they
   // share a single mutex to avoid inconsistency issues between them.
   Status status = index_namespace_->insert(request.root, request.name);
@@ -342,35 +344,11 @@ Status MasterController::create_index(const RpcIndexCreateRequest &request,
                << status.message();
     return status;
   }
-  string full_path = get_full_index_path(request.root, request.name);
-  LOG(INFO) << "Creating index on partition 0: " << full_path;
-  status = index_partition_manager_->add_index(full_path);
-  if (!status.ok()) {
-    // Roll back.
-    LOG(ERROR) << "Failed to insert index (" << full_path
-               << ") into index partition manager:" << status.message();
-    index_namespace_->remove(request.root, request.name);
-    return status;
-  }
 
-  NodeInfo node;
-  // The first partition always starts from hash value 0.
-  string partition_path =
-      index_partition_manager_->get_partition_path(full_path, 0);
-  auto path_hash = HashUtil::file_path_to_hash(partition_path);
-  status = index_server_manager_->get(path_hash, &node);
-  if (!status.ok()) {
-    // Roll back.
-    LOG(ERROR) << "Failed to get index server for: " << full_path
-               << ": " << status.message();
-    index_namespace_->remove(request.root, request.name);
-    index_partition_manager_->remove_index(full_path);
-    return status;
-  }
-  index_location->full_index_path = partition_path;
-  index_location->server_addr.host = node.address.host;
-  index_location->server_addr.port = node.address.port;
-  return Status::OK;
+  auto full_path = get_full_index_path(request.root, request.name);
+  VLOG(0) << "Create index: " << full_path;
+  status = namespace_->mkdir(full_path, request.mode, request.uid, request.gid);
+  return status;
 }
 
 Status MasterController::remove_index(const string& root, const string& name) {
@@ -387,58 +365,17 @@ Status MasterController::remove_index(const string& root, const string& name) {
   return status;
 }
 
-Status MasterController::locate_index(const RpcIndexLookupRequest &request,
-                                      RpcIndexLocationList *results) {
-  CHECK_NOTNULL(results);
-  Status status;
-  vector<string> index_paths;
-  const string& name = request.name;  // index name.
-  unordered_map<string, vector<uint64_t>> partition_to_file_id_map;
-  for (const auto& dir_and_file_ids : request.dir_to_file_id_map) {
-    const string& dir_path = dir_and_file_ids.first;
-    VLOG(2) << "Lookup for directory: " << dir_path;
-    string index_path;
-    status = index_namespace_->find(dir_path, name, &index_path);
-    if (!status.ok()) {
-      LOG(ERROR) << "Can not locate index with name (" << name
-                 << ") for directory: " << dir_path;
-      return status;
-    }
-
-    string full_path = get_full_index_path(index_path, name);
-    // A mapping from the patition path to a vector if positions of the
-    // file ids in file id vector.
-    unordered_map<string, vector<size_t>> partition_to_file_id_pos_map;
-    const auto& file_id_vector = dir_and_file_ids.second;
-    // TODO(lxu): use adaptive way to switch between copying the parition map
-    // and directly quering the partition path.
-    PartitionManager::PartitionMap index_partition_map;
-    status = index_partition_manager_->copy_partition_map(
-        full_path, &index_partition_map);
-    for (auto file_id : file_id_vector) {
-      string partition_path;
-      index_partition_map.get(file_id, &partition_path);
-      partition_to_file_id_map[partition_path].push_back(file_id);
+Status MasterController::locate_indices(
+    const string& root, const vector<string>& names, vector<string>* indices) {
+  CHECK_NOTNULL(indices);
+  for (const auto& name : names) {
+    auto index_roots = index_namespace_->collect(root, name);
+    for (const auto& idx_root : index_roots) {
+      // TODO(lxu): provide a central place to build index path.
+      auto idx_path = (fs::path(idx_root) / ".vsfs" / name).string();
+      indices->push_back(idx_path);
     }
   }
-  for (const auto &partition_and_file_ids : partition_to_file_id_map) {
-    const string& partition_path = partition_and_file_ids.first;
-    size_t path_hash = HashUtil::file_path_to_hash(partition_path);
-    NodeInfo index_server;
-    status = index_server_manager_->get(path_hash, &index_server);
-    if (!status.ok()) {
-      LOG(ERROR) << "Can not find index server for: " << partition_path;
-      return status;
-    }
-    results->emplace_back();
-    results->back().full_index_path = partition_path;
-    results->back().server_addr = index_server.address;
-    results->back().file_ids.reserve(partition_and_file_ids.second.size());
-    for (auto file_id : partition_and_file_ids.second) {
-      results->back().file_ids.push_back(file_id);
-    }
-  }
-
   return Status::OK;
 }
 

@@ -123,7 +123,10 @@ struct RpcIndexCreateRequest {
   1: required string root,  // The root path of the index scope.
   2: required string name,  // The name of this index.
   3: required i32 index_type,  // The data structure of this index.
-  4: optional i32 key_type,  // The key type of this index.
+  4: required i32 key_type,  // The key type of this index.
+  5: required i64 mode,
+  6: required i64 uid,
+  7: required i64 gid,
 }
 
 struct RpcIndexLocation {
@@ -131,7 +134,6 @@ struct RpcIndexLocation {
   2: required RpcNodeAddress server_addr,
   3: required list<i64> file_ids
 }
-
 
 typedef list<RpcIndexLocation> RpcIndexLocationList
 
@@ -266,15 +268,19 @@ service MasterServer {
    * ring.
    * \return the address of IndexServer to manages this index.
    */
-  RpcIndexLocation create_index(1:RpcIndexCreateRequest index)
+  void create_index(1:RpcIndexCreateRequest index)
     throws (1:RpcInvalidOp ouch);
 
   /// Removes the related items of an index completely.
   void remove_index(1:string root, 2:string name) throws (1:RpcInvalidOp ouch);
 
-  /// Locates index servers for files.
-  RpcIndexLocationList locate_index(1: RpcIndexLookupRequest lookup)
-	throws (1:RpcInvalidOp ouch);
+  /**
+   * \brief Returns the index paths for all index that have 'names', which also
+   * includes files under 'root' path.
+   * \return a list of index paths.
+   */
+  list<string> locate_indices_for_search(
+	  1:string root, 2:list<string> names) throws (1:RpcInvalidOp ouch);
 }
 
 /**

@@ -68,6 +68,7 @@ void LocalVsfsCluster::start() {
     }
     break;
   }
+  VLOG(0) << "Primary masterd starts successfully.";
 
   // Starts the secondary masters.
   for (int i = 1; i < num_masterds_; ++i) {

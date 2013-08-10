@@ -151,13 +151,11 @@ TEST_F(VsfsRpcClientTest, TestCreateSuccess) {
 
 TEST_F(VsfsRpcClientTest, TestCreateIndexSuccess) {
   init_client(2, 1);
-  RpcIndexLocation loc;
-  loc.full_index_path = "/foo/bar/.vsfs/index/0";
   EXPECT_CALL(*mock_master_, mkdir(_, _))
-      .Times(2);
+      .Times(1);
   EXPECT_CALL(*mock_master_, create("/foo/bar/.vsfs/index/0", _, _, _));
   EXPECT_CALL(*mock_master_, add_subfile(_, _))
-      .Times(3);
+      .Times(2);
   EXPECT_CALL(*mock_index_, create_index(_));
 
   RpcFileInfo dir_info;

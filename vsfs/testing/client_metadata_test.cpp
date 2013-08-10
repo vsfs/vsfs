@@ -24,14 +24,19 @@
 #include <glog/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <memory>
 #include <stack>
 #include <string>
 #include <thread>
 #include <vector>
 #include <set>
+#include "vobla/traits.h"
 #include "vobla/file.h"
 #include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/common/complex_query.h"
+#include "vsfs/index/index_info.h"
 #include "vsfs/testing/local_vsfs_cluster.h"
 
 using ::testing::ContainerEq;
@@ -42,11 +47,13 @@ using std::to_string;
 using std::unique_ptr;
 using std::vector;
 using vobla::TemporaryDirectory;
-using vsfs::client::VSFSRpcClient;
 using vsfs::LocalVsfsCluster;
+using vsfs::client::VSFSRpcClient;
+using vsfs::index::IndexInfo;
 namespace fs = boost::filesystem;
 
 namespace vsfs {
+namespace client {
 
 class ClientMetadataTest : public ::testing::Test {
  protected:
@@ -63,12 +70,13 @@ class ClientMetadataTest : public ::testing::Test {
     cluster_.reset(new LocalVsfsCluster(
             tmpdir_->path(), num_masters, num_indices));
     cluster_->start();
+
+    client_.reset(new VSFSRpcClient(cluster_->host(0), cluster_->port(0)));
+    EXPECT_TRUE(client_->init().ok());
   }
 
+  /// Recursively creates all absent directories in 'path'.
   void create_directories(const string& path) {
-    VSFSRpcClient client(cluster_->host(0), cluster_->port(0));
-    EXPECT_TRUE(client.init().ok());
-
     stack<string> parent_dirs;
     auto tmp = path;
     parent_dirs.push(tmp);
@@ -79,12 +87,19 @@ class ClientMetadataTest : public ::testing::Test {
     while (!parent_dirs.empty()) {
       auto dir = parent_dirs.top();
       parent_dirs.pop();
-      EXPECT_TRUE(client.mkdir(dir, 0755, 100, 100).ok());
+      client_->mkdir(dir, 0755, 100, 100).ok();
     }
+  }
+
+  void create_index(const string& root, const string& name) {
+    create_directories(root);
+    EXPECT_TRUE(client_->create_index(root, name, IndexInfo::BTREE,
+                                      INT32, 0755, 100, 100).ok());
   }
 
   unique_ptr<TemporaryDirectory> tmpdir_;
   unique_ptr<LocalVsfsCluster> cluster_;
+  unique_ptr<VSFSRpcClient> client_;
 };
 
 TEST_F(ClientMetadataTest, TestMakeDirs) {
@@ -92,18 +107,48 @@ TEST_F(ClientMetadataTest, TestMakeDirs) {
 
   create_directories("/test");
 
-  VSFSRpcClient client(cluster_->host(0), cluster_->port(0));
-  EXPECT_TRUE(client.init().ok());
   set<string> expected_files;
   for (int i = 0; i < 100; i++) {
-    EXPECT_TRUE(client.mkdir("/test/dir" + to_string(i), 0x666, 100, 100).ok());
+    EXPECT_TRUE(client_->mkdir("/test/dir" + to_string(i),
+                               0755, 100, 100).ok());
     expected_files.insert("dir" + to_string(i));
   }
 
   vector<string> files;
-  EXPECT_TRUE(client.readdir("/test", &files).ok());
+  EXPECT_TRUE(client_->readdir("/test", &files).ok());
   set<string> actual_files(files.begin(), files.end());
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
 }
 
+TEST_F(ClientMetadataTest, TestCreateIndices) {
+  start(4, 1);
+  create_directories("/foo/bar/test");
+  create_directories("/foo/bar/zoo");
+
+  EXPECT_TRUE(client_->create_index("/foo/bar", "blue", IndexInfo::BTREE,
+                                  INT32, 0755, 100, 100).ok());
+  EXPECT_TRUE(client_->create_index("/foo/bar/zoo", "blue", IndexInfo::BTREE,
+                                  INT32, 0755, 100, 100).ok());
+  struct stat stbuf;
+  EXPECT_TRUE(client_->getattr("/foo/bar/.vsfs/blue", &stbuf).ok());
+  EXPECT_TRUE(client_->getattr("/foo/bar/zoo/.vsfs/blue", &stbuf).ok());
+}
+
+TEST_F(ClientMetadataTest, TestLocateIndicesForSearch) {
+  start(2, 1);
+  create_index("/foo/bar/test", "blue");
+  create_index("/foo/bar/test", "red");
+  create_index("/foo/bar/zoo", "blue");
+
+  ComplexQuery query;
+  query.parse("/foo/bar?blue>100");
+
+  vector<string> expected_indices = { "/foo/bar/test/.vsfs/blue",
+                                      "/foo/bar/zoo/.vsfs/blue" };
+  vector<string> actual_indices;
+  EXPECT_TRUE(client_->locate_index_for_search(query, &actual_indices).ok());
+  EXPECT_THAT(actual_indices, ContainerEq(expected_indices));
+}
+
+}  // namespace client
 }  // namespace vsfs

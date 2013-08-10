@@ -79,16 +79,14 @@ class MasterServer : public vsfs::MasterServerIf {
   /**
    * \brief Creates index in the master server and assign a IndexServer to it.
    */
-  void create_index(RpcIndexLocation&, const RpcIndexCreateRequest&);
+  void create_index(const RpcIndexCreateRequest& request);
 
   /// Removes an index by given {root, name} pair.
   void remove_index(const string& root, const string& name);
 
-  /**
-   * \brief Locate Index Servers.
-   */
-  void locate_index(RpcIndexLocationList& loc_list,  // NOLINT
-                    const RpcIndexLookupRequest& request);
+  /// Locate index servers for a query.
+  void locate_indices_for_search(
+      vector<string>& results, const string& root, const vector<string>& names);
 
  private:
   MasterController* controller_;
