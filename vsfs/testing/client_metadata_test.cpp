@@ -30,8 +30,10 @@
 #include <thread>
 #include <vector>
 #include <set>
+#include "vobla/traits.h"
 #include "vobla/file.h"
 #include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/index/index_info.h"
 #include "vsfs/testing/local_vsfs_cluster.h"
 
 using ::testing::ContainerEq;
@@ -42,8 +44,9 @@ using std::to_string;
 using std::unique_ptr;
 using std::vector;
 using vobla::TemporaryDirectory;
-using vsfs::client::VSFSRpcClient;
 using vsfs::LocalVsfsCluster;
+using vsfs::client::VSFSRpcClient;
+using vsfs::index::IndexInfo;
 namespace fs = boost::filesystem;
 
 namespace vsfs {
@@ -79,7 +82,7 @@ class ClientMetadataTest : public ::testing::Test {
     while (!parent_dirs.empty()) {
       auto dir = parent_dirs.top();
       parent_dirs.pop();
-      EXPECT_TRUE(client.mkdir(dir, 0755, 100, 100).ok());
+      client.mkdir(dir, 0755, 100, 100).ok();
     }
   }
 
@@ -104,6 +107,19 @@ TEST_F(ClientMetadataTest, TestMakeDirs) {
   EXPECT_TRUE(client.readdir("/test", &files).ok());
   set<string> actual_files(files.begin(), files.end());
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
+}
+
+TEST_F(ClientMetadataTest, TestCreateIndices) {
+  start(4, 4);
+  create_directories("/foo/bar/test");
+  create_directories("/foo/bar/zoo");
+
+  VSFSRpcClient client(cluster_->host(0), cluster_->port(0));
+  EXPECT_TRUE(client.init().ok());
+  EXPECT_TRUE(client.create_index("/foo/bar", "blue", IndexInfo::BTREE,
+                                  INT32, 0755, 100, 100).ok());
+  EXPECT_TRUE(client.create_index("/foo/bar/zoo", "blue", IndexInfo::BTREE,
+                                  INT32, 0755, 100, 100).ok());
 }
 
 }  // namespace vsfs

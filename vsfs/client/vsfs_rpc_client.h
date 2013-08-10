@@ -137,6 +137,7 @@ class VSFSRpcClient : public VSFSClient {
   Status info(const string& path, vector<index::IndexInfo>* infos);
 
  private:
+  FRIEND_TEST(ClientMetadataTest, TestCreateIndices);
   FRIEND_TEST(VsfsRpcClientTest, TestGetParentPathToIndexPathMap);
   FRIEND_TEST(VsfsRpcClientTest, TestReorderRequests);
 

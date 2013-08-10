@@ -303,6 +303,9 @@ Status VSFSRpcClient::mkdir(
     dir_info.gid = gid;
     master_client->handler()->mkdir(path, dir_info);
     master_client_factory_->close(master_client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    status = Status(ouch.what, ouch.why);
+    return status;
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
     LOG(ERROR) << "Failed to run mkdir RPC to master node {"
@@ -421,6 +424,8 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     auto index_client = index_client_factory_->open(index_server.address);
     index_client->handler()->create_index(create_request);
     index_client_factory_->close(index_client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    status = Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
   }
@@ -698,10 +703,11 @@ Status VSFSRpcClient::add_subfile(const string& path) {
       client->handler()->add_subfile(parent, filename);
       master_client_factory_->close(client);
       break;
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set(ouch.what, ouch.why);
     } catch (TTransportException e) {  // NOLINT
       // TODO(eddyxu): clear the conflict resolving algorithm later.
-      status.set_error(e.getType());
-      status.set_message(e.what());
+      status.set(e.getType(), e.what());
       backoff--;
       continue;
     }
