@@ -76,6 +76,10 @@ RpcNodeAddress string_to_address(const string& addr_str) {
   return result;
 }
 
+string address_to_string(const RpcNodeAddress& addr) {
+  return addr.host + ":" + to_string(addr.port);
+}
+
 }  // namespace
 
 VSFSRpcClient::VSFSRpcClient(const string &host, int port)
@@ -559,6 +563,7 @@ Status VSFSRpcClient::search(const ComplexQuery& query,
       return Status(e.getType(), e.what());
     }
   }
+
   return Status::OK;
 }
 
@@ -828,6 +833,35 @@ Status VSFSRpcClient::gen_search_plan(const ComplexQuery& query,
   }
   return Status::OK;
 }
+
+Status VSFSRpcClient::resolve_file_path(const vector<ObjectId>& objects,
+                                        vector<string>* paths) {
+  CHECK_NOTNULL(paths);
+  map<string, RpcObjectList> plan;
+  for (auto obj : objects) {
+    NodeInfo node;
+    CHECK(master_map_.get(obj, &node).ok());
+    auto addr = address_to_string(node.address);
+    plan[addr].push_back(obj);
+  }
+  // TODO(lxu): use threads to do parallel query.
+  for (const auto& addr_and_obj_list : plan) {
+    auto address = string_to_address(addr_and_obj_list.first);
+    vector<string> tmp;
+    try {
+      auto client = master_client_factory_->open(address);
+      client->handler()->find_files(tmp, addr_and_obj_list.second);
+      master_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      return Status(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      return Status(e.getType(), e.what());
+    }
+    paths->insert(paths->end(), tmp.begin(), tmp.end());
+  }
+  return Status::OK;
+}
+
 
 }  // namespace client
 }  // namespace vsfs

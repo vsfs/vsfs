@@ -209,6 +209,9 @@ class VSFSRpcClient : public VSFSClient {
   /// Generates a search plan.
   Status gen_search_plan(const ComplexQuery& query, SearchPlanMap* plan);
 
+  Status resolve_file_path(const vector<ObjectId>& objects,
+                           vector<string>* paths);
+
   unique_ptr<MasterClientFactory> master_client_factory_;
 
   unique_ptr<IndexClientFactory> index_client_factory_;
