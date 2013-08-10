@@ -1,13 +1,23 @@
 # vim: ts=8:st=8:noexpandtab
 
 LDADD = \
+  libvsfs-testing.a \
   ../masterd/libvsfs-masterd-test.a \
   ../masterd/libvsfs-masterd.a \
+  ../indexd/libvsfs-indexd.a \
+  ../index/libvsfs-index.a \
   ../client/libvsfs-client.a \
   ../rpc/libvsfs-rpc.a \
   ../common/libvsfs-common.a \
   $(libthrift_LIBS) $(BOOST_FILESYSTEM_LIB) $(BOOST_SYSTEM_LIB) \
   -lgtest -lgtest_main -lgmock
+
+noinst_LIBRARIES = \
+  libvsfs-testing.a
+
+libvsfs_testing_a_SOURCES = \
+  local_vsfs_cluster.cpp \
+  local_vsfs_cluster.h
 
 TESTS = \
   client_metadata_test

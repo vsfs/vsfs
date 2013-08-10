@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/utility.hpp>
 #include <gflags/gflags.h>
@@ -35,10 +36,15 @@ using std::string;
 using std::to_string;
 using std::vector;
 using vobla::Status;
+using vobla::ThreadPool;
 namespace fs = boost::filesystem;
 
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
              "VSFS client can use.");
+
+DEFINE_int32(vsfs_client_batch_size, 2048, "Sets the batch size of sending "
+             "index update requests.");
+
 const int kNumBackOffs = 3;
 
 namespace vsfs {
@@ -50,7 +56,7 @@ namespace client {
 namespace {
 
 string get_index_full_path(const string& root, const string& name) {
-  return root + "/.vsfs/" + name;
+  return (fs::path(root) / ".vsfs" / name).string();
 }
 
 string get_partition_full_path(const string& root, const string& name,
@@ -498,6 +504,10 @@ void VSFSRpcClient::IndexUpdateTask::add(const IndexUpdateRequest* request) {
   requests_.emplace_back(request);
 }
 
+size_t VSFSRpcClient::IndexUpdateTask::size() const {
+  return requests_.size();
+}
+
 Status VSFSRpcClient::IndexUpdateTask::get_parent_path_to_index_path_map(
     ParentPathToIndexPathMap *index_map) {
   CHECK_NOTNULL(index_map);
@@ -555,21 +565,108 @@ Status VSFSRpcClient::IndexUpdateTask::reorder_requests_to_index_servers(
     NodeInfo node;
     CHECK(parent_->index_server_map_.get(hash, &node).ok());
     string addr = node.address.host + ":" + to_string(node.address.port);
-    (*request_map)[addr].push_back(request);
+    (*request_map)[addr][index_path].push_back(request);
   }
   return Status::OK;
 }
 
 Status VSFSRpcClient::IndexUpdateTask::run() {
-  // Find the index server mapping of requests.
+  VLOG(1) << "Find the index path for each request.";
+  ParentPathToIndexPathMap index_map;
+  auto status = get_parent_path_to_index_path_map(&index_map);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to get index path for each request: "
+               << status.message();
+    return status;
+  }
 
-  // Map<Index Path, Request>
-  map<string, const IndexUpdateRequest*> index_to_request_map;
+  ServerToRequestMap request_map;
+  status = reorder_requests_to_index_servers(index_map, &request_map);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to reorder IndexUpdateRequest: " << status.message();
+    return status;
+  }
+
+  for (const auto& server_and_requests : request_map) {
+    RpcIndexUpdate update_request;
+    // TODO(lxu): clean up the confusion names in Rpc structurs.
+    for (const auto& index_path_and_requests : server_and_requests.second) {
+      update_request.updates.emplace_back();
+      auto& record_list = update_request.updates.back();
+      record_list.root_path = index_path_and_requests.first;
+      for (const auto& req : index_path_and_requests.second) {
+        record_list.record_updates.emplace_back();
+        auto& record = record_list.record_updates.back();
+        // TODO(lxu): merges IndexUpdateRequest::OP with RpcIndexUpdateOpCode.
+        switch (req->op) {
+          case IndexUpdateRequest::INSERT:
+            record.op = RpcIndexUpdateOpCode::INSERT;
+            break;
+          case IndexUpdateRequest::UPDATE:
+            record.op = RpcIndexUpdateOpCode::UPDATE;
+            break;
+          case IndexUpdateRequest::REMOVE:
+            record.op = RpcIndexUpdateOpCode::REMOVE;
+            break;
+          case IndexUpdateRequest::UNKNOWN:
+          default:
+            record.op = RpcIndexUpdateOpCode::UNKNOWN;
+            break;
+        }
+        record.key = req->key;
+        auto hash = HashUtil::file_path_to_hash(req->file_path);
+        record.__set_value(to_string(hash));
+        VLOG(3) << "Index update record: key:" << req->key
+                << " value: " << req->file_path << "(H:" << hash << ")"
+                << " root: " << record_list.root_path
+                << " name: " << record_list.name;
+      }
+    }
+    vector<string> host_and_port;
+    boost::split(host_and_port, server_and_requests.first,
+                 boost::is_any_of(":"));
+    CHECK_EQ(2u, host_and_port.size());
+    try {
+      auto index_conn = parent_->index_client_factory_->open(
+          host_and_port[0], std::stoi(host_and_port[1]));
+      index_conn->handler()->update(update_request);
+      parent_->index_client_factory_->close(index_conn);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      return Status(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      LOG(ERROR) << "Thrift transport exception: " << e.what();
+      return Status(e.getType(), e.what());
+    }
+  }
   return Status::OK;
 }
 
-Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& updates) {
-  (void) updates;
+Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& requests) {
+  vector<unique_ptr<IndexUpdateTask>> tasks;
+  tasks.emplace_back(unique_ptr<IndexUpdateTask>(new IndexUpdateTask(this)));
+  vector<ThreadPool::FutureType> futures;
+  size_t tasks_in_pool = 0;
+  for (const auto& request : requests) {
+    tasks.back()->add(&request);
+    if (tasks.back()->size() >
+        static_cast<size_t>(FLAGS_vsfs_client_batch_size)) {
+      futures.emplace_back(
+          thread_pool_.add_task(
+              std::bind(&IndexUpdateTask::run, tasks.back().get())));
+      tasks.emplace_back(unique_ptr<IndexUpdateTask>(
+              new IndexUpdateTask(this)));
+    }
+  }
+  if (tasks_in_pool < tasks.size()) {
+    futures.emplace_back(
+        thread_pool_.add_task(std::bind(&IndexUpdateTask::run,
+                                        tasks.back().get())));
+  }
+  for (auto& future : futures) {
+    if (!future.get().ok()) {
+      return future.get();
+    }
+  }
   return Status::OK;
 }
 

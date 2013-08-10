@@ -79,10 +79,13 @@ IndexController::IndexController(const string &basedir)
 }
 
 IndexController::IndexController(
-    const string &basedir, const string &host, int port)
+    const string& basedir, const string& host, int port,
+    const string& master_host, int master_port)
   : host_(host), port_(port), base_dir_(basedir),
-    manager_(new IndexManager(basedir)),
-    master_(new MasterClientType(FLAGS_master_addr, FLAGS_master_port)) {
+    manager_(new IndexManager(basedir)) {
+  string mhost = master_host.empty() ? FLAGS_master_addr : master_host;
+  int mport = master_port == 0 ? FLAGS_master_port : master_port;
+    master_.reset(new MasterClientType(mhost, mport));
 }
 
 IndexController::IndexController(const string &basedir, const string &host,

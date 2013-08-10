@@ -20,27 +20,31 @@
  * master cluster.
  */
 
+#include <boost/filesystem.hpp>
 #include <glog/logging.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <stack>
 #include <string>
 #include <thread>
 #include <vector>
 #include <set>
 #include "vobla/file.h"
 #include "vsfs/client/vsfs_rpc_client.h"
-#include "vsfs/masterd/testing/local_masterd_cluster.h"
+#include "vsfs/testing/local_vsfs_cluster.h"
 
 using ::testing::ContainerEq;
 using std::set;
+using std::stack;
 using std::thread;
 using std::to_string;
 using std::unique_ptr;
 using std::vector;
 using vobla::TemporaryDirectory;
 using vsfs::client::VSFSRpcClient;
-using vsfs::masterd::LocalMasterdCluster;
+using vsfs::LocalVsfsCluster;
+namespace fs = boost::filesystem;
 
 namespace vsfs {
 
@@ -55,23 +59,41 @@ class ClientMetadataTest : public ::testing::Test {
     tmpdir_.reset();
   }
 
-  void start(int num_masters) {
-    cluster_.reset(new LocalMasterdCluster(tmpdir_->path(), num_masters));
+  void start(int num_masters, int num_indices) {
+    cluster_.reset(new LocalVsfsCluster(
+            tmpdir_->path(), num_masters, num_indices));
     cluster_->start();
   }
 
+  void create_directories(const string& path) {
+    VSFSRpcClient client(cluster_->host(0), cluster_->port(0));
+    EXPECT_TRUE(client.init().ok());
+
+    stack<string> parent_dirs;
+    auto tmp = path;
+    parent_dirs.push(tmp);
+    while (tmp != "/") {
+      tmp = fs::path(tmp).parent_path().string();
+      parent_dirs.push(tmp);
+    }
+    while (!parent_dirs.empty()) {
+      auto dir = parent_dirs.top();
+      parent_dirs.pop();
+      EXPECT_TRUE(client.mkdir(dir, 0755, 100, 100).ok());
+    }
+  }
+
   unique_ptr<TemporaryDirectory> tmpdir_;
-  unique_ptr<LocalMasterdCluster> cluster_;
+  unique_ptr<LocalVsfsCluster> cluster_;
 };
 
 TEST_F(ClientMetadataTest, TestMakeDirs) {
-  start(4);
+  start(4, 2);
+
+  create_directories("/test");
 
   VSFSRpcClient client(cluster_->host(0), cluster_->port(0));
   EXPECT_TRUE(client.init().ok());
-  EXPECT_TRUE(client.mkdir("/", 0x666, 100, 100).ok());
-  EXPECT_TRUE(client.mkdir("/test", 0x666, 100, 100).ok());
-
   set<string> expected_files;
   for (int i = 0; i < 100; i++) {
     EXPECT_TRUE(client.mkdir("/test/dir" + to_string(i), 0x666, 100, 100).ok());

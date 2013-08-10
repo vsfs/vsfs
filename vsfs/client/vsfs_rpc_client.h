@@ -170,8 +170,9 @@ class VSFSRpcClient : public VSFSClient {
     Status get_parent_path_to_index_path_map(
         ParentPathToIndexPathMap *index_map);
 
-    /// map<"host:port", vector<Request*>>
-    typedef map<string, vector<const IndexUpdateRequest*>> ServerToRequestMap;
+    /// map<"host:port", map<index path, vector<Request*>>>
+    typedef map<string, map<string, vector<const IndexUpdateRequest*>>>
+        ServerToRequestMap;
 
     /// Reorder the requests and categorize them by the targeting index servers.
     Status reorder_requests_to_index_servers(
