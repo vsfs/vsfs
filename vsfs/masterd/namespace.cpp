@@ -23,8 +23,8 @@
 #include <string>
 #include "vobla/clock.h"
 #include "vobla/map_util.h"
-#include "vsfs/common/hash_util.h"
 #include "vsfs/common/leveldb_store.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/common/types.h"
 #include "vsfs/masterd/namespace.h"
@@ -319,7 +319,7 @@ Status Namespace::readdir(const string &path, vector<string>* results) {  // NOL
 }
 
 ObjectId Namespace::get_object_id(const string &path) {
-  FilePathHashType hash_value = HashUtil::file_path_to_hash(path);
+  auto hash_value = PathUtil::path_to_hash(path);
 
   // Object id is the first 16 bits from hash value and the last 48 bits from
   // the assigned obj id.

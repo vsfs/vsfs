@@ -14,26 +14,23 @@
  * limitations under the License.
  */
 
-#ifndef VSFS_COMMON_HASH_UTIL_H_
-#define VSFS_COMMON_HASH_UTIL_H_
+#ifndef VSFS_COMMON_PATH_UTIL_H_
+#define VSFS_COMMON_PATH_UTIL_H_
 
-#include <cstdint>
 #include <string>
 #include "vsfs/common/types.h"
-#include "vobla/macros.h"
 
 using std::string;
 
 namespace vsfs {
 
-class HashUtil {
+class PathUtil {
  public:
-  static FilePathHashType file_path_to_hash(const string &path);
+  static HashValueType path_to_hash(const string& path);
 
  private:
-  DISALLOW_IMPLICIT_CONSTRUCTORS(HashUtil);
+  PathUtil() = delete;
 };
 
 }  // namespace vsfs
-
-#endif  // VSFS_COMMON_HASH_UTIL_H_
+#endif  // VSFS_COMMON_PATH_UTIL_H_

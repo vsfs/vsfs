@@ -10,7 +10,6 @@ libvsfs_common_a_SOURCES = \
   file_handler.h \
   file_info.h file_info.cpp \
   file_object.h file_object.cpp \
-  hash_util.h hash_util.cpp \
   key_value_store.h \
   leveldb_store.h leveldb_store.cpp \
   log_constants.h log_constants.cpp \
@@ -18,6 +17,7 @@ libvsfs_common_a_SOURCES = \
   log_types.h log_types.cpp \
   mock_key_value_store.h \
   mock_leveldb_store.h \
+  path_util.h path_util.cpp \
   posix_file_handler.h posix_file_handler.cpp \
   posix_path.h posix_path.cpp \
   posix_storage_manager.h posix_storage_manager.cpp \

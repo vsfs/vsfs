@@ -28,7 +28,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "vsfs/common/hash_util.h"
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/server_map.h"
 #include "vsfs/common/thread.h"

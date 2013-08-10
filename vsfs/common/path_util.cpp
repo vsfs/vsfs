@@ -15,21 +15,21 @@
  */
 
 #include <string.h>
-#include <memory>
 #include <string>
 #include "vobla/hash.h"
-#include "vsfs/common/hash_util.h"
+#include "vsfs/common/path_util.h"
 
 using std::string;
 using vobla::MD5Digest;
 
 namespace vsfs {
 
-FilePathHashType HashUtil::file_path_to_hash(const string &path) {
-  FilePathHashType ret;
+HashValueType PathUtil::path_to_hash(const string& path) {
+  HashValueType ret;
   // TODO(lxu): add a flag to switch hash function.
   MD5Digest hash_value(path);
   memcpy(&ret, hash_value.digest(), sizeof(ret));
   return ret;
 }
+
 }  // namespace vsfs
