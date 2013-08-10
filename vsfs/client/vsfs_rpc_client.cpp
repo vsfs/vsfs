@@ -57,15 +57,6 @@ namespace client {
 
 namespace {
 
-string get_index_full_path(const string& root, const string& name) {
-  return (fs::path(root) / ".vsfs" / name).string();
-}
-
-string get_partition_full_path(const string& root, const string& name,
-                               HashValueType hash) {
-  return root + "/.vsfs/" + name + "/" + to_string(hash);
-}
-
 RpcNodeAddress string_to_address(const string& addr_str) {
   RpcNodeAddress result;
   vector<string> fields;
@@ -424,7 +415,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     return Status::system_error(-ENOTDIR);
   }
 
-  string partition_path = get_partition_full_path(root, name, 0);
+  string partition_path = PathUtil::partition_path(root, name, 0);
   RpcIndexCreateRequest create_request;
   create_request.root = partition_path;
   create_request.name = name;
@@ -462,7 +453,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     return status;
   }
 
-  auto full_path = get_index_full_path(root, name);
+  auto full_path = PathUtil::index_path(root, name);
   hash = PathUtil::path_to_hash(full_path);
   NodeInfo master_server;
   CHECK(master_map_.get(hash, &master_server).ok());
@@ -486,9 +477,10 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
 
   // TODO(lxu): should pass oid to index server to store this index.
   ObjectId oid;
-  status = create(get_partition_full_path(root, name, 0), 0755, uid, gid, &oid);
+  status = create(PathUtil::partition_path(root, name, 0),
+                  0755, uid, gid, &oid);
   if (!status.ok()) {
-    rmdir(get_index_full_path(root, name));
+    rmdir(PathUtil::index_path(root, name));
     remove_index(root, name);
   }
   return Status::OK;
@@ -500,7 +492,7 @@ Status VSFSRpcClient::remove_index(const string& root, const string& name) {
   request.name = name;
 
   vector<string> partitions;
-  string full_index_path = get_index_full_path(name, root);
+  string full_index_path = PathUtil::index_path(name, root);
   auto status = this->readdir(full_index_path, &partitions);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to get all partitions: " << status.message();
@@ -592,7 +584,7 @@ Status VSFSRpcClient::IndexUpdateTask::get_parent_path_to_index_path_map(
     for (const auto& index_name : parent_and_names.second) {
       auto tmp_parent = parent;
       while (true) {
-        auto index_path = get_index_full_path(tmp_parent, index_name);
+        auto index_path = PathUtil::index_path(tmp_parent, index_name);
         struct stat stbuf;
         auto status = parent_->getattr(index_path, &stbuf);
         if (status.ok() && S_ISDIR(stbuf.st_mode)) {
