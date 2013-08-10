@@ -818,6 +818,7 @@ Status VSFSRpcClient::find_objects(const vector<string>& paths,
     } catch (TTransportException e) {  // NOLINT
       return Status(e.getType(), e.what());
     }
+    CHECK_EQ(tmp_objs.size(), tmp_files.size());
     size_t num_files = tmp_files.size();
     for (size_t i = 0; i < num_files; ++i) {
       (*objects)[positions[i]] = tmp_objs[i];

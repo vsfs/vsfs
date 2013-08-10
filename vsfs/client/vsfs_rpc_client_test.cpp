@@ -193,6 +193,8 @@ TEST_F(VsfsRpcClientTest, TestUpdateIndex) {
       .WillOnce(Throw(ouch));
   EXPECT_CALL(*mock_master_, getattr(_, "/foo/some/test/.vsfs/blue"))
       .WillOnce(SetArgReferee<0>(info));
+  EXPECT_CALL(*mock_master_, find_objects(_, _))
+      .WillOnce(SetArgReferee<0>(vector<ObjectId>({1, 2, 3})));
 
   EXPECT_CALL(*mock_index_, update(_)).Times(2);
   EXPECT_TRUE(test_client_->update(requests).ok());
