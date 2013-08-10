@@ -23,7 +23,7 @@
 #include <utility>
 #include <vector>
 #include "vobla/range.h"
-#include "vsfs/common/hash_util.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/server_map.h"
 #include "vsfs/common/thread.h"
 
@@ -99,7 +99,7 @@ Status ServerMap::get(HashValueType path_hash, NodeInfo* node) {
 }
 
 Status ServerMap::get(const string& path, NodeInfo* node) {
-  auto hash = HashUtil::file_path_to_hash(path);
+  auto hash = PathUtil::path_to_hash(path);
   return get(hash, node);
 }
 

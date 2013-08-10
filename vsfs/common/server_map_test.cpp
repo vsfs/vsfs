@@ -125,7 +125,7 @@ TEST(ServerMapTest, TestGetByPath) {
   }
 
   string path = "/abc/def/ghi";
-  auto hash = HashUtil::file_path_to_hash(path);
+  auto hash = PathUtil::path_to_hash(path);
   NodeInfo hash_node, path_node;
   EXPECT_TRUE(test_map.get(hash, &hash_node).ok());
   EXPECT_TRUE(test_map.get(path, &path_node).ok());
