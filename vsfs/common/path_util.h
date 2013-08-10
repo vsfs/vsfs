@@ -14,22 +14,31 @@
  * limitations under the License.
  */
 
-#include <string.h>
-#include <memory>
+#ifndef VSFS_COMMON_PATH_UTIL_H_
+#define VSFS_COMMON_PATH_UTIL_H_
+
 #include <string>
-#include "vobla/hash.h"
-#include "vsfs/common/hash_util.h"
+#include "vsfs/common/types.h"
 
 using std::string;
-using vobla::MD5Digest;
 
 namespace vsfs {
 
-FilePathHashType HashUtil::file_path_to_hash(const string &path) {
-  FilePathHashType ret;
-  // TODO(lxu): add a flag to switch hash function.
-  MD5Digest hash_value(path);
-  memcpy(&ret, hash_value.digest(), sizeof(ret));
-  return ret;
-}
+class PathUtil {
+ public:
+  /// Calculates the hash value (MD5) of the path.
+  static HashValueType path_to_hash(const string& path);
+
+  /// Generates the index path for the index on 'root' with index 'name'.
+  static string index_path(const string& root, const string& name);
+
+  /// Generates the partition path with index 'root', 'name' and partition
+  /// hash range starting point.
+  static string partition_path(const string& root, const string& name,
+                               HashValueType sep);
+ private:
+  PathUtil() = delete;
+};
+
 }  // namespace vsfs
+#endif  // VSFS_COMMON_PATH_UTIL_H_

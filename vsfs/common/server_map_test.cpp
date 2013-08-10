@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 #include "vobla/status.h"
-#include "vsfs/common/hash_util.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/server_map.h"
 #include "vsfs/rpc/vsfs_types.h"
 
@@ -98,7 +98,7 @@ TEST(ServerMapTest, TestGetIndexServer) {
   NodeInfo tmp;
   for (int i = 0; i < 2000; i++) {
     string path = "/tmp_data/test_data/" + std::to_string(i);
-    int64_t file_id = HashUtil::file_path_to_hash(path);
+    auto file_id = PathUtil::path_to_hash(path);
     EXPECT_TRUE(test_map.get(file_id, &tmp).ok());
     if (tmp.server_id == "node1") {
       node1_count++;

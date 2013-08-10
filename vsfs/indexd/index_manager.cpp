@@ -29,7 +29,7 @@
 #include <thread>
 #include <vector>
 #include "vobla/map_util.h"
-#include "vsfs/common/hash_util.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/common/types.h"
 #include "vsfs/index/index_info.h"
@@ -47,8 +47,6 @@ using std::thread;
 using std::unique_ptr;
 using std::vector;
 using vobla::contain_key;
-using vsfs::HashUtil;
-using vsfs::ObjectId;
 
 const uint64_t kDefaultFlushLogSize = 8 * 1024 * 1024;  // 8MB.
 const char kIndexFileExt[] = ".idx";
@@ -317,6 +315,7 @@ Status IndexManager::update(RpcIndexUpdate *out_updates) {
 
 RangeIndexInterface* IndexManager::get_range_index(const string &index_path,
                                                    const string &name) {
+  (void) name;
   MutexGuard lock(lock_);
   auto iter = range_index_map_.find(index_path);
   if (iter == range_index_map_.end()) {
@@ -482,7 +481,7 @@ IndexInfo* IndexManager::get_index_info(const string &index_info_key) {
 }
 
 string IndexManager::get_index_file_base_path(const string &root_path) const {
-  uint64_t index_hash = HashUtil::file_path_to_hash(root_path);
+  auto index_hash = PathUtil::path_to_hash(root_path);
   return basedir_ + "/" + lexical_cast<string>(index_hash);
 }
 
