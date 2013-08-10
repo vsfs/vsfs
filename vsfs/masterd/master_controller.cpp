@@ -138,7 +138,6 @@ Status MasterController::init() {
 }
 
 void MasterController::background_task() {
-  const int kSleepSeconds = 30;
   if (!is_primary_node_) {
     LOG(INFO) << "A secondary master node: " << host_ << ":" << port_
               << " joins the metadata cluster.";
@@ -156,11 +155,14 @@ void MasterController::background_task() {
               << ":" << primary_port_ << ").";
   }
 
+  /*
+  const int kSleepSeconds = 30;
   while (runtime_status_ == RuntimeStatus::RUNNING) {
     std::unique_lock<mutex> lock(background_mutex_);
     background_cv_.wait_for(lock, std::chrono::seconds(kSleepSeconds));
     LOG(INFO) << "Masterd Background Task...";
   }
+  */
 }
 
 void MasterController::start() {
@@ -184,6 +186,7 @@ void MasterController::start() {
   }
   background_thread_ = thread(&MasterController::background_task, this);
   server_->serve();
+  thread_manager->stop();
   if (is_primary_node_) {
     LOG(INFO) << "Primary master server quits...";
   } else {

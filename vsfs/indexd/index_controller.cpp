@@ -100,15 +100,17 @@ IndexController::~IndexController() {
 }
 
 void IndexController::background_task() {
-  const int kSleepSeconds = 30;
   LOG(INFO) << "Joining master: " << FLAGS_master_addr
             << ":" << FLAGS_master_port;
   join();
 
+  /*
+  const int kSleepSeconds = 30;
   while (status_ != STOPPED) {
     std::unique_lock<std::mutex> lock(background_mutex_);
     background_cv_.wait_for(lock, std::chrono::seconds(kSleepSeconds));
   }
+  */
 }
 
 void IndexController::start() {
@@ -133,6 +135,7 @@ void IndexController::start() {
   LOG(INFO) << "Starting IndexController at port:" << port_;
   backgroup_thread_ = thread(&IndexController::background_task, this);
   server_->serve();
+  thread_manager->stop();
   LOG(INFO) << "Shutting down completely.";
 }
 
