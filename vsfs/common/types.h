@@ -27,8 +27,6 @@
 namespace vsfs {
 
 typedef int64_t ObjectId;
-typedef int64_t FilePathHashType;
-// TODO(eddyxu): Merge HashValueType and FilePathHashType together.
 typedef int64_t HashValueType;
 
 }  // namespace vsfs

@@ -68,10 +68,18 @@ class ServerMap : boost::noncopyable {
   /**
    * \brief Given a hash of the path, get the corresponding Server based on the
    * position of the hash in the hash ring.
-   * \param [in] path_hash the hash value of the path of the target.
-   * \param [out] node the Node's information.
+   * \param[in] path_hash the hash value of the path of the target.
+   * \param[out] node the Node's information.
    */
-  Status get(HashValueType path_hash, NodeInfo* node); // NOLINT
+  Status get(HashValueType path_hash, NodeInfo* node);
+
+  /**
+   * \brief Given a file path, calculates its hash, and returns the
+   * corresponding server based on the position of this hash in the hash ring.
+   * \param[in] path the file path
+   * \param[out] node the Node's information.
+   */
+  Status get(const string& path, NodeInfo* node);
 
   /**
    * \brief Gets the replica servers for node.

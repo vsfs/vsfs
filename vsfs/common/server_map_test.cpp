@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 #include "vobla/status.h"
-#include "vsfs/common/hash_util.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/server_map.h"
 #include "vsfs/rpc/vsfs_types.h"
 
@@ -98,7 +98,7 @@ TEST(ServerMapTest, TestGetIndexServer) {
   NodeInfo tmp;
   for (int i = 0; i < 2000; i++) {
     string path = "/tmp_data/test_data/" + std::to_string(i);
-    int64_t file_id = HashUtil::file_path_to_hash(path);
+    auto file_id = PathUtil::path_to_hash(path);
     EXPECT_TRUE(test_map.get(file_id, &tmp).ok());
     if (tmp.server_id == "node1") {
       node1_count++;
@@ -114,6 +114,22 @@ TEST(ServerMapTest, TestGetIndexServer) {
   EXPECT_NEAR(node2_count, 500, 50);
   EXPECT_NEAR(node3_count, 500, 50);
   EXPECT_NEAR(node4_count, 500, 50);*/
+}
+
+TEST(ServerMapTest, TestGetByPath) {
+  ServerMap test_map;
+  for (int i = 0; i < 10; i++) {
+    NodeInfo node;
+    node.server_id = "node" + std::to_string(i);
+    test_map.add(node);
+  }
+
+  string path = "/abc/def/ghi";
+  auto hash = PathUtil::path_to_hash(path);
+  NodeInfo hash_node, path_node;
+  EXPECT_TRUE(test_map.get(hash, &hash_node).ok());
+  EXPECT_TRUE(test_map.get(path, &path_node).ok());
+  EXPECT_EQ(hash_node.server_id, path_node.server_id);
 }
 
 TEST(ServerMapTest, TestGetReplicaServers) {

@@ -26,7 +26,7 @@
 #include <vector>
 #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/common/complex_query.h"
-#include "vsfs/common/hash_util.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/types.h"
 #include "vsfs/rpc/thrift_utils.h"
 #include "vsfs/rpc/vsfs_types.h"
@@ -56,15 +56,6 @@ using rpc::RpcClientFactory;
 namespace client {
 
 namespace {
-
-string get_index_full_path(const string& root, const string& name) {
-  return (fs::path(root) / ".vsfs" / name).string();
-}
-
-string get_partition_full_path(const string& root, const string& name,
-                               FilePathHashType hash) {
-  return root + "/.vsfs/" + name + "/" + to_string(hash);
-}
 
 RpcNodeAddress string_to_address(const string& addr_str) {
   RpcNodeAddress result;
@@ -201,7 +192,7 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
     VLOG(1) << "The VSFS RPC client has not initialized yet.";
     return Status(-1, "The client has not initialized yet.");
   }
-  auto hash = HashUtil::file_path_to_hash(path);
+  auto hash = PathUtil::path_to_hash(path);
   NodeInfo file_node;
   auto status = master_map_.get(hash, &file_node);
   if (!status.ok()) {
@@ -247,7 +238,7 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
 
 Status VSFSRpcClient::open(const string& path, ObjectId* oid) {
   CHECK_NOTNULL(oid);
-  auto hash = HashUtil::file_path_to_hash(path);
+  auto hash = PathUtil::path_to_hash(path);
   NodeInfo node;
   auto status = master_map_.get(hash, &node);
   if (!status.ok()) {
@@ -267,7 +258,7 @@ Status VSFSRpcClient::unlink(const string& path) {
   // First remove the subfile from its parent node.
   NodeInfo parent_node;
   auto parent = fs::path(path).parent_path().string();
-  auto parent_hash = HashUtil::file_path_to_hash(parent);
+  auto parent_hash = PathUtil::path_to_hash(parent);
   auto filename = fs::path(path).filename().string();
   auto status = master_map_.get(parent_hash, &parent_node);
   if (!status.ok()) {
@@ -283,7 +274,7 @@ Status VSFSRpcClient::unlink(const string& path) {
   }
 
   NodeInfo node;
-  auto hash = HashUtil::file_path_to_hash(path);
+  auto hash = PathUtil::path_to_hash(path);
   status = master_map_.get(hash, &node);
   if (!status.ok()) {
     return status;
@@ -304,7 +295,7 @@ Status VSFSRpcClient::mkdir(
     VLOG(1) << "The VSFS RPC client has not initialized yet.";
     return Status(-1, "The client has not initialized yet.");
   }
-  FilePathHashType hash = HashUtil::file_path_to_hash(path);
+  HashValueType hash = PathUtil::path_to_hash(path);
   NodeInfo node;
   auto status = master_map_.get(hash, &node);
   if (!status.ok()) {
@@ -349,7 +340,7 @@ Status VSFSRpcClient::rmdir(const string& path) {
     VLOG(1) << "The VSFS RPC client has not initialized yet.";
     return Status(-1, "The client has not initialized yet.");
   }
-  FilePathHashType hash = HashUtil::file_path_to_hash(path);
+  auto hash = PathUtil::path_to_hash(path);
   NodeInfo node;
   auto status = master_map_.get(hash, &node);
   if (!status.ok()) {
@@ -372,7 +363,7 @@ Status VSFSRpcClient::rmdir(const string& path) {
 
 Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  // NOLINT
   CHECK_NOTNULL(files);
-  auto hash = HashUtil::file_path_to_hash(dirpath);
+  auto hash = PathUtil::path_to_hash(dirpath);
   NodeInfo node;
   CHECK(master_map_.get(hash, &node).ok());
   try {
@@ -389,7 +380,7 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
 
 Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   CHECK_NOTNULL(stbuf);
-  auto hash = HashUtil::file_path_to_hash(path);
+  auto hash = PathUtil::path_to_hash(path);
   NodeInfo node;
   CHECK(master_map_.get(hash, &node).ok());
   RpcFileInfo file_info;
@@ -428,7 +419,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     return Status::system_error(-ENOTDIR);
   }
 
-  string partition_path = get_partition_full_path(root, name, 0);
+  string partition_path = PathUtil::partition_path(root, name, 0);
   RpcIndexCreateRequest create_request;
   create_request.root = partition_path;
   create_request.name = name;
@@ -438,7 +429,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
   create_request.uid = uid;
   create_request.gid = gid;
 
-  auto hash = HashUtil::file_path_to_hash(partition_path);
+  auto hash = PathUtil::path_to_hash(partition_path);
   NodeInfo index_server;
   status = index_server_map_.get(hash, &index_server);
   CHECK(status.ok());
@@ -466,8 +457,8 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     return status;
   }
 
-  auto full_path = get_index_full_path(root, name);
-  hash = HashUtil::file_path_to_hash(full_path);
+  auto full_path = PathUtil::index_path(root, name);
+  hash = PathUtil::path_to_hash(full_path);
   NodeInfo master_server;
   CHECK(master_map_.get(hash, &master_server).ok());
   try {
@@ -490,9 +481,10 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
 
   // TODO(lxu): should pass oid to index server to store this index.
   ObjectId oid;
-  status = create(get_partition_full_path(root, name, 0), 0755, uid, gid, &oid);
+  status = create(PathUtil::partition_path(root, name, 0),
+                  0755, uid, gid, &oid);
   if (!status.ok()) {
-    rmdir(get_index_full_path(root, name));
+    rmdir(PathUtil::index_path(root, name));
     remove_index(root, name);
   }
   return Status::OK;
@@ -504,7 +496,7 @@ Status VSFSRpcClient::remove_index(const string& root, const string& name) {
   request.name = name;
 
   vector<string> partitions;
-  string full_index_path = get_index_full_path(name, root);
+  string full_index_path = PathUtil::index_path(name, root);
   auto status = this->readdir(full_index_path, &partitions);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to get all partitions: " << status.message();
@@ -514,7 +506,7 @@ Status VSFSRpcClient::remove_index(const string& root, const string& name) {
   for (const auto& part : partitions) {
     auto partition_path = (fs::path(full_index_path) / part).string();
     unlink(partition_path);
-    auto hash = HashUtil::file_path_to_hash(partition_path);
+    auto hash = PathUtil::path_to_hash(partition_path);
     NodeInfo node;
     CHECK(index_server_map_.get(hash, &node).ok());
     try {
@@ -619,7 +611,7 @@ Status VSFSRpcClient::IndexUpdateTask::get_parent_path_to_index_path_map(
     for (const auto& index_name : parent_and_names.second) {
       auto tmp_parent = parent;
       while (true) {
-        auto index_path = get_index_full_path(tmp_parent, index_name);
+        auto index_path = PathUtil::index_path(tmp_parent, index_name);
         struct stat stbuf;
         auto status = parent_->getattr(index_path, &stbuf);
         if (status.ok() && S_ISDIR(stbuf.st_mode)) {
@@ -657,7 +649,7 @@ Status VSFSRpcClient::IndexUpdateTask::reorder_requests_to_index_servers(
                                       .at(request->index_name);
     // TODO(lxu): the current solution only works for one partition.
     auto partition_path = index_path + "/0";
-    auto hash = HashUtil::file_path_to_hash(partition_path);
+    auto hash = PathUtil::path_to_hash(partition_path);
     NodeInfo node;
     CHECK(parent_->index_server_map_.get(hash, &node).ok());
     string addr = node.address.host + ":" + to_string(node.address.port);
@@ -832,7 +824,7 @@ Status VSFSRpcClient::add_subfile(const string& path) {
     return Status::OK;
   }
   auto parent = fs::path(path).parent_path().string();
-  auto hash = HashUtil::file_path_to_hash(parent);
+  auto hash = PathUtil::path_to_hash(parent);
   auto filename = fs::path(path).filename().string();
   NodeInfo node;
   auto status = master_map_.get(hash, &node);
@@ -901,7 +893,7 @@ Status VSFSRpcClient::gen_search_plan(const ComplexQuery& query,
   for (const auto& index_path : indices) {
     // TODO(lxu): only support 1 partition now.
     auto partition_path = index_path + "/0";
-    auto hash = HashUtil::file_path_to_hash(partition_path);
+    auto hash = PathUtil::path_to_hash(partition_path);
     NodeInfo node;
     CHECK(index_server_map_.get(hash, &node).ok());
     auto addr = node.address.host + ":" + to_string(node.address.port);

@@ -23,8 +23,9 @@
 #include <utility>
 #include <vector>
 #include "vobla/range.h"
-#include "vsfs/common/thread.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/server_map.h"
+#include "vsfs/common/thread.h"
 
 using std::map;
 using std::string;
@@ -95,6 +96,11 @@ Status ServerMap::get(HashValueType path_hash, NodeInfo* node) {
     return Status(-ENOENT, "Can't find any Server.");
   }
   return Status::OK;
+}
+
+Status ServerMap::get(const string& path, NodeInfo* node) {
+  auto hash = PathUtil::path_to_hash(path);
+  return get(hash, node);
 }
 
 vector<NodeInfo> ServerMap::get_replica_servers(

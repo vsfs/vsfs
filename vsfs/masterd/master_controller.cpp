@@ -28,8 +28,8 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include "vsfs/common/hash_util.h"
 #include "vsfs/common/leveldb_store.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/server_map.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/index/index_info.h"
@@ -56,14 +56,6 @@ using vsfs::index::IndexInfo;
 
 namespace vsfs {
 namespace masterd {
-
-namespace {
-
-string get_full_index_path(const string &root, const string &name) {
-  return root + "/.vsfs/" + name;
-}
-
-}
 
 MasterController::MasterController(const string& basedir,
                                    const string& host,
@@ -350,7 +342,7 @@ Status MasterController::create_index(const RpcIndexCreateRequest &request) {
     return status;
   }
 
-  auto full_path = get_full_index_path(request.root, request.name);
+  auto full_path = PathUtil::index_path(request.root, request.name);
   VLOG(0) << "Create index: " << full_path;
   status = namespace_->mkdir(full_path, request.mode, request.uid, request.gid);
   return status;
@@ -365,7 +357,7 @@ Status MasterController::remove_index(const string& root, const string& name) {
   }
   // Even if removing from index namespace fails, we will try our best-efforts
   // to remove any related records.
-  string full_path = get_full_index_path(root, name);
+  string full_path = PathUtil::index_path(root, name);
   index_partition_manager_->remove_index(full_path);
   return status;
 }
