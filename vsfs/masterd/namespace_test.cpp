@@ -206,9 +206,10 @@ TEST_F(NamespaceTest, TestObjectIdDistribution) {
   ObjectId oid = test_ns_->get_object_id(path);
   auto hash = HashUtil::file_path_to_hash(path);
 
-  HashValueType part_size = std::numeric_limits<HashValueType>::max() / 64;
+  int64_t part_size = std::numeric_limits<int64_t>::max() / 4;
   ServerMap servers;
-  for (int i = 0; i < 128; i++) {
+  for (int64_t i = 0; i < 2; i++) {
+    LOG(INFO) << " i = " << i << " <128 ? " << (i < 128);
     NodeInfo node;
     node.address.port = i;
     servers.add(part_size * i, node);
