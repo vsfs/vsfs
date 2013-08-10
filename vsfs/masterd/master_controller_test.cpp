@@ -88,22 +88,17 @@ class MasterControllerTest : public ::testing::Test {
 
   /// A helper function to create file indices.
   Status create_index(const string &root_path, const string &name,
-                      int index_type, int key_type,
-                      RpcIndexLocation *loc) {
-    CHECK_NOTNULL(loc);
+                      int index_type = IndexInfo::BTREE,
+                      int key_type = UINT64) {
     RpcIndexCreateRequest create_request;
     create_request.root = root_path;
     create_request.name = name;
     create_request.index_type = index_type;
     create_request.key_type = key_type;
-    return controller_->create_index(create_request, loc);
-  }
-
-  Status create_index(const string &root_path, const string &name,
-                      int index_type = IndexInfo::BTREE,
-                      int key_type = UINT64) {
-    RpcIndexLocation loc;
-    return create_index(root_path, name, index_type, key_type, &loc);
+    create_request.mode = 0755 | S_IFDIR;
+    create_request.uid = 100;
+    create_request.gid = 100;
+    return controller_->create_index(create_request);
   }
 
   unique_ptr<MasterController> controller_;
@@ -145,29 +140,7 @@ TEST_F(MasterControllerTest, TestCreateIndex) {
   request.index_type = IndexInfo::BTREE;
   request.key_type = TypeIDs::INT16;
 
-  RpcIndexLocation loc;
-  EXPECT_TRUE(controller_->create_index(request, &loc).ok());
-  EXPECT_EQ("/test/data/.vsfs/name0.0", loc.full_index_path);
-}
-
-TEST_F(MasterControllerTest, TestLocateIndex) {
-  join_index_servers(1);
-
-  RpcIndexLocation index_loc;
-  EXPECT_TRUE(create_index("/foo/bar", "energy", IndexInfo::BTREE, FLOAT,
-                           &index_loc).ok());
-
-  RpcIndexLookupRequest lookup_request;
-  lookup_request.name = "energy";
-  lookup_request.dir_to_file_id_map["/foo/bar/abc"].push_back(
-      HashUtil::file_path_to_hash("/foo/bar/abc/efg"));
-  lookup_request.dir_to_file_id_map["/foo/bar/bcd"].push_back(
-      HashUtil::file_path_to_hash("/foo/bar/bcd/aaa"));
-  RpcIndexLocationList locations;
-  EXPECT_TRUE(controller_->locate_index(lookup_request, &locations).ok());
-  EXPECT_EQ(1u, locations.size());
-  EXPECT_EQ("/foo/bar/.vsfs/energy.0", locations[0].full_index_path);
-  EXPECT_EQ(2u, locations[0].file_ids.size());
+  EXPECT_TRUE(controller_->create_index(request).ok());
 }
 
 }  // namespace masterd

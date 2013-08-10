@@ -103,18 +103,12 @@ void MasterServer::find_files(RpcFileList& files,  // NOLINT
   ThriftUtils::check_status(controller_->find_files(objects, &files));
 }
 
-void MasterServer::create_index(RpcIndexLocation& location,  // NOLINT
-                                const RpcIndexCreateRequest& request) {
-  ThriftUtils::check_status(controller_->create_index(request, &location));
+void MasterServer::create_index(const RpcIndexCreateRequest& request) {
+  ThriftUtils::check_status(controller_->create_index(request));
 }
 
 void MasterServer::remove_index(const string& root, const string& name) {
   ThriftUtils::check_status(controller_->remove_index(root, name));
-}
-
-void MasterServer::locate_index(RpcIndexLocationList& loc_list,  // NOLINT
-                                const RpcIndexLookupRequest& request) {
-  ThriftUtils::check_status(controller_->locate_index(request, &loc_list));
 }
 
 void MasterServer::locate_indices_for_search(

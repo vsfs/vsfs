@@ -45,6 +45,7 @@ using vobla::Status;
 
 namespace vsfs {
 
+class ClientMetadataTest;
 class ComplexQuery;
 
 using rpc::RpcClientFactoryInterface;
@@ -137,7 +138,7 @@ class VSFSRpcClient : public VSFSClient {
   Status info(const string& path, vector<index::IndexInfo>* infos);
 
  private:
-  FRIEND_TEST(ClientMetadataTest, TestCreateIndices);
+  FRIEND_TEST(ClientMetadataTest, TestLocateIndicesForSearch);
   FRIEND_TEST(VsfsRpcClientTest, TestGetParentPathToIndexPathMap);
   FRIEND_TEST(VsfsRpcClientTest, TestReorderRequests);
 
@@ -196,6 +197,9 @@ class VSFSRpcClient : public VSFSClient {
   Status sync_index_server_map();
 
   Status add_subfile(const string& filepath);
+
+  Status locate_index_for_search(const ComplexQuery& query,
+                                 vector<string>* indices);
 
   unique_ptr<MasterClientFactory> master_client_factory_;
 
