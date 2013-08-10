@@ -25,7 +25,6 @@
 #include "vobla/file.h"
 #include "vobla/status.h"
 #include "vobla/traits.h"
-#include "vsfs/common/hash_util.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/masterd/master_controller.h"
 #include "vsfs/masterd/mock_index_namespace.h"
