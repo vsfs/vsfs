@@ -32,7 +32,9 @@ class Status;
 
 namespace vsfs {
 
+class ComplexQuery;
 class RpcInvalidOp;
+class RpcComplexQuery;
 
 /**
  * \class ThriftUtils "vsfs/rpc/thrift_utils.h"
@@ -86,6 +88,9 @@ class ThriftUtils {
    * RpcInvalidOp and throw exception.
    */
   static void check_status(const vobla::Status& status);
+
+  static RpcComplexQuery complex_query_to_rpc_complex_query(
+      const ComplexQuery& query);
 
  private:
   DISALLOW_IMPLICIT_CONSTRUCTORS(ThriftUtils);

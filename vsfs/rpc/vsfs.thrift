@@ -73,7 +73,7 @@ typedef list<RpcRangeQuery> RpcRangeQueryList
 
 struct RpcComplexQuery {
   1: required i64 txn_id,
-  2: required string path_prefix,
+  2: required string root,
   3: required RpcRangeQueryList range_queries,
 }
 

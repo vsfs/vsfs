@@ -15,6 +15,7 @@
  */
 
 #include "vobla/status.h"
+#include "vsfs/common/complex_query.h"
 #include "vsfs/rpc/thrift_utils.h"
 #include "vsfs/rpc/vsfs_types.h"
 
@@ -33,6 +34,25 @@ void ThriftUtils::check_status(const Status& status) {
   if (!status.ok()) {
     throw ThriftUtils::status_to_rpc_invalid_op(status);
   }
+}
+
+RpcComplexQuery ThriftUtils::complex_query_to_rpc_complex_query(
+    const ComplexQuery& query) {
+  RpcComplexQuery result;
+  result.root = query.root();
+
+  auto range_names = query.get_names_of_range_queries();
+  for (const auto& name : range_names) {
+    auto range = query.range_query(name);
+    result.range_queries.emplace_back();
+    auto& rpc_query = result.range_queries.back();
+    rpc_query.name = name;
+    rpc_query.lower = range->lower;
+    rpc_query.lower_open = !range->lower_closed;
+    rpc_query.upper = range->upper;
+    rpc_query.upper_open = !range->upper_closed;
+  }
+  return result;
 }
 
 }  // namespace vsfs

@@ -28,6 +28,7 @@
 #include "vsfs/common/complex_query.h"
 #include "vsfs/common/hash_util.h"
 #include "vsfs/common/types.h"
+#include "vsfs/rpc/thrift_utils.h"
 #include "vsfs/rpc/vsfs_types.h"
 
 using apache::thrift::transport::TTransportException;
@@ -63,6 +64,16 @@ string get_index_full_path(const string& root, const string& name) {
 string get_partition_full_path(const string& root, const string& name,
                                FilePathHashType hash) {
   return root + "/.vsfs/" + name + "/" + to_string(hash);
+}
+
+RpcNodeAddress string_to_address(const string& addr_str) {
+  RpcNodeAddress result;
+  vector<string> fields;
+  boost::split(fields, addr_str, boost::is_any_of(":"));
+  CHECK_EQ(2u, fields.size());
+  result.host = fields[0];
+  result.port = stoi(fields[1]);
+  return result;
 }
 
 }  // namespace
@@ -520,8 +531,34 @@ Status VSFSRpcClient::remove_index(const string& root, const string& name) {
 
 Status VSFSRpcClient::search(const ComplexQuery& query,
                              vector<string>* results) {
-  (void) query;
   CHECK_NOTNULL(results);
+  SearchPlanMap plan;
+  auto status = gen_search_plan(query, &plan);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to generate search plan: " << status.message();
+    return status;
+  }
+
+  auto rpc_query = ThriftUtils::complex_query_to_rpc_complex_query(query);
+  vector<ObjectId> objects;
+  // TODO(lxu): use multithread to do parallel query.
+  for (const auto& addr_and_partitions : plan) {
+    auto address = string_to_address(addr_and_partitions.first);
+    try {
+      auto client = index_client_factory_->open(address);
+      for (const auto& part : addr_and_partitions.second) {
+        vector<ObjectId> tmp;
+        rpc_query.root = part;
+        client->handler()->search(tmp, rpc_query);
+        objects.insert(end(objects), begin(tmp), end(tmp));
+      }
+      index_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      return Status(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      return Status(e.getType(), e.what());
+    }
+  }
   return Status::OK;
 }
 
@@ -653,13 +690,10 @@ Status VSFSRpcClient::IndexUpdateTask::run() {
                 << " name: " << record_list.name;
       }
     }
-    vector<string> host_and_port;
-    boost::split(host_and_port, server_and_requests.first,
-                 boost::is_any_of(":"));
-    CHECK_EQ(2u, host_and_port.size());
+
+    auto address = string_to_address(server_and_requests.first);
     try {
-      auto index_conn = parent_->index_client_factory_->open(
-          host_and_port[0], std::stoi(host_and_port[1]));
+      auto index_conn = parent_->index_client_factory_->open(address);
       index_conn->handler()->update(update_request);
       parent_->index_client_factory_->close(index_conn);
     } catch (RpcInvalidOp ouch) {  // NOLINT
@@ -771,6 +805,26 @@ Status VSFSRpcClient::locate_index_for_search(const ComplexQuery& query,
       return status;
     }
     indices->insert(end(*indices), begin(results), end(results));
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::gen_search_plan(const ComplexQuery& query,
+                                      SearchPlanMap* plan) {
+  CHECK_NOTNULL(plan);
+  vector<string> indices;
+  auto status = locate_index_for_search(query, &indices);
+  if (!status.ok()) {
+    return status;
+  }
+  for (const auto& index_path : indices) {
+    // TODO(lxu): only support 1 partition now.
+    auto partition_path = index_path + "/0";
+    auto hash = HashUtil::file_path_to_hash(partition_path);
+    NodeInfo node;
+    CHECK(index_server_map_.get(hash, &node).ok());
+    auto addr = node.address.host + ":" + to_string(node.address.port);
+    (*plan)[addr].insert(partition_path);
   }
   return Status::OK;
 }

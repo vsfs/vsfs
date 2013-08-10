@@ -25,6 +25,7 @@
 #include <map>
 #include <memory>
 #include <mutex>  // NOLINT
+#include <set>
 #include <string>
 #include <vector>
 #include "vobla/thread_pool.h"
@@ -37,6 +38,7 @@
 #include "vsfs/rpc/rpc_client_factory.h"
 
 using std::map;
+using std::set;
 using std::string;
 using std::unique_ptr;
 using std::vector;
@@ -200,6 +202,12 @@ class VSFSRpcClient : public VSFSClient {
 
   Status locate_index_for_search(const ComplexQuery& query,
                                  vector<string>* indices);
+
+  /// map<address, set<partition path>>
+  typedef map<string, set<string>> SearchPlanMap;
+
+  /// Generates a search plan.
+  Status gen_search_plan(const ComplexQuery& query, SearchPlanMap* plan);
 
   unique_ptr<MasterClientFactory> master_client_factory_;
 
