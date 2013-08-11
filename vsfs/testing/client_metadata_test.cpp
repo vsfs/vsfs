@@ -26,12 +26,13 @@
 #include <gtest/gtest.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <algorithm>
 #include <memory>
+#include <set>
 #include <stack>
 #include <string>
 #include <thread>
 #include <vector>
-#include <set>
 #include "vobla/traits.h"
 #include "vobla/file.h"
 #include "vsfs/client/vsfs_rpc_client.h"
@@ -148,6 +149,42 @@ TEST_F(ClientMetadataTest, TestLocateIndicesForSearch) {
   vector<string> actual_indices;
   EXPECT_TRUE(client_->locate_index_for_search(query, &actual_indices).ok());
   EXPECT_THAT(actual_indices, ContainerEq(expected_indices));
+}
+
+TEST_F(ClientMetadataTest, TestSearchSuccess) {
+  start(4, 4);
+  create_index("/foo/bar", "dog");
+  create_directories("/foo/bar/zoo");
+  create_directories("/foo/bar/dogs");
+  create_directories("/foo/bar/cat");
+
+  for (int i = 0; i < 100; i++) {
+    ObjectId oid;
+    client_->create("/foo/bar/zoo/zoo" + to_string(i), 0644, 100, 100, &oid);
+    client_->create("/foo/bar/dogs/dog" + to_string(i), 0644, 100, 100, &oid);
+    client_->create("/foo/bar/cat/cat" + to_string(i), 0644, 100, 100, &oid);
+  }
+
+  vector<VSFSRpcClient::IndexUpdateRequest> requests;
+  for (int i = 0; i < 100; i++) {
+    requests.emplace_back(VSFSRpcClient::IndexUpdateRequest::INSERT,
+                          "/foo/bar/dogs/dog" + to_string(i),
+                          "dog",
+                          to_string(i));
+  }
+  EXPECT_TRUE(client_->update(requests).ok());
+
+  vector<string> expected_files;
+  for (int i = 51; i < 100; i++) {
+    expected_files.push_back("/foo/bar/dogs/dog" + to_string(i));
+  }
+
+  ComplexQuery query;
+  query.parse("/foo?dog>50");
+  vector<string> actual_files;
+  EXPECT_TRUE(client_->search(query, &actual_files).ok());
+  std::sort(actual_files.begin(), actual_files.end());
+  EXPECT_THAT(actual_files, ContainerEq(expected_files));
 }
 
 }  // namespace client

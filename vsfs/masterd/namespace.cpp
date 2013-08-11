@@ -107,6 +107,21 @@ Status Namespace::file_path(ObjectId oid, string *path) {
   return Status::OK;
 }
 
+void Namespace::find_objects(const vector<string>& paths,
+                             vector<ObjectId>* object_ids) {
+  CHECK_NOTNULL(object_ids);
+  object_ids->reserve(paths.size());
+  MutexGuard guard(mutex_);
+  for (const auto& path : paths) {
+    auto it = metadata_map_.find(path);
+    if (it == metadata_map_.end()) {
+      object_ids->push_back(0);
+    } else {
+      object_ids->push_back(it->second.object_id);
+    }
+  }
+}
+
 Status Namespace::find_files(const vector<ObjectId>& object_ids,
                              vector<string>* paths) {
   CHECK_NOTNULL(paths);
@@ -323,7 +338,10 @@ ObjectId Namespace::get_object_id(const string &path) {
 
   // Object id is the first 16 bits from hash value and the last 48 bits from
   // the assigned obj id.
-  ObjectId obj_id = (hash_value & 0xFF000000) + (next_obj_id_ & 0x00FFFFFF);
+  const int kPrefixLen = 16;
+  ObjectId obj_id = (hash_value & (((1LL << kPrefixLen) - 1)
+                                   << (64 - kPrefixLen))) |
+                    (next_obj_id_ & ((1LL << (64 - kPrefixLen)) - 1));
   next_obj_id_++;
   return obj_id;
 }
