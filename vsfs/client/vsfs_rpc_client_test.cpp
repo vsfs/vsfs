@@ -193,6 +193,8 @@ TEST_F(VsfsRpcClientTest, TestUpdateIndex) {
       .WillOnce(Throw(ouch));
   EXPECT_CALL(*mock_master_, getattr(_, "/foo/some/test/.vsfs/blue"))
       .WillOnce(SetArgReferee<0>(info));
+  EXPECT_CALL(*mock_master_, find_objects(_, _))
+      .WillOnce(SetArgReferee<0>(vector<ObjectId>({1, 2, 3})));
 
   EXPECT_CALL(*mock_index_, update(_)).Times(2);
   EXPECT_TRUE(test_client_->update(requests).ok());
@@ -254,9 +256,9 @@ TEST_F(VsfsRpcClientTest, TestReorderRequests) {
   EXPECT_TRUE(task.reorder_requests_to_index_servers(index_map,
                                                      &request_map).ok());
   IndexUpdateTask::ServerToRequestMap expected_map;
-  expected_map["localhost:12001"]["/foo/bar/.vsfs/dog"].push_back(&requests[0]);
-  expected_map["localhost:12001"]["/foo/bar/.vsfs/dog"].push_back(&requests[1]);
-  expected_map["localhost:12002"]["/foo/bar/.vsfs/cat"].push_back(&requests[2]);
+  expected_map["localhost:12001"]["/foo/bar/.vsfs/dog/0"].push_back(0);
+  expected_map["localhost:12001"]["/foo/bar/.vsfs/dog/0"].push_back(1);
+  expected_map["localhost:12002"]["/foo/bar/.vsfs/cat/0"].push_back(2);
   EXPECT_THAT(request_map, ContainerEq(expected_map));
 }
 

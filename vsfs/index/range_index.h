@@ -129,7 +129,7 @@ class RangeIndexInterface {
   template <typename K>
   void search(const vobla::Range<K>& range, FileIdVector *results);
 
-  // virtual Status search(const RpcRangeQuery &query, FileIdVector *results) = 0; // NOLINT
+  virtual Status search(const RpcRangeQuery &query, FileIdVector *results) = 0; // NOLINT
 
   virtual int key_type() const = 0;
 
@@ -278,7 +278,6 @@ class RangeIndex : public RangeIndexInterface {
     return Status::OK;
   }
 
-  /*
   Status search(const RpcRangeQuery &query, FileIdVector* results) {
     CHECK_NOTNULL(results);
     KeyType lower = std::numeric_limits<KeyType>::min();
@@ -298,7 +297,6 @@ class RangeIndex : public RangeIndexInterface {
                  results);
     return Status::OK;
   }
-  */
 
   /**
    * \brief Search files of which the keys fall into the key range [low, upper]
