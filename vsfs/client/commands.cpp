@@ -33,6 +33,7 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <unordered_map>
 #include <vector>
 #include "vobla/stl_util.h"
 #include "vobla/status.h"
@@ -70,6 +71,119 @@ DEFINE_string(master_host, "localhost", "Sets the default master host.");
 DEFINE_int32(master_port, 9876, "Sets the master node port.");
 DEFINE_int64(batch_size, 10000, "Set the default number of batch requests.");
 
+/**
+ * \class IndexCommand
+ * \brief Provides an indexing interface to command line.
+ */
+class IndexCommand : public Command {
+ public:
+  IndexCommand();
+
+  int parse_args(int argc, char* const argv[]);
+
+  /// Prints the detailed help for "index" command.
+  void print_help() const;
+
+  Status run();
+
+ private:
+  /**
+   * \brief A hash mapping from the file name to a vector of indexing keys.
+   *
+   * E.g. <file name, [key0, key1, key2, ...]>
+   */
+  typedef unordered_map<string, vector<string>> IndexDataMap;
+
+  enum IndexOp {
+    /// Adds to an index entry
+    ADD = 1,
+    /// Updates an index entry.
+    UPDATE,
+    /// Deletes from an index entry.
+    DELETE
+  };
+
+  enum Operation {
+    /// Updates on an existing index.
+    INDEX = 1,
+    /// Creates a named index.
+    CREATE_INDEX,
+    /// Deletes a named index.
+    DELETE_INDEX,
+    /// Queries the information of the named index.
+    INFO
+  };
+
+  /// Prints out examples of usage.
+  void show_examples() const;
+
+  Status create_index();
+
+  Status update_index();
+
+  string index_root_;
+
+  /// The name of named index.
+  string index_name_;
+
+  /// Set to true to use stdin to feed.
+  bool use_stdin_;
+
+  /// Operations.
+  int operation_;
+
+  /// Operations on index.
+  int index_op_;
+
+  /// The data structure type of index. (e.g., btree or hash).
+  int index_type_;
+
+  /// The type of the key of index. (e.g., int32, float or string).
+  int key_type_;
+
+  IndexDataMap index_data_;
+};
+
+/**
+ * \class SearchCommand
+ * \brief Search files according to the complex query.
+ */
+class SearchCommand : public Command {
+ public:
+  int parse_args(int argc, char* const argv[]);
+
+  /// Print detailed help for "search" command.
+  void print_help() const;
+
+  /// Run search function.
+  Status run();
+
+ private:
+  string query_;
+  double master_time_;
+  double nodes_time_;
+};
+
+/**
+ * \class InfoCommand
+ * \brief Query the information of various aspects of VSFS.
+ */
+class InfoCommand : public Command {
+ public:
+  InfoCommand();
+
+  int parse_args(int argc, char* const argv[]);
+
+  void print_help() const;
+
+  Status run();
+
+ private:
+  bool recursive_;
+
+  vector<string> dirs_;
+};
+
 Command* Command::create_command(const string &subcmd) {
   if (subcmd == "help" || subcmd == "-h" || subcmd == "--help") {
     return new HelpCommand;
@@ -82,7 +196,7 @@ Command* Command::create_command(const string &subcmd) {
   }
   fprintf(stderr, "Error: Unknown command: %s\n", subcmd.c_str());
   HelpCommand::usage();
-  return NULL;
+  return nullptr;
 }
 
 Command::Command() : host_(FLAGS_master_host), port_(FLAGS_master_port),
@@ -91,10 +205,6 @@ Command::Command() : host_(FLAGS_master_host), port_(FLAGS_master_port),
 }
 
 Command::~Command() {
-}
-
-void Command::init_master_client() {
-  master_client_.reset(new MasterClientType(host_, port_));
 }
 
 void Command::set_verbose_level(const char* level) {
@@ -117,7 +227,7 @@ int HelpCommand::parse_args(int argc, char* const argv[]) {
 }
 
 void HelpCommand::print_help() const {
-  fprintf(stderr, "Usage: vsfsutil {-h|--help} command [options] [ARGS]\n");
+  fprintf(stderr, "Usage: vsfs {-h|--help} command [options] [ARGS]\n");
   fprintf(stderr, "Global Options:\n"
           "  -h, --help\t\tdisplay this help information.\n"
           "Supported Commands\n"
@@ -189,7 +299,7 @@ int SearchCommand::parse_args(int argc, char* const argv[]) {
 }
 
 void SearchCommand::print_help() const {
-  fprintf(stderr, "Usage: vsfsutil search [options] QUERY\n");
+  fprintf(stderr, "Usage: vsfs search [options] QUERY\n");
   fprintf(stderr, "Options:\n"
           "  -h, --help\t\t\tdisplay this help information.\n"
           "  -d, --debug\t\t\trun in debug mode.\n"
@@ -203,11 +313,8 @@ void SearchCommand::print_help() const {
 
 Status SearchCommand::run() {
   VLOG(1) << "SearchCommand::run: Issue query to master: " << query_.c_str();
-  init_master_client();
-
-  Status status;
   ComplexQuery query;
-  query.parse(query_);
+  auto status = query.parse(query_);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to parse command line query: " << query_;
     return status;
@@ -217,7 +324,7 @@ Status SearchCommand::run() {
   status = client.init();
   if (!status.ok()) {
     LOG(ERROR) << "Failed to init connection to master node: "
-        << status.message();
+               << status.message();
     return status;
   }
 
@@ -228,7 +335,6 @@ Status SearchCommand::run() {
   }
   return Status::OK;
 }
-
 
 // ----------- IndexCommand ------------
 IndexCommand::IndexCommand()
@@ -358,11 +464,11 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
 }
 
 void IndexCommand::print_help() const {
-  fprintf(stderr, "Usage: vsfsutil index [options] [[FILE KEY], ...]\n");
+  fprintf(stderr, "Usage: vsfs index [options] [[FILE KEY], ...]\n");
   fprintf(stderr, "Options:\n"
           "  -h, --help\t\t\tShow this help.\n"
           "  --debug\t\t\tRun in debug mode.\n"
-          "  -v,--verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
+          "  -v, --verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
           "  --examples\t\t\tShow some examples of the usage.\n"
           "  -H, --host\t\t\tSet the master address.\n"
           "  -p, --port\t\t\tSet the master port.\n"
@@ -390,14 +496,14 @@ Status IndexCommand::run() {
 }
 
 void IndexCommand::show_examples() const {
-  fprintf(stderr, "Usage: vsfsutil index [options] [FILE...]\n");
+  fprintf(stderr, "Usage: vsfs index [options] [FILE...]\n");
   fprintf(stderr, "\nSome examples of VSFS index usage:\n"
           " * Creates an index:\n"
-          "   $ vsfsutil index --create --name energy --index-type btree "
+          "   $ vsfs index --create --name energy --index-type btree "
           "--key-type float /home/john\n"
           "\n"
           " * Updates 'symbol' index for a single file:\n\n"
-          "   $ vsfsutil index -n symbol /foo/bar/main.cpp awesome_func\n"
+          "   $ vsfs index -n symbol /foo/bar/main.cpp awesome_func\n"
           "");
 }
 
@@ -498,7 +604,7 @@ InfoCommand::InfoCommand() : recursive_(false) {
 }
 
 void InfoCommand::print_help() const {
-  fprintf(stderr, "Usage: vsfsutil info [options] PATH...\n"
+  fprintf(stderr, "Usage: vsfs info [options] PATH...\n"
           "Options:\n"
           "  -h, --help\t\t\tdisplay this help information.\n"
           "  -r, --recursive\t\tshow all indices recursively.\n"
