@@ -258,7 +258,7 @@ TEST_F(VsfsRpcClientTest, TestReorderRequests) {
   IndexUpdateTask::ServerToRequestMap expected_map;
   expected_map["localhost:12001"]["/foo/bar/.vsfs/dog/0"].push_back(0);
   expected_map["localhost:12001"]["/foo/bar/.vsfs/dog/0"].push_back(1);
-  expected_map["localhost:12003"]["/foo/bar/.vsfs/cat/0"].push_back(2);
+  expected_map["localhost:12002"]["/foo/bar/.vsfs/cat/0"].push_back(2);
   EXPECT_THAT(request_map, ContainerEq(expected_map));
 }
 
