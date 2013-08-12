@@ -11,11 +11,11 @@ LDADD = libvsfs-client.a \
 	-lvobla -lcrypto -lgtest -lgtest_main -lgmock
 
 vsfs_SOURCES = \
-  vsfs.cpp \
-  commands.h commands.cpp
+  vsfs.cpp
 
 libvsfs_client_a_SOURCES = \
   vsfs_client.h \
+  commands.h commands.cpp \
   vsfs_rpc_client.cpp vsfs_rpc_client.h
 
 TESTS = vsfs_rpc_client_test
