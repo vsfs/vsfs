@@ -20,11 +20,13 @@ libvsfs_testing_a_SOURCES = \
   local_vsfs_cluster.h
 
 TESTS = \
-  client_metadata_test
+  client_metadata_test \
+  command_test
 
 noinst_PROGRAMS = $(TESTS)
 
 client_metadata_test_SOURCES = client_metadata_test.cpp
+command_test_SOURCES = command_test.cpp
 
 test: integration-test
 

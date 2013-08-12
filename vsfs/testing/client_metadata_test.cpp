@@ -31,7 +31,6 @@
 #include <set>
 #include <stack>
 #include <string>
-#include <thread>
 #include <vector>
 #include "vobla/traits.h"
 #include "vobla/file.h"
@@ -43,7 +42,6 @@
 using ::testing::ContainerEq;
 using std::set;
 using std::stack;
-using std::thread;
 using std::to_string;
 using std::unique_ptr;
 using std::vector;
