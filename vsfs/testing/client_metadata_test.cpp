@@ -121,6 +121,22 @@ TEST_F(ClientMetadataTest, TestMakeDirs) {
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
 }
 
+TEST_F(ClientMetadataTest, TestCreateUTF8FileNames) {
+  start(1, 1);
+  create_directories("/test");
+  for (int i = 0; i < 5; i++) {
+    ObjectId oid;
+    EXPECT_TRUE(client_->create("/test/测试" + to_string(i),
+                                0755, 100, 100, &oid).ok());
+  }
+  vector<string> files;
+  EXPECT_TRUE(client_->readdir("/test", &files).ok());
+  EXPECT_EQ(5u, files.size());
+  for (const auto& chn_file : files) {
+    LOG(INFO) << "Chinese filename: " << chn_file;
+  }
+}
+
 TEST_F(ClientMetadataTest, TestCreateIndices) {
   start(4, 1);
   create_directories("/foo/bar/test");
