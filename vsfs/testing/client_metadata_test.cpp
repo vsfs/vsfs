@@ -144,10 +144,13 @@ TEST_F(ClientMetadataTest, TestCreateIndices) {
 
   EXPECT_TRUE(client_->create_index("/foo/bar", "blue", IndexInfo::BTREE,
                                   INT32, 0755, 100, 100).ok());
+  EXPECT_TRUE(client_->create_index("/foo/bar", "蓝色", IndexInfo::BTREE,
+                                    INT32, 0755, 100, 100).ok());
   EXPECT_TRUE(client_->create_index("/foo/bar/zoo", "blue", IndexInfo::BTREE,
                                   INT32, 0755, 100, 100).ok());
   struct stat stbuf;
   EXPECT_TRUE(client_->getattr("/foo/bar/.vsfs/blue", &stbuf).ok());
+  EXPECT_TRUE(client_->getattr("/foo/bar/.vsfs/蓝色", &stbuf).ok());
   EXPECT_TRUE(client_->getattr("/foo/bar/zoo/.vsfs/blue", &stbuf).ok());
 }
 
@@ -201,6 +204,32 @@ TEST_F(ClientMetadataTest, TestSearchSuccess) {
   EXPECT_TRUE(client_->search(query, &actual_files).ok());
   std::sort(actual_files.begin(), actual_files.end());
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
+}
+
+TEST_F(ClientMetadataTest, TestSearchUTF8Indices) {
+  start(2, 2);
+  create_index("/foo/bar", "测试");
+  create_directories("/foo/bar/dog");
+  for (int i = 0; i < 100; i++) {
+    ObjectId oid;
+    client_->create("/foo/bar/dog/dog" + to_string(i), 0644, 100, 100, &oid);
+  }
+
+  vector<VSFSRpcClient::IndexUpdateRequest> requests;
+  for (int i = 0; i < 100; i++) {
+    requests.emplace_back(VSFSRpcClient::IndexUpdateRequest::INSERT,
+                          "/foo/bar/dog/dog" + to_string(i),
+                          "测试",
+                          to_string(i));
+  }
+  LOG(INFO) << "Update request;";
+  EXPECT_TRUE(client_->update(requests).ok());
+
+  ComplexQuery query;
+  EXPECT_TRUE(query.parse("/foo?测试>50").ok());
+  vector<string> actual_files;
+  EXPECT_TRUE(client_->search(query, &actual_files).ok());
+  EXPECT_EQ(49u, actual_files.size());
 }
 
 }  // namespace client
