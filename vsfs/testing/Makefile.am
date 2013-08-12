@@ -23,7 +23,7 @@ INTEGRATION_TESTS = \
   client_metadata_test \
   command_test
 
-noinst_PROGRAMS = $(TESTS)
+noinst_PROGRAMS = $(INTEGRATION_TESTS)
 
 client_metadata_test_SOURCES = client_metadata_test.cpp
 command_test_SOURCES = command_test.cpp
