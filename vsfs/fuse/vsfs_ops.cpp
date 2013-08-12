@@ -37,6 +37,7 @@
 #include <vector>
 #include "vobla/status.h"
 #include "vsfs/common/complex_query.h"
+#include "vsfs/common/file_handler.h"
 #include "vsfs/common/file_object.h"
 #include "vsfs/common/posix_path.h"
 #include "vsfs/common/posix_storage_manager.h"
@@ -102,6 +103,15 @@ string VsfsFuse::abspath(const string &vsfs_path) const {
 
 string VsfsFuse::mnt_path(const string &vsfs_path) const {
   return (fs::path(mount_point_) / vsfs_path).string();
+}
+
+void VsfsFuse::add_obj(uint64_t fd, FileObject* file_obj) {
+}
+
+void VsfsFuse::remove_obj(uint64_t fd) {
+}
+
+void VsfsFuse::get_obj(uint64_t fd, FileObject* file_obj) {
 }
 
 // VSFS Operations
@@ -270,7 +280,6 @@ int vsfs_rmdir(const char* path) {
 }
 
 int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
-  // TODO(lxu): use StorageManager.
   string abspath = VsfsFuse::instance()->abspath(path);
   ObjectId oid;
   Status status = vsfs->client()->create(path, mode, getuid(), getgid(), &oid);
@@ -278,8 +287,15 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
     LOG(ERROR) << "Failed to create file: " << status.message();
     return status.error();
   }
-  // TODO(lxu): Use StorageManager to open a FileObject.
-  int fd = open(abspath.c_str(), fi->flags | O_CREAT, mode);
+  // TODO(ziling): Add mode to open.
+  FileObject file_obj =
+      VsfsFuse::instance()->storage_manager()->open(abspath.c_str(),
+                                                    fi->flags | O_CREAT);
+
+  int fd = file_obj.file_handler()->objectId();
+
+  VsfsFuse::instance()->add_obj(fd, &file_obj);
+
   if (fd == -1) {
     LOG(ERROR) << strerror(errno);
     return -errno;

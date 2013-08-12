@@ -25,6 +25,7 @@
 #include <string>
 #include <thread>  // NOLINT
 #include "vobla/macros.h"
+#include "vsfs/common/file_object.h"
 #include "vsfs/common/storage_manager.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 
@@ -92,6 +93,12 @@ class VsfsFuse : boost::noncopyable {
     return client_.get();
   }
 
+  void add_obj(uint64_t fd, FileObject* file_obj);
+
+  void remove_obj(uint64_t fd);
+
+  void get_obj(uint64_t fd, FileObject* file_obj);
+
  private:
   VsfsFuse(const string &basedir, const string &mount_point,
            const string &host, int port);
@@ -109,6 +116,8 @@ class VsfsFuse : boost::noncopyable {
   unique_ptr<StorageManager> storage_manager_;
 
   unique_ptr<client::VSFSRpcClient> client_;
+
+  std::map<uint64_t, unique_ptr<FileObject>> fh_to_obj_map_;
 };
 
 // VSFS operations
