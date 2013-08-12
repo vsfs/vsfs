@@ -129,14 +129,6 @@ struct RpcIndexCreateRequest {
   7: required i64 gid,
 }
 
-struct RpcIndexLocation {
-  1: required string full_index_path,
-  2: required RpcNodeAddress server_addr,
-  3: required list<i64> file_ids
-}
-
-typedef list<RpcIndexLocation> RpcIndexLocationList
-
 /**
  * \brief Describes a Consistent Hash Ring for all the partitions of one index.
  */
@@ -194,7 +186,6 @@ struct RpcIndexInfo {
   2: required string name,
   3: required i32 type,  // index type
   4: required i32 key_type,
-  5: required RpcIndexLocationList locations,
   6: required i64 num_records,  // Number of records.
 }
 
