@@ -84,13 +84,6 @@ struct RpcIndexName {
   2: required string name,
 }
 
-struct RpcIndexKeyValue {
-  1: required string root_path,
-  2: required string name,
-  3: required string key,
-  4: optional string value,
-}
-
 // The operations on index records.
 enum RpcIndexUpdateOpCode {
   UNKNOWN,
@@ -139,37 +132,6 @@ struct RpcIndexPartitionRing {
 }
 
 typedef list<RpcIndexPartitionRing> RpcIndexPartitionRingList
-
-struct RpcMetaLocation {
-  1: required i64 file_id,
-  2: required RpcNodeAddress server_addr,
-}
-
-typedef list<RpcMetaLocation> RpcMetaLocationList
-
-struct RpcMetaData {
-  1: required i64 file_id,
-  2: required string file_path;
-}
-
-typedef list<RpcMetaData> RpcMetaDataList
-
-/**
- * \brief Lookup request for index.
- *
- * It works in two ways:
- *  - No cached (cached = false), the optional field `dir_to_file_id_map` is
- *    used. This field is a map between "dir names" -> "vector<hash(file
- *    path)>".
- *  - Cached (cached = true), only 'dirs' is set. The 'dirs' is the common
-*     directories used by all files to index.
- */
-struct RpcIndexLookupRequest {
-  1: required string name,  // Index name
-  2: required bool cached,
-  3: optional map<string, list<i64>> dir_to_file_id_map,
-  4: optional list<string> dirs;
-}
 
 struct RpcIndexInfoRequest {
   1: required i64 txn_id,
