@@ -456,7 +456,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
   }
   if (!S_ISDIR(stbuf.st_mode)) {
     LOG(ERROR) << "Can not create index on an non-dir path.";
-    return Status::system_error(-ENOTDIR);
+    return Status::system_error(ENOTDIR);
   }
 
   string partition_path = PathUtil::partition_path(root, name, 0);
