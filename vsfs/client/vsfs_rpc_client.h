@@ -127,6 +127,8 @@ class VSFSRpcClient : public VSFSClient {
 
   Status chmod(const string& path, mode_t mode);
 
+  Status chown(const string& path, int64_t uid, int64_t gid);
+
   Status create_index(const string& index_path,
                       const string& index_name,
                       int index_type, int key_type,

@@ -384,21 +384,18 @@ Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   CHECK_NOTNULL(stbuf);
   NodeInfo node;
   CHECK(master_map_.get(path, &node).ok());
-  LOG(INFO) << "ATTR GET MAP." << node.address.host << ":" << node.address.port;
   RpcFileInfo file_info;
   try {
     auto client = master_client_factory_->open(node.address);
     client->handler()->getattr(file_info, path);
     master_client_factory_->close(client);
   } catch (RpcInvalidOp ouch) {  // NOLINT
-    LOG(ERROR) << "Ouch: " << ouch.why;
     return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     LOG(ERROR) << "Thrift Transport Exception: (" << e.getType() << "): "
                << e.what();
     return Status(e.getType(), e.what());
   }
-  LOG(INFO) << "GET ATTR SUCCESS.";
   stbuf->st_mode = file_info.mode;
   stbuf->st_size = file_info.size;
   stbuf->st_uid = file_info.uid;
@@ -430,6 +427,13 @@ Status VSFSRpcClient::setattr(const string& path, const RpcFileInfo& info) {
 Status VSFSRpcClient::chmod(const string& path, mode_t mode) {
   RpcFileInfo file_info;
   file_info.__set_mode(mode);
+  return setattr(path, file_info);
+}
+
+Status VSFSRpcClient::chown(const string& path, int64_t uid, int64_t gid) {
+  RpcFileInfo file_info;
+  file_info.__set_uid(uid);
+  file_info.__set_gid(gid);
   return setattr(path, file_info);
 }
 

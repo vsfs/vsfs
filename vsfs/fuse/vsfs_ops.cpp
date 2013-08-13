@@ -188,8 +188,7 @@ int vsfs_chmod(const char* path, mode_t mode) {
 }
 
 int vsfs_chown(const char* path, uid_t uid, gid_t gid) {
-  string abspath = VsfsFuse::instance()->abspath(path);
-  return chown(abspath.c_str(), uid, gid);
+  return VsfsFuse::instance()->client()->chown(path, uid, gid).error();
 }
 
 int vsfs_truncate(const char* path, off_t offset) {
