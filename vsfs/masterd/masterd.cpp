@@ -65,6 +65,11 @@ int main(int argc, char *argv[]) {
 
   controller.reset(new MasterController(FLAGS_dir, "", FLAGS_port,
                                         FLAGS_primary));
+  auto status = controller->init();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to open metadata db: " << status.message();
+    return status.error();
+  }
   controller->start();
   return 0;
 }

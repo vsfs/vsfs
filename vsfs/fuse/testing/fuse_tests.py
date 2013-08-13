@@ -26,12 +26,11 @@ import unittest
 
 CWD = os.path.dirname(__file__)
 MASTERD = os.path.join(CWD, os.pardir, os.pardir, 'masterd', 'masterd')
-INDEXD = os.path.join(CWD, os.pardir, os.pardir, 'index_server', 'indexd')
-METAD = os.path.join(CWD, os.pardir, os.pardir, 'meta_server', 'metad')
-VSFSUTIL = os.path.join(CWD, os.pardir, os.pardir, 'client', 'vsfsutil')
+INDEXD = os.path.join(CWD, os.pardir, os.pardir, 'indexd', 'indexd')
+VSFSUTIL = os.path.join(CWD, os.pardir, os.pardir, 'client', 'vsfs')
 
 
-class FileOperationTests(unittest.TestCase):
+class FuseTests(unittest.TestCase):
     def setUp(self):
         script_dir = os.path.dirname(__file__)
         self.base_dir = tempfile.mkdtemp()
@@ -43,12 +42,10 @@ class FileOperationTests(unittest.TestCase):
         os.makedirs(self.index_server_dir1)
         self.index_server_dir2 = os.path.join(self.base_dir, '2')
         os.makedirs(self.index_server_dir2)
-        self.meta_server_dir = os.path.join(self.base_dir, 'meta')
-        os.makedirs(self.meta_server_dir)
         self.mount_dir = tempfile.mkdtemp()
 
         self.masterd_proc = subprocess.Popen(
-            [MASTERD, '-dir', self.masterd_dir])
+            [MASTERD, '-primary', '-dir', self.masterd_dir])
         self.index_server_proc1 = subprocess.Popen(
             [INDEXD, '-datadir', self.index_server_dir1,
              '-master_addr', 'localhost', '-port', '10011'])
@@ -56,22 +53,17 @@ class FileOperationTests(unittest.TestCase):
             [INDEXD, '-datadir', self.index_server_dir2,
              '-master_addr', 'localhost', '-port', '10012'])
         time.sleep(0.5)
-        self.meta_server_proc = subprocess.Popen(
-            [METAD, '-datadir', self.meta_server_dir,
-             '-master_addr', 'localhost', '-port', '10020'])
 
         # TODO(lxu): scans the output of each server to determine whether it is
         # fully started.
         time.sleep(5)
-        subprocess.check_call('%s/../vsfs -b %s -H localhost %s' %
+        subprocess.check_call('%s/../mount.vsfs -b %s -H localhost %s' %
                               (script_dir, self.base_dir, self.mount_dir),
                               shell=True)
         time.sleep(1)
 
     def tearDown(self):
         os.system('fusermount -u %s' % self.mount_dir)
-        self.meta_server_proc.terminate()
-        self.meta_server_proc.wait()
         self.index_server_proc1.terminate()
         self.index_server_proc1.wait()
         self.index_server_proc2.terminate()
