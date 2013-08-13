@@ -7,6 +7,6 @@ rpc:
 integration-test:
 	$(MAKE) -C masterd $@
 	$(MAKE) -C testing $@
-	$(MAKE) -C fuse $@
+#	$(MAKE) -C fuse $@
 
 .PHONY: rpc integratio-test
