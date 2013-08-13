@@ -106,12 +106,15 @@ string VsfsFuse::mnt_path(const string &vsfs_path) const {
 }
 
 void VsfsFuse::add_obj(uint64_t fd, FileObject* file_obj) {
+  fh_to_obj_map_[fd].reset(file_obj);
 }
 
 void VsfsFuse::remove_obj(uint64_t fd) {
+  fh_to_obj_map_.erase(fd);
 }
 
-void VsfsFuse::get_obj(uint64_t fd, FileObject* file_obj) {
+FileObject* VsfsFuse::get_obj(uint64_t fd) {
+  return fh_to_obj_map_[fd].get();
 }
 
 // VSFS Operations
@@ -291,11 +294,8 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
   FileObject file_obj =
       VsfsFuse::instance()->storage_manager()->open(abspath.c_str(),
                                                     fi->flags | O_CREAT);
-
   int fd = file_obj.file_handler()->objectId();
-
   VsfsFuse::instance()->add_obj(fd, &file_obj);
-
   if (fd == -1) {
     LOG(ERROR) << strerror(errno);
     return -errno;
@@ -306,7 +306,11 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
 
 int vsfs_open(const char* path, struct fuse_file_info *fi) {
   string abspath = VsfsFuse::instance()->abspath(path);
-  int fd = open(abspath.c_str(), fi->flags);
+  FileObject file_obj =
+      VsfsFuse::instance()->storage_manager()->open(abspath.c_str(),
+                                                    fi->flags | O_CREAT);
+  int fd = file_obj.file_handler()->objectId();
+  VsfsFuse::instance()->add_obj(fd, &file_obj);
   if (fd == -1) {
     LOG(ERROR) << "Failed to open file: " << path << ": " << strerror(errno);
     return -errno;
@@ -331,12 +335,19 @@ int vsfs_unlink(const char* path) {
 }
 
 int vsfs_release(const char* path, struct fuse_file_info *fi) {
-  (void) path;
-  int ret = 0;
   if (fi->fh) {
-    ret = close(fi->fh);
+    FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
+    Status status =
+        VsfsFuse::instance()->storage_manager()->close(
+            file_obj->file_handler());
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to release file: " << path << ": "
+                 << status.message();
+      return status.error();
+    }
+    VsfsFuse::instance()->remove_obj(fi->fh);
   }
-  return ret ? -errno : 0;
+  return 0;
 }
 
 int vsfs_readlink(const char* path, char *buf, size_t size) {
@@ -365,7 +376,10 @@ int vsfs_readlink(const char* path, char *buf, size_t size) {
 
 int vsfs_read(const char*, char *buf, size_t size, off_t offset,
               struct fuse_file_info* fi) {
-  ssize_t nread = pread(fi->fh, buf, size, offset);
+  FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
+  ssize_t nread =
+       VsfsFuse::instance()->storage_manager()->read(
+           file_obj->file_handler(), buf, size, offset);
   if (nread == -1) {
     LOG(ERROR) << "VSFS_READ ERROR: " <<  strerror(errno);
     return -errno;
@@ -375,8 +389,10 @@ int vsfs_read(const char*, char *buf, size_t size, off_t offset,
 
 int vsfs_write(const char*, const char* buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
-  ssize_t nwrite = 0;
-  nwrite = pwrite(fi->fh, buf, size, offset);
+  FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
+  ssize_t nwrite =
+       VsfsFuse::instance()->storage_manager()->write(
+           file_obj->file_handler(), buf, size, offset);
   if (nwrite == -1) {
     LOG(ERROR) << strerror(errno);
     return -errno;
@@ -411,7 +427,10 @@ int vsfs_write_buf(const char* , struct fuse_bufvec *buf, off_t off,
   ssize_t nwrite = 0;
   ssize_t total_write = 0;
   for (size_t i = 0; i < buf->count; i++) {
-    nwrite = pwrite(fi->fh, buf->buf[i].mem, buf->buf[i].size, off);
+  FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
+  nwrite =
+      VsfsFuse::instance()->storage_manager()->write(
+          file_obj->file_handler(), buf->buf[i].mem, buf->buf[i].size, off);
     if (nwrite == -1) {
       return -errno;
     }
