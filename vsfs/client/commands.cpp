@@ -117,6 +117,8 @@ class IndexCommand : public Command {
 
   Status create_index();
 
+  Status remove_index();
+
   Status update_index();
 
   string index_root_;
@@ -473,7 +475,8 @@ void IndexCommand::print_help() const {
           "  --examples\t\t\tShow some examples of the usage.\n"
           "  -H, --host\t\t\tSet the master address.\n"
           "  -p, --port\t\t\tSet the master port.\n"
-          "  -c, --create\t\t\tCreate a named index.\n"
+          "  -c, --create\t\t\tCreate an index.\n"
+          "  -d, --delete\t\t\tDelete an index.\n"
           "  --info\t\t\tShow the information of the named index.\n"
           "  -s, --stdin\t\t\tRead indexing metadata from stdin.\n"
           "  -n, --name NAME\t\tSet the name of index to feed.\n"
@@ -482,7 +485,7 @@ void IndexCommand::print_help() const {
           "  -k, --key TYPE\t\tSet the key type ({u}int{8,16,32,64}, "
           "float, double, string).\n"
           "\t\t\t\tOnly be used when --create is set.\n"
-          "  -b, --batch NUM\t\tSets the batch size to send records.\n"
+          "  -b, --batch NUM\t\tSet the batch size to send records.\n"
           "  --profile [masterd,indexd]\tSet to profile operation.\n"
           "");
 }
