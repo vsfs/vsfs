@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include "vobla/map_util.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/masterd/index_namespace.h"
@@ -191,6 +192,29 @@ vector<string> IndexNamespace::collect(const string &root, const string &name) {
     ++iter;
   }
   return indices;
+}
+
+vector<string> IndexNamespace::get_indices(const string& root, bool recursive) {
+  vector<string> results;
+  MutexGuard guard(lock_);
+  if (recursive) {
+    auto iter = nodes_.lower_bound(root);
+    while (iter != nodes_.end()) {
+      const string& path = iter->first;
+      if (!boost::algorithm::starts_with(path, root)) {
+        break;
+      }
+      for (const auto& name : iter->second->names) {
+        results.push_back(PathUtil::index_path(path, name));
+      }
+    }
+  } else {
+    auto names = get_index_names(root);
+    for (const auto& name : names) {
+      results.push_back(PathUtil::index_path(root, name));
+    }
+  }
+  return results;
 }
 
 vector<string> IndexNamespace::get_index_names(const string &path) {

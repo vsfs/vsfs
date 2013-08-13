@@ -770,7 +770,8 @@ Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& requests) {
 Status VSFSRpcClient::info(const string& path,
                            vector<index::IndexInfo>* infos) {
   CHECK_NOTNULL(infos);
-  (void) path;
+  RpcIndexInfoRequest request;
+  request.path = path;
   return Status::OK;
 }
 

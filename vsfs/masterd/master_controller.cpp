@@ -376,6 +376,11 @@ Status MasterController::locate_indices(
   return Status::OK;
 }
 
+vector<string> MasterController::locate_indices(const string& root,
+                                                bool recursive) {
+  return index_namespace_->get_indices(root, recursive);
+}
+
 string MasterController::host() const {
   return host_;
 }
