@@ -198,13 +198,12 @@ vector<string> IndexNamespace::get_indices(const string& root, bool recursive) {
   vector<string> results;
   MutexGuard guard(lock_);
   if (recursive) {
-    auto iter = nodes_.lower_bound(root);
-    while (iter != nodes_.end()) {
-      const string& path = iter->first;
+    for (auto it = nodes_.lower_bound(root); it != nodes_.end(); ++it) {
+      const string& path = it->first;
       if (!boost::algorithm::starts_with(path, root)) {
         break;
       }
-      for (const auto& name : iter->second->names) {
+      for (const auto& name : it->second->names) {
         results.push_back(PathUtil::index_path(path, name));
       }
     }
