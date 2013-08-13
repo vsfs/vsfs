@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -96,7 +96,6 @@ VsfsFuse::VsfsFuse(const string &basedir, const string &mnt,
 }
 
 VsfsFuse::~VsfsFuse() {
-  // TODO(eddyxu): cancle the thread in C++11.
 }
 
 const string& VsfsFuse::basedir() const {
@@ -185,8 +184,7 @@ int vsfs_utimens(const char* path, const struct timespec tv[2]) {
 }
 
 int vsfs_chmod(const char* path, mode_t mode) {
-  string abspath = VsfsFuse::instance()->abspath(path);
-  return chmod(abspath.c_str(), mode);
+  return VsfsFuse::instance()->client()->chmod(path, mode).error();
 }
 
 int vsfs_chown(const char* path, uid_t uid, gid_t gid) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
+# Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ class FuseTests(unittest.TestCase):
 
         self.masterd_proc = subprocess.Popen(
             [MASTERD, '-primary', '-dir', self.masterd_dir])
+        time.sleep(1)
         self.index_server_proc1 = subprocess.Popen(
             [INDEXD, '-datadir', self.index_server_dir1,
              '-master_addr', 'localhost', '-port', '10011'])
@@ -77,6 +78,10 @@ class FuseTests(unittest.TestCase):
     def test_mkdirs(self):
         self.assertEqual(0, os.system('mkdir -p %s/a/b/c' % self.mount_dir))
         self.assertTrue(os.path.exists('%s/a/b/c' % self.mount_dir))
+
+    def test_chmod(self):
+        self.assertEqual(0, os.system('mkdir -p %s/a/b/c' % self.mount_dir))
+        os.chmod('%s/a/b/c' % self.mount_dir, 0777)
 
 #    def test_create_file(self):
 #        self.assertEqual(0, os.system('touch %s/abc.txt' % self.mount_dir))

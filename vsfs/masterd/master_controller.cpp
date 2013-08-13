@@ -322,6 +322,10 @@ Status MasterController::getattr(const string& path, RpcFileInfo *info) {
   return namespace_->getattr(path, info);
 }
 
+Status MasterController::setattr(const string& path, const RpcFileInfo& info) {
+  return namespace_->setattr(path, info);
+}
+
 void MasterController::find_objects(const vector<string>& files,
                                       vector<ObjectId>* objects) {
   namespace_->find_objects(files, objects);

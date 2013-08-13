@@ -382,21 +382,23 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
 
 Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   CHECK_NOTNULL(stbuf);
-  auto hash = PathUtil::path_to_hash(path);
   NodeInfo node;
-  CHECK(master_map_.get(hash, &node).ok());
+  CHECK(master_map_.get(path, &node).ok());
+  LOG(INFO) << "ATTR GET MAP." << node.address.host << ":" << node.address.port;
   RpcFileInfo file_info;
   try {
     auto client = master_client_factory_->open(node.address);
     client->handler()->getattr(file_info, path);
     master_client_factory_->close(client);
   } catch (RpcInvalidOp ouch) {  // NOLINT
+    LOG(ERROR) << "Ouch: " << ouch.why;
     return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     LOG(ERROR) << "Thrift Transport Exception: (" << e.getType() << "): "
                << e.what();
     return Status(e.getType(), e.what());
   }
+  LOG(INFO) << "GET ATTR SUCCESS.";
   stbuf->st_mode = file_info.mode;
   stbuf->st_size = file_info.size;
   stbuf->st_uid = file_info.uid;
@@ -405,6 +407,30 @@ Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   stbuf->st_ctime = file_info.ctime;
   stbuf->st_mtime = file_info.mtime;
   return Status::OK;
+}
+
+Status VSFSRpcClient::setattr(const string& path, const RpcFileInfo& info) {
+  NodeInfo node;
+  CHECK(master_map_.get(path, &node).ok());
+  Status status;
+  try {
+    auto client = master_client_factory_->open(node.address);
+    client->handler()->setattr(path, info);
+    master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    status.set(ouch.what, ouch.why);
+  } catch (TTransportException e) {  // NOLINT
+    LOG(ERROR) << "Thrift Transport Exception: (" << e.getType() << "): "
+               << e.what();
+    status.set(e.getType(), e.what());
+  }
+  return status;
+}
+
+Status VSFSRpcClient::chmod(const string& path, mode_t mode) {
+  RpcFileInfo file_info;
+  file_info.__set_mode(mode);
+  return setattr(path, file_info);
 }
 
 Status VSFSRpcClient::create_index(const string& root, const string& name,
@@ -880,6 +906,7 @@ Status VSFSRpcClient::find_objects(const vector<string>& paths,
   }
   return Status::OK;
 }
+
 
 Status VSFSRpcClient::add_subfile(const string& path) {
   if (path == "/") {

@@ -23,8 +23,8 @@
 #include "vobla/status.h"
 #include "vsfs/masterd/master_controller.h"
 
-using vsfs::masterd::MasterController;
 using std::string;
+using vsfs::masterd::MasterController;
 
 DEFINE_bool(daemon, false, "Runs in daemon mode.");
 DEFINE_bool(primary, false, "Sets this node as primary master node.");

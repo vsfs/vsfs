@@ -125,6 +125,8 @@ class VSFSRpcClient : public VSFSClient {
 
   Status getattr(const string& path, struct stat* stbuf);
 
+  Status chmod(const string& path, mode_t mode);
+
   Status create_index(const string& index_path,
                       const string& index_name,
                       int index_type, int key_type,
@@ -199,6 +201,8 @@ class VSFSRpcClient : public VSFSClient {
   Status sync_index_server_map();
 
   Status find_objects(const vector<string>& paths, vector<ObjectId>* objects);
+
+  Status setattr(const string& path, const RpcFileInfo& info);
 
   Status add_subfile(const string& filepath);
 
