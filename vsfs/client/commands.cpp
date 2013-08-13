@@ -22,8 +22,6 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <getopt.h>
-#include <gflags/gflags.h>
-#include <glog/logging.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <cstdio>
@@ -67,9 +65,9 @@ namespace vsfs {
 namespace client {
 
 const char *Command::program = NULL;
-DEFINE_string(master_host, "localhost", "Sets the default master host.");
-DEFINE_int32(master_port, 9876, "Sets the master node port.");
-DEFINE_int64(batch_size, 10000, "Set the default number of batch requests.");
+const char *kDefaultMasterHost = "localhost";
+const int kDefaultMasterPort = 9876;
+const uint64_t kDefaultBatchSize = 10000;
 
 /**
  * \class IndexCommand
@@ -141,6 +139,8 @@ class IndexCommand : public Command {
   /// The type of the key of index. (e.g., int32, float or string).
   int key_type_;
 
+  uint64_t batch_size_;
+
   IndexDataMap index_data_;
 };
 
@@ -199,7 +199,7 @@ Command* Command::create_command(const string &subcmd) {
   return nullptr;
 }
 
-Command::Command() : host_(FLAGS_master_host), port_(FLAGS_master_port),
+Command::Command() : host_(kDefaultMasterHost), port_(kDefaultMasterPort),
     debug_(false) {
   timer_.reset(new Timer);
 }
@@ -338,7 +338,8 @@ Status SearchCommand::run() {
 
 // ----------- IndexCommand ------------
 IndexCommand::IndexCommand()
-  : use_stdin_(false), operation_(INDEX), index_op_(ADD) {
+  : use_stdin_(false), operation_(INDEX), index_op_(ADD),
+    batch_size_(kDefaultBatchSize) {
 }
 
 int IndexCommand::parse_args(int argc, char* const argv[]) {
@@ -407,7 +408,7 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
         port_ = lexical_cast<int>(optarg);
         break;
       case 'b':
-        FLAGS_batch_size = lexical_cast<uint64_t>(optarg);
+        batch_size_ = lexical_cast<uint64_t>(optarg);
         break;
       case 'h':
       default:
@@ -563,7 +564,7 @@ Status IndexCommand::update_index() {
       request.index_name = index_name_;
       request.key = key;
 
-      if (updates.size() >= static_cast<size_t>(FLAGS_batch_size)) {
+      if (updates.size() >= static_cast<size_t>(batch_size_)) {
         status = client.update(updates);
         if (!status.ok()) {
           LOG(ERROR) << "Failed to update index: " << status.message();

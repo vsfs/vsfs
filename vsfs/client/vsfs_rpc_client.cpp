@@ -413,7 +413,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
   struct stat stbuf;
   auto status = getattr(root, &stbuf);
   if (!status.ok()) {
-    LOG(ERROR) << "Can not create log: " << status.message();
+    LOG(ERROR) << "Can not create index: " << status.message();
     return status;
   }
   if (!S_ISDIR(stbuf.st_mode)) {
