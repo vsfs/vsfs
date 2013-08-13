@@ -79,6 +79,8 @@ class IndexNamespaceInterface {
    */
   virtual vector<string> collect(const string &root, const string &name) = 0;
 
+  virtual vector<string> get_indices(const string& root, bool recursive) = 0;
+
   /**
    * \brief Gets all the index names on this path.
    * \param[in] path Find indices on this path.

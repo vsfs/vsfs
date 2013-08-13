@@ -136,8 +136,7 @@ typedef list<RpcIndexPartitionRing> RpcIndexPartitionRingList
 struct RpcIndexInfoRequest {
   1: required i64 txn_id,
   2: required string path,
-  3: optional string name,
-  4: optional bool recursive,
+  3: optional bool recursive
 }
 
 /**
@@ -237,6 +236,10 @@ service MasterServer {
    */
   list<string> locate_indices_for_search(
 	  1:string root, 2:list<string> names) throws (1:RpcInvalidOp ouch);
+
+  /// Locate all indices under the directory.
+  list<string> locate_indices(1:RpcIndexInfoRequest request)
+      throws (1:RpcInvalidOp ouch);
 }
 
 /**

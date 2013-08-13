@@ -39,6 +39,7 @@ class MockIndexNamespace : public IndexNamespaceInterface {
   MOCK_METHOD1(remove, Status(const string&));
   MOCK_CONST_METHOD3(find, Status(const string&, const string&, string*));
   MOCK_METHOD2(collect, vector<string>(const string&, const string&));
+  MOCK_METHOD2(get_indices, vector<string>(const string&, bool));
   MOCK_METHOD1(get_index_names, vector<string>(const string&));
 };
 

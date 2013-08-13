@@ -81,6 +81,15 @@ class IndexNamespace : public IndexNamespaceInterface {
 
   virtual vector<string> collect(const string &root, const string &name);
 
+  /**
+   * \brief Gets all indices under the root.
+   * \param root the top directory.
+   * \param recursive if it is true, then recursively to traversel the whole
+   * sub namespace under 'root'
+   * \returns a vector of full index paths.
+   */
+  virtual vector<string> get_indices(const string& root, bool recursive);
+
   virtual vector<string> get_index_names(const string &path);
 
  private:

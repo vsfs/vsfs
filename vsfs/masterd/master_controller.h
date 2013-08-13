@@ -192,6 +192,9 @@ class MasterController : boost::noncopyable {
   Status locate_indices(const string& root, const vector<string>& names,
                         vector<string>* indices);
 
+  /// Finds all indices with any names under the directory 'root'
+  vector<string> locate_indices(const string& root, bool recursive);
+
   string host() const;
 
   int port() const;
