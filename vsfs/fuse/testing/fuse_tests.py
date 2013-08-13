@@ -19,6 +19,7 @@
 
 import os
 import shutil
+import stat
 import subprocess
 import tempfile
 import time
@@ -31,6 +32,8 @@ VSFSUTIL = os.path.join(CWD, os.pardir, os.pardir, 'client', 'vsfs')
 
 
 class FuseTests(unittest.TestCase):
+    """System tests on the FUSE-based VSFS.
+    """
     def setUp(self):
         script_dir = os.path.dirname(__file__)
         self.base_dir = tempfile.mkdtemp()
@@ -62,6 +65,8 @@ class FuseTests(unittest.TestCase):
                               (script_dir, self.base_dir, self.mount_dir),
                               shell=True)
         time.sleep(1)
+        # Check we are running on a successfully mounted FUSE system.
+        self.assertTrue(os.path.ismount(self.mount_dir))
 
     def tearDown(self):
         os.system('fusermount -u %s' % self.mount_dir)
@@ -78,10 +83,16 @@ class FuseTests(unittest.TestCase):
     def test_mkdirs(self):
         self.assertEqual(0, os.system('mkdir -p %s/a/b/c' % self.mount_dir))
         self.assertTrue(os.path.exists('%s/a/b/c' % self.mount_dir))
+        for i in range(10):
+            os.makedirs('%s/a/b/c/d%d' % (self.mount_dir, i))
+        subdirs = os.listdir('%s/a/b/c' % self.mount_dir)
+        self.assertEqual(10, len(subdirs))
 
     def test_chmod(self):
         self.assertEqual(0, os.system('mkdir -p %s/a/b/c' % self.mount_dir))
         os.chmod('%s/a/b/c' % self.mount_dir, 0777)
+        statinfo = os.stat('%s/a/b/c' % self.mount_dir)
+        self.assertEqual(0777 | stat.S_IFDIR, statinfo.st_mode)
 
 #    def test_create_file(self):
 #        self.assertEqual(0, os.system('touch %s/abc.txt' % self.mount_dir))
