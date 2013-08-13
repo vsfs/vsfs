@@ -307,9 +307,9 @@ Status VSFSRpcClient::mkdir(
     auto master_client = master_client_factory_->open(node.address.host,
                                                       node.address.port);
     RpcFileInfo dir_info;
-    dir_info.mode = mode | S_IFDIR;
-    dir_info.uid = uid;
-    dir_info.gid = gid;
+    dir_info.__set_mode(mode | S_IFDIR);
+    dir_info.__set_uid(uid);
+    dir_info.__set_gid(gid);
     master_client->handler()->mkdir(path, dir_info);
     master_client_factory_->close(master_client);
   } catch (RpcInvalidOp ouch) {  // NOLINT
@@ -434,6 +434,14 @@ Status VSFSRpcClient::chown(const string& path, int64_t uid, int64_t gid) {
   RpcFileInfo file_info;
   file_info.__set_uid(uid);
   file_info.__set_gid(gid);
+  return setattr(path, file_info);
+}
+
+Status VSFSRpcClient::utimens(const string& path,
+                              int64_t atime, int64_t mtime) {
+  RpcFileInfo file_info;
+  file_info.__set_atime(atime);
+  file_info.__set_mtime(mtime);
   return setattr(path, file_info);
 }
 

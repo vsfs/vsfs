@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -128,6 +128,8 @@ class VSFSRpcClient : public VSFSClient {
   Status chmod(const string& path, mode_t mode);
 
   Status chown(const string& path, int64_t uid, int64_t gid);
+
+  Status utimens(const string& path, int64_t atime, int64_t mtime);
 
   Status create_index(const string& index_path,
                       const string& index_name,

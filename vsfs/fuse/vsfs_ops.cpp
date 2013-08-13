@@ -166,8 +166,7 @@ int vsfs_getattr(const char* path, struct stat* stbuf) {
   return 0;
 }
 
-int vsfs_fgetattr(const char* , struct stat* stbuf,
-                  struct fuse_file_info* fi) {
+int vsfs_fgetattr(const char*, struct stat* stbuf, struct fuse_file_info* fi) {
   int ret = fstat(fi->fh, stbuf);
   if (ret == -1) {
     return -errno;
@@ -176,11 +175,8 @@ int vsfs_fgetattr(const char* , struct stat* stbuf,
 }
 
 int vsfs_utimens(const char* path, const struct timespec tv[2]) {
-  string abspath = VsfsFuse::instance()->abspath(path);
-  if (utimensat(0, abspath.c_str(), tv, 0) == -1) {
-    return -errno;
-  };
-  return 0;
+  return VsfsFuse::instance()->client()
+      ->utimens(path, tv[0].tv_sec, tv[1].tv_sec).error();
 }
 
 int vsfs_chmod(const char* path, mode_t mode) {
@@ -191,16 +187,12 @@ int vsfs_chown(const char* path, uid_t uid, gid_t gid) {
   return VsfsFuse::instance()->client()->chown(path, uid, gid).error();
 }
 
-int vsfs_truncate(const char* path, off_t offset) {
-  (void) path;
-  (void) offset;
+int vsfs_truncate(const char*, off_t) {
   return 0;
 }
 
-int vsfs_opendir(const char* path, struct fuse_file_info* info) {
+int vsfs_opendir(const char*, struct fuse_file_info*) {
   // TODO(lxu): check permission.
-  (void) path;
-  (void) info;
   return 0;
 }
 
