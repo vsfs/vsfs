@@ -307,9 +307,9 @@ Status VSFSRpcClient::mkdir(
     auto master_client = master_client_factory_->open(node.address.host,
                                                       node.address.port);
     RpcFileInfo dir_info;
-    dir_info.mode = mode | S_IFDIR;
-    dir_info.uid = uid;
-    dir_info.gid = gid;
+    dir_info.__set_mode(mode | S_IFDIR);
+    dir_info.__set_uid(uid);
+    dir_info.__set_gid(gid);
     master_client->handler()->mkdir(path, dir_info);
     master_client_factory_->close(master_client);
   } catch (RpcInvalidOp ouch) {  // NOLINT
@@ -382,9 +382,8 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
 
 Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   CHECK_NOTNULL(stbuf);
-  auto hash = PathUtil::path_to_hash(path);
   NodeInfo node;
-  CHECK(master_map_.get(hash, &node).ok());
+  CHECK(master_map_.get(path, &node).ok());
   RpcFileInfo file_info;
   try {
     auto client = master_client_factory_->open(node.address);
@@ -407,6 +406,45 @@ Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   return Status::OK;
 }
 
+Status VSFSRpcClient::setattr(const string& path, const RpcFileInfo& info) {
+  NodeInfo node;
+  CHECK(master_map_.get(path, &node).ok());
+  Status status;
+  try {
+    auto client = master_client_factory_->open(node.address);
+    client->handler()->setattr(path, info);
+    master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    status.set(ouch.what, ouch.why);
+  } catch (TTransportException e) {  // NOLINT
+    LOG(ERROR) << "Thrift Transport Exception: (" << e.getType() << "): "
+               << e.what();
+    status.set(e.getType(), e.what());
+  }
+  return status;
+}
+
+Status VSFSRpcClient::chmod(const string& path, mode_t mode) {
+  RpcFileInfo file_info;
+  file_info.__set_mode(mode);
+  return setattr(path, file_info);
+}
+
+Status VSFSRpcClient::chown(const string& path, int64_t uid, int64_t gid) {
+  RpcFileInfo file_info;
+  file_info.__set_uid(uid);
+  file_info.__set_gid(gid);
+  return setattr(path, file_info);
+}
+
+Status VSFSRpcClient::utimens(const string& path,
+                              int64_t atime, int64_t mtime) {
+  RpcFileInfo file_info;
+  file_info.__set_atime(atime);
+  file_info.__set_mtime(mtime);
+  return setattr(path, file_info);
+}
+
 Status VSFSRpcClient::create_index(const string& root, const string& name,
                                    int index_type, int key_type,
                                    int64_t mode, int64_t uid, int64_t gid) {
@@ -418,7 +456,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
   }
   if (!S_ISDIR(stbuf.st_mode)) {
     LOG(ERROR) << "Can not create index on an non-dir path.";
-    return Status::system_error(-ENOTDIR);
+    return Status::system_error(ENOTDIR);
   }
 
   string partition_path = PathUtil::partition_path(root, name, 0);
@@ -880,6 +918,7 @@ Status VSFSRpcClient::find_objects(const vector<string>& paths,
   }
   return Status::OK;
 }
+
 
 Status VSFSRpcClient::add_subfile(const string& path) {
   if (path == "/") {

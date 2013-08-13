@@ -90,7 +90,12 @@ class Namespace : boost::noncopyable {
    * \param[in] path the full path of the targeted file.
    * \param[out] info filled with the metadata of file.
    */
-  Status getattr(const string &path, RpcFileInfo *info);
+  Status getattr(const string& path, RpcFileInfo *info);
+
+  /**
+   * \brief Sets the attribute of one file.
+   */
+  Status setattr(const string& path, const RpcFileInfo& info);
 
   /**
    * \brief Creates a file and returns its file id.

@@ -30,3 +30,13 @@ TESTS = \
 
 check_PROGRAMS = vsfs_ops_test
 vsfs_ops_test_SOURCES = vsfs_ops.h vsfs_ops.cpp vsfs_ops_test.cpp
+
+INTEGRATION_TESTS = \
+		    testing/fuse_tests.py
+
+test: check integration-test
+
+integration-test: $(INTEGRATION_TESTS)
+	for t in $< ; do ./$$t; done
+
+.PHONY: test integration-test

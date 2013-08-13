@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,6 +125,12 @@ class VSFSRpcClient : public VSFSClient {
 
   Status getattr(const string& path, struct stat* stbuf);
 
+  Status chmod(const string& path, mode_t mode);
+
+  Status chown(const string& path, int64_t uid, int64_t gid);
+
+  Status utimens(const string& path, int64_t atime, int64_t mtime);
+
   Status create_index(const string& index_path,
                       const string& index_name,
                       int index_type, int key_type,
@@ -199,6 +205,8 @@ class VSFSRpcClient : public VSFSClient {
   Status sync_index_server_map();
 
   Status find_objects(const vector<string>& paths, vector<ObjectId>* objects);
+
+  Status setattr(const string& path, const RpcFileInfo& info);
 
   Status add_subfile(const string& filepath);
 
