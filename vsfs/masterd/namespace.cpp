@@ -142,7 +142,7 @@ Status Namespace::object_id(const string &path, ObjectId *oid) {
   MutexGuard guard(mutex_);
   auto it = metadata_map_.find(path);
   if (it == metadata_map_.end()) {
-    return Status(-ENOENT, strerror(ENOENT));
+    return Status::system_error(ENOENT);
   }
   *oid = it->second.object_id;
   return Status::OK;
@@ -153,17 +153,51 @@ Status Namespace::getattr(const string &path, RpcFileInfo *info) {
   MutexGuard guard(mutex_);
   auto meta = find_or_null(metadata_map_, path);
   if (!meta) {
-    return Status(-ENOENT, strerror(ENOENT));
+    return Status::system_error(ENOENT);
   }
-  info->id = meta->object_id;
-  info->uid = meta->uid;
-  info->gid = meta->gid;
-  info->mode = meta->mode;
-  info->size = meta->size;
-  info->atime = meta->atime;
-  info->ctime = meta->ctime;
-  info->mtime = meta->mtime;
+  info->__set_object_id(meta->object_id);
+  info->__set_uid(meta->uid);
+  info->__set_gid(meta->gid);
+  info->__set_mode(meta->mode);
+  info->__set_size(meta->size);
+  info->__set_atime(meta->atime);
+  info->__set_ctime(meta->ctime);
+  info->__set_mtime(meta->mtime);
   return Status::OK;
+}
+
+Status Namespace::setattr(const string& path, const RpcFileInfo& info) {
+  MutexGuard guard(mutex_);
+  auto meta = find_or_null(metadata_map_, path);
+  if (!meta) {
+    return Status::system_error(ENOENT);
+  }
+  if (info.__isset.uid) {
+    meta->uid = info.uid;
+  }
+  if (info.__isset.gid) {
+    meta->gid = info.gid;
+  }
+  if (info.__isset.mode) {
+    meta->mode = info.mode;
+  }
+  if (info.__isset.size) {
+    meta->size = info.size;
+  }
+  if (info.__isset.atime) {
+    meta->atime = info.atime;
+  }
+  if (info.__isset.mtime) {
+    meta->mtime = info.mtime;
+  }
+  if (info.__isset.ctime) {
+    meta->ctime = info.ctime;
+  }
+  auto status = store_metadata(path, *meta);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to store metadata." << status.message();
+  }
+  return status;
 }
 
 Status Namespace::create(const string &path, int mode, uid_t uid,

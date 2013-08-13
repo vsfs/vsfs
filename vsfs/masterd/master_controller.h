@@ -167,7 +167,9 @@ class MasterController : boost::noncopyable {
   Status object_id(const string& path, ObjectId* oid);
 
   /// Gets the attribute of a file / dir / index.
-  Status getattr(const string &path, RpcFileInfo *info);
+  Status getattr(const string& path, RpcFileInfo *info);
+
+  Status setattr(const string& path, const RpcFileInfo& info);
 
   void find_objects(const vector<string>& files, vector<ObjectId>* objects);
 

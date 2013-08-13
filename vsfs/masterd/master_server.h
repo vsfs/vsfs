@@ -74,6 +74,8 @@ class MasterServer : public vsfs::MasterServerIf {
 
   void getattr(RpcFileInfo& info, const string& path);  // NOLINT
 
+  void setattr(const string& path, const RpcFileInfo& info);
+
   void find_objects(RpcObjectList& objects, const RpcFileList& files);  // NOLINT
 
   void find_files(RpcFileList& files, const RpcObjectList& objects);  // NOLINT

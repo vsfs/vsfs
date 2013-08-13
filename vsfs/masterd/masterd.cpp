@@ -23,8 +23,8 @@
 #include "vobla/status.h"
 #include "vsfs/masterd/master_controller.h"
 
-using vsfs::masterd::MasterController;
 using std::string;
+using vsfs::masterd::MasterController;
 
 DEFINE_bool(daemon, false, "Runs in daemon mode.");
 DEFINE_bool(primary, false, "Sets this node as primary master node.");
@@ -65,6 +65,11 @@ int main(int argc, char *argv[]) {
 
   controller.reset(new MasterController(FLAGS_dir, "", FLAGS_port,
                                         FLAGS_primary));
+  auto status = controller->init();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to open metadata db: " << status.message();
+    return status.error();
+  }
   controller->start();
   return 0;
 }

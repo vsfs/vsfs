@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,8 +68,15 @@ Status VsfsFuse::init(const string &basedir, const string &mnt,
   instance_.reset(new VsfsFuse(absolute_basedir, absolute_mnt, host, port));
   vsfs = instance_.get();
   LOG(INFO) << "VsfsFuse fully initialized.";
-  return vsfs->client_->init();
-  // return Status::OK;
+  auto status = vsfs->client_->init();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to initialize RPC connection to VSFS: "
+               << status.message();
+    return status;
+  }
+  vsfs->client_->mkdir("/", 0777, fuse_get_context()->uid,
+                       fuse_get_context()->gid);
+  return Status::OK;
 }
 
 void VsfsFuse::destory() {
@@ -89,7 +96,6 @@ VsfsFuse::VsfsFuse(const string &basedir, const string &mnt,
 }
 
 VsfsFuse::~VsfsFuse() {
-  // TODO(eddyxu): cancle the thread in C++11.
 }
 
 const string& VsfsFuse::basedir() const {
@@ -141,9 +147,7 @@ int vsfs_access(const char* path, int flag) {
   return 0;
 }
 
-int vsfs_getattr(const char* path, struct stat *stbuf) {
-  LOG(INFO) << "VSFS_GETATTR\n";
-  int ret = 0;
+int vsfs_getattr(const char* path, struct stat* stbuf) {
   PosixPath vsp(path);
   if (!vsp.is_validate()) {
     return -EINVAL;
@@ -154,18 +158,15 @@ int vsfs_getattr(const char* path, struct stat *stbuf) {
     stbuf->st_mode |= S_IFLNK;
     stbuf->st_size = vsp.result().size();
   } else {
-    string abspath = VsfsFuse::instance()->abspath(path);
-    LOG(INFO) << "Get abspath stat: " << abspath;
-    ret = stat(abspath.c_str(), stbuf);
-    if (ret == -1) {
-      return -errno;
+    auto status = VsfsFuse::instance()->client()->getattr(path, stbuf);
+    if (!status.ok()) {
+      return status.error();
     }
   }
-  return ret;
+  return 0;
 }
 
-int vsfs_fgetattr(const char* , struct stat* stbuf,
-                  struct fuse_file_info* fi) {
+int vsfs_fgetattr(const char*, struct stat* stbuf, struct fuse_file_info* fi) {
   int ret = fstat(fi->fh, stbuf);
   if (ret == -1) {
     return -errno;
@@ -174,33 +175,24 @@ int vsfs_fgetattr(const char* , struct stat* stbuf,
 }
 
 int vsfs_utimens(const char* path, const struct timespec tv[2]) {
-  string abspath = VsfsFuse::instance()->abspath(path);
-  if (utimensat(0, abspath.c_str(), tv, 0) == -1) {
-    return -errno;
-  };
-  return 0;
+  return VsfsFuse::instance()->client()
+      ->utimens(path, tv[0].tv_sec, tv[1].tv_sec).error();
 }
 
 int vsfs_chmod(const char* path, mode_t mode) {
-  string abspath = VsfsFuse::instance()->abspath(path);
-  return chmod(abspath.c_str(), mode);
+  return VsfsFuse::instance()->client()->chmod(path, mode).error();
 }
 
 int vsfs_chown(const char* path, uid_t uid, gid_t gid) {
-  string abspath = VsfsFuse::instance()->abspath(path);
-  return chown(abspath.c_str(), uid, gid);
+  return VsfsFuse::instance()->client()->chown(path, uid, gid).error();
 }
 
-int vsfs_truncate(const char* path, off_t offset) {
-  (void) path;
-  (void) offset;
+int vsfs_truncate(const char*, off_t) {
   return 0;
 }
 
-int vsfs_opendir(const char* path, struct fuse_file_info* info) {
+int vsfs_opendir(const char*, struct fuse_file_info*) {
   // TODO(lxu): check permission.
-  (void) path;
-  (void) info;
   return 0;
 }
 
@@ -212,7 +204,7 @@ int vsfs_releasedir(const char* path, struct fuse_file_info* info) {
 
 int vsfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
                  off_t, struct fuse_file_info*) {
-  LOG(INFO) << "VSFS_READDIR";
+  VLOG(0) << "Readdir: " << path;
   PosixPath vsp(path);
 
   filler(buf, ".", NULL, 0);
@@ -246,11 +238,13 @@ int vsfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
       filler(buf, name.c_str(), &stbuf, 0);
     }
   } else {
-    fs::directory_iterator dit(VsfsFuse::instance()->abspath(path));
-    fs::directory_iterator end;
-    while (dit != end) {
-      filler(buf, dit->path().filename().string().c_str(), NULL, 0);
-      ++dit;
+    vector<string> subfiles;
+    status = VsfsFuse::instance()->client()->readdir(path, &subfiles);
+    if (!status.ok()) {
+      return status.error();
+    }
+    for (const auto& subfile : subfiles) {
+      filler(buf, subfile.c_str(), NULL, 0);
     }
   }
   return 0;
@@ -260,6 +254,11 @@ int vsfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
  * \brief Create a directory
  */
 int vsfs_mkdir(const char* path, mode_t mode) {
+  auto status = VsfsFuse::instance()->client()
+      ->mkdir(path, mode, fuse_get_context()->uid, fuse_get_context()->gid);
+  if (!status.ok()) {
+    return status.error();
+  }
   string abspath = VsfsFuse::instance()->abspath(path);
   return mkdir(abspath.c_str(), mode);
 }
@@ -375,8 +374,11 @@ int vsfs_flush(const char* , struct fuse_file_info *) {
 
 int vsfs_getxattr(const char* path, const char* name, char *value,
                   size_t vlen) {
-  string abspath = VsfsFuse::instance()->abspath(path);
-  return getxattr(abspath.c_str(), name, value, vlen);
+  (void) path;
+  (void) name;
+  (void) value;
+  (void) vlen;
+  return 0;
 }
 
 #if defined(FUSE_29)

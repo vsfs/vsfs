@@ -19,22 +19,21 @@ typedef list<string> RpcKeywordList
 typedef string RpcRawData
 
 exception RpcInvalidOp {
-  1: i32 what,
-  2: string why,
+  1: required i32 what,
+  2: required string why,
 }
 
 // Rpcepresents a File object in VSFS namespace.
 // See common/file_info.h for more details.
 struct RpcFileInfo {
-  1: i64 id,
-  2: string path,
-  4: i64 uid,
-  5: i64 gid,
-  6: i64 mode,
-  7: i64 size,
-  8: i64 ctime,
-  9: i64 mtime,
-  10: i64 atime,
+  1: optional i64 object_id,
+  2: optional i64 uid,
+  3: optional i64 gid,
+  4: optional i64 mode,
+  5: optional i64 size,
+  6: optional i64 ctime,
+  7: optional i64 mtime,
+  8: optional i64 atime,
 }
 
 // IP address of a node.
@@ -214,6 +213,9 @@ service MasterServer {
   /// Access the attributes of a file or a directory.
   RpcFileInfo getattr(1:string path)
     throws (1:RpcInvalidOp ouch);
+
+  /// Sets the attribute of a file.
+  void setattr(1:string path, 2:RpcFileInfo info) throws (1:RpcInvalidOp ouch);
 
   /// Returns a list of file paths.
   RpcFileList find_files(1:RpcObjectList objects) throws (1:RpcInvalidOp ouch);
