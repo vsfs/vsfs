@@ -28,6 +28,7 @@
 #include "vsfs/common/complex_query.h"
 #include "vsfs/common/path_util.h"
 #include "vsfs/common/types.h"
+#include "vsfs/index/index_info.h"
 #include "vsfs/rpc/thrift_utils.h"
 #include "vsfs/rpc/vsfs_types.h"
 
@@ -39,6 +40,7 @@ using std::to_string;
 using std::vector;
 using vobla::Status;
 using vobla::ThreadPool;
+using vsfs::index::IndexInfo;
 namespace fs = boost::filesystem;
 
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
@@ -456,6 +458,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     status = remove_index(root, name);
     return status;
   }
+  status = Status::OK;  // resets the status.
 
   auto full_path = PathUtil::index_path(root, name);
   hash = PathUtil::path_to_hash(full_path);
@@ -464,6 +467,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
   try {
     auto client = master_client_factory_->open(master_server.address);
     create_request.root = root;
+    create_request.name = name;
     client->handler()->create_index(create_request);
     master_client_factory_->close(client);
   } catch (RpcInvalidOp ouch) {  // NOLINT
@@ -772,6 +776,65 @@ Status VSFSRpcClient::info(const string& path,
   CHECK_NOTNULL(infos);
   RpcIndexInfoRequest request;
   request.path = path;
+  request.__set_recursive(true);
+
+  auto master_map = master_map_.get_ch_ring_as_map();
+  vector<string> indices;
+  Status status;
+  for (const auto& hash_and_node : master_map) {
+    const auto& node = hash_and_node.second;
+    vector<string> tmp;
+    try {
+      auto client = master_client_factory_->open(node.address);
+      client->handler()->locate_indices(tmp, request);
+      master_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      status.set(e.getType(), e.what());
+    }
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to locate indices on MasterNode: "
+          << node.address.host << ":" << node.address.port
+          << " because: " << status.message();
+      return status;
+    }
+    indices.insert(indices.end(), begin(tmp), end(tmp));
+  }
+
+  for (const auto& idx_path : indices) {
+    string root, name;
+    if (!PathUtil::split_index_path(idx_path, &root, &name)) {
+      LOG(ERROR) << "Index Path has wrong format: " << idx_path;
+      return Status(-1, "Wrong index path format.");
+    }
+
+    auto partition_path = idx_path + "/0";
+    NodeInfo node;
+    CHECK(index_server_map_.get(partition_path, &node).ok());
+    RpcIndexInfo rpc_info;
+    RpcIndexInfoRequest req;
+    req.path = partition_path;
+    VLOG(1) << "Getting Index Info for " << idx_path;
+    try {
+      auto client = index_client_factory_->open(node.address);
+      client->handler()->info(rpc_info, req);
+      index_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      status.set(e.getType(), e.what());
+    }
+    if (!status.ok()) {
+      LOG(ERROR) << "Can not access the index info for: " << idx_path
+                 << ", because: " << status.message();
+      return status;
+    }
+    VLOG(1) << "IndexInfo: " << root << " " << name
+            << " " << rpc_info.type << " " << rpc_info.key_type;
+    infos->emplace_back(root, name, rpc_info.type, rpc_info.key_type);
+  }
+
   return Status::OK;
 }
 

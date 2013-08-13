@@ -37,11 +37,14 @@
 #include "vobla/file.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/common/complex_query.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/testing/local_vsfs_cluster.h"
 
 using ::testing::ContainerEq;
+using ::testing::ElementsAre;
 using std::set;
+using std::sort;
 using std::stack;
 using std::thread;
 using std::to_string;
@@ -183,8 +186,31 @@ TEST_F(ClientMetadataTest, TestSearchSuccess) {
   query.parse("/foo?dog>50");
   vector<string> actual_files;
   EXPECT_TRUE(client_->search(query, &actual_files).ok());
-  std::sort(actual_files.begin(), actual_files.end());
+  sort(actual_files.begin(), actual_files.end());
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
+}
+
+TEST_F(ClientMetadataTest, TestIndexInfo) {
+  start(2, 2);
+  create_index("/foo/bar", "a");
+  create_index("/foo/bar", "b");
+  create_index("/foo/bar/zoo", "a");
+  create_index("/foo/bar/zoo", "b");
+
+  vector<IndexInfo> infos;
+  EXPECT_TRUE(client_->info("/foo/bar", &infos).ok());
+  EXPECT_EQ(4u, infos.size());
+  vector<string> actual_indices;
+  for (const auto& info : infos) {
+    actual_indices.emplace_back(PathUtil::index_path(info.path(),
+                                                     info.index_name()));
+    EXPECT_EQ(IndexInfo::BTREE, info.index_type());
+    EXPECT_EQ(INT32, info.key_type());
+  }
+  sort(begin(actual_indices), end(actual_indices));
+  EXPECT_THAT(actual_indices, ElementsAre(
+      "/foo/bar/.vsfs/a", "/foo/bar/.vsfs/b", "/foo/bar/zoo/.vsfs/a",
+      "/foo/bar/zoo/.vsfs/b"));
 }
 
 }  // namespace client
