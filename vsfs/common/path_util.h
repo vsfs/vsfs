@@ -32,6 +32,9 @@ class PathUtil {
   /// Generates the index path for the index on 'root' with index 'name'.
   static string index_path(const string& root, const string& name);
 
+  /// Splits an index path into two parts (root, name).
+  static bool split_index_path(const string& path, string* root, string* name);
+
   /// Generates the partition path with index 'root', 'name' and partition
   /// hash range starting point.
   static string partition_path(const string& root, const string& name,

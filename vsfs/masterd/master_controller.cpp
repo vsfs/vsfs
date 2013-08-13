@@ -345,6 +345,12 @@ Status MasterController::create_index(const RpcIndexCreateRequest &request) {
   auto full_path = PathUtil::index_path(request.root, request.name);
   VLOG(0) << "Create index: " << full_path;
   status = namespace_->mkdir(full_path, request.mode, request.uid, request.gid);
+  if (!status.ok()) {
+    VLOG(0) << "Status: " << status.message();
+    LOG(ERROR) << "Failed to create index directory: " << full_path
+               << " " << status.message();
+    index_namespace_->remove(request.root, request.name);
+  }
   return status;
 }
 
@@ -374,6 +380,11 @@ Status MasterController::locate_indices(
     }
   }
   return Status::OK;
+}
+
+vector<string> MasterController::locate_indices(const string& root,
+                                                bool recursive) {
+  return index_namespace_->get_indices(root, recursive);
 }
 
 string MasterController::host() const {

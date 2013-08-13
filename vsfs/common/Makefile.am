@@ -57,6 +57,7 @@ TESTS = \
 	complex_query_test \
 	leveldb_store_test \
 	log_manager_test \
+	path_util_test \
 	posix_path_test \
 	server_map_test
 
@@ -73,6 +74,7 @@ complex_query_test_SOURCES = complex_query.h complex_query.cpp \
 			     complex_query_test.cpp
 leveldb_store_test_SOURCES = leveldb_store_test.cpp
 log_manager_test_SOURCES = log_manager_test.cpp
+path_util_test_SOURCES = path_util_test.cpp
 posix_path_test_SOURCES = posix_path.h posix_path.cpp posix_path_test.cpp
 server_map_test_SOURCES = server_map_test.cpp
 
