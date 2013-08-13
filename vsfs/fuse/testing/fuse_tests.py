@@ -74,79 +74,83 @@ class FuseTests(unittest.TestCase):
         shutil.rmtree(self.base_dir)
         shutil.rmtree(self.mount_dir)
 
-    def test_create_file(self):
-        self.assertEqual(0, os.system('touch %s/abc.txt' % self.mount_dir))
-        self.assertTrue(os.path.exists('%s/abc.txt' % self.base_dir))
+    def test_mkdirs(self):
+        self.assertEqual(0, os.system('mkdir -p %s/a/b/c' % self.mount_dir))
+        self.assertTrue(os.path.exists('%s/a/b/c' % self.mount_dir))
 
-        self.assertEqual(0, os.system('echo 123 > %s/123.txt' %
-                                      self.mount_dir))
-        with open('%s/123.txt' % self.mount_dir) as fobj:
-            content = fobj.read()
-            self.assertEqual('123', content.strip())
-
-    def test_remove_file(self):
-        for i in range(10):  # Create 10 files first.
-            with open('%s/%d.txt' % (self.mount_dir, i), 'w') as fobj:
-                fobj.write('%s\n' % i)
-
-        for i in range(10):
-            os.remove('%s/%d.txt' % (self.mount_dir, i))
-
-    def test_create_and_read(self):
-        test_file = '%s/test.txt' % self.mount_dir
-        with open(test_file, 'w') as fobj:
-            for i in range(32):
-                fobj.write(os.urandom(1024 * 1024))
-            fobj.flush()
-            fobj.close()
-
-        with open('%s/test.txt' % self.mount_dir) as fobj:
-            data = fobj.read()
-            self.assertEquals(32 * 1024 * 1024, len(data))
-            #self.assertEqual('A test file.', data)
-
-    def test_delete_files(self):
-        os.makedirs('%s/test' % self.mount_dir)
-        for i in range(10):
-            with open('%s/test/file-%d.txt' % (self.mount_dir, i), 'w') as fobj:
-                fobj.write('%s\n' % i)
-        shutil.rmtree('%s/test' % self.mount_dir)
-
-    def _index_file(self, name, path, key):
-        """Insert a record into VSFS.
-        @param name the name of index
-        @param path the absolute path of the file.
-        @param key the key to inserted
-        """
-        vsfs_path = os.path.relpath(path, self.mount_dir)
-        if vsfs_path[0] != '/':
-            vsfs_path = '/' + vsfs_path
-        cmd = '%s index --name %s %s %s' % (VSFSUTIL, name,
-                                            vsfs_path, str(key))
-        return subprocess.call(cmd, shell=True)
-
-    def test_index_and_search_files(self):
-        os.makedirs('%s/energy' % self.mount_dir)
-
-        # Creates index
-        cmd = '%s index --create --name energy --type btree ' \
-              '--key uint64 %s' % (VSFSUTIL, '/energy')
-        self.assertEqual(0, subprocess.call(cmd, shell=True))
-
-        for i in range(100):  # creates 100 files.
-            test_file = '%s/energy/file-%d.txt' % (self.mount_dir, i)
-            with open(test_file, 'w') as fobj:
-                fobj.write('%d\n' % i)
-            self.assertEqual(0, self._index_file('energy', test_file, i))
-
-        expected_files = set(['#energy#file-%d.txt' % x for x in
-                              range(6, 100)])
-        files = os.listdir('%s/energy/?energy>5/' % self.mount_dir)
-        self.assertEqual(expected_files, set(files))
-
-        with open('%s/energy/?energy>5/#energy#file-20.txt' % self.mount_dir) \
-                as fobj:
-            self.assertEqual('20', fobj.read().strip())
+#    def test_create_file(self):
+#        self.assertEqual(0, os.system('touch %s/abc.txt' % self.mount_dir))
+#        self.assertTrue(os.path.exists('%s/abc.txt' % self.base_dir))
+#
+#        self.assertEqual(0, os.system('echo 123 > %s/123.txt' %
+#                                      self.mount_dir))
+#        with open('%s/123.txt' % self.mount_dir) as fobj:
+#            content = fobj.read()
+#            self.assertEqual('123', content.strip())
+#
+#    def test_remove_file(self):
+#        for i in range(10):  # Create 10 files first.
+#            with open('%s/%d.txt' % (self.mount_dir, i), 'w') as fobj:
+#                fobj.write('%s\n' % i)
+#
+#        for i in range(10):
+#            os.remove('%s/%d.txt' % (self.mount_dir, i))
+#
+#    def test_create_and_read(self):
+#        test_file = '%s/test.txt' % self.mount_dir
+#        with open(test_file, 'w') as fobj:
+#            for i in range(32):
+#                fobj.write(os.urandom(1024 * 1024))
+#            fobj.flush()
+#            fobj.close()
+#
+#        with open('%s/test.txt' % self.mount_dir) as fobj:
+#            data = fobj.read()
+#            self.assertEquals(32 * 1024 * 1024, len(data))
+#            #self.assertEqual('A test file.', data)
+#
+#    def test_delete_files(self):
+#        os.makedirs('%s/test' % self.mount_dir)
+#        for i in range(10):
+#            with open('%s/test/file-%d.txt' % (self.mount_dir, i), 'w') as fobj:
+#                fobj.write('%s\n' % i)
+#        shutil.rmtree('%s/test' % self.mount_dir)
+#
+#    def _index_file(self, name, path, key):
+#        """Insert a record into VSFS.
+#        @param name the name of index
+#        @param path the absolute path of the file.
+#        @param key the key to inserted
+#        """
+#        vsfs_path = os.path.relpath(path, self.mount_dir)
+#        if vsfs_path[0] != '/':
+#            vsfs_path = '/' + vsfs_path
+#        cmd = '%s index --name %s %s %s' % (VSFSUTIL, name,
+#                                            vsfs_path, str(key))
+#        return subprocess.call(cmd, shell=True)
+#
+#    def test_index_and_search_files(self):
+#        os.makedirs('%s/energy' % self.mount_dir)
+#
+#        # Creates index
+#        cmd = '%s index --create --name energy --type btree ' \
+#              '--key uint64 %s' % (VSFSUTIL, '/energy')
+#        self.assertEqual(0, subprocess.call(cmd, shell=True))
+#
+#        for i in range(100):  # creates 100 files.
+#            test_file = '%s/energy/file-%d.txt' % (self.mount_dir, i)
+#            with open(test_file, 'w') as fobj:
+#                fobj.write('%d\n' % i)
+#            self.assertEqual(0, self._index_file('energy', test_file, i))
+#
+#        expected_files = set(['#energy#file-%d.txt' % x for x in
+#                              range(6, 100)])
+#        files = os.listdir('%s/energy/?energy>5/' % self.mount_dir)
+#        self.assertEqual(expected_files, set(files))
+#
+#        with open('%s/energy/?energy>5/#energy#file-20.txt' % self.mount_dir) \
+#                as fobj:
+#            self.assertEqual('20', fobj.read().strip())
 
 if __name__ == '__main__':
     unittest.main()
