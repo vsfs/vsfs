@@ -1,5 +1,5 @@
 /*
- * Copyright 2012 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -125,6 +125,12 @@ class VSFSRpcClient : public VSFSClient {
 
   Status getattr(const string& path, struct stat* stbuf);
 
+  Status chmod(const string& path, mode_t mode);
+
+  Status chown(const string& path, int64_t uid, int64_t gid);
+
+  Status utimens(const string& path, int64_t atime, int64_t mtime);
+
   Status create_index(const string& index_path,
                       const string& index_name,
                       int index_type, int key_type,
@@ -174,8 +180,8 @@ class VSFSRpcClient : public VSFSClient {
     Status get_parent_path_to_index_path_map(
         ParentPathToIndexPathMap *index_map);
 
-    /// map<"host:port", map<index path, vector<Request*>>>
-    typedef map<string, map<string, vector<const IndexUpdateRequest*>>>
+    /// map<"host:port", map<index path, vector<ReqPosition>>>
+    typedef map<string, map<string, vector<size_t>>>
         ServerToRequestMap;
 
     /// Reorder the requests and categorize them by the targeting index servers.
@@ -198,6 +204,10 @@ class VSFSRpcClient : public VSFSClient {
   /// Synchronize the index server's CH ring.
   Status sync_index_server_map();
 
+  Status find_objects(const vector<string>& paths, vector<ObjectId>* objects);
+
+  Status setattr(const string& path, const RpcFileInfo& info);
+
   Status add_subfile(const string& filepath);
 
   Status locate_index_for_search(const ComplexQuery& query,
@@ -208,6 +218,9 @@ class VSFSRpcClient : public VSFSClient {
 
   /// Generates a search plan.
   Status gen_search_plan(const ComplexQuery& query, SearchPlanMap* plan);
+
+  Status get_file_paths_from_objects(const vector<ObjectId>& objects,
+                                     vector<string>* paths);
 
   unique_ptr<MasterClientFactory> master_client_factory_;
 

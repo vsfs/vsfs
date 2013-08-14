@@ -19,10 +19,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <limits>
 #include <memory>
 #include <set>
 #include <string>
 #include <vector>
+#include "vsfs/common/path_util.h"
+#include "vsfs/common/server_map.h"
 #include "vsfs/common/test_leveldb_store.h"
 #include "vsfs/masterd/namespace.h"
 
@@ -196,6 +199,25 @@ TEST_F(NamespaceTest, TestFindFiles) {
   vector<string> actual_files;
   EXPECT_TRUE(test_ns_->find_files(object_ids, &actual_files).ok());
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
+}
+
+TEST_F(NamespaceTest, TestObjectIdDistribution) {
+  string path = "/foo/bar/dogs/dog56";
+  ObjectId oid = test_ns_->get_object_id(path);
+  auto hash = PathUtil::path_to_hash(path);
+
+  int64_t part_size = std::numeric_limits<int64_t>::max() / 4;
+  ServerMap servers;
+  for (int64_t i = 0; i < 2; i++) {
+    LOG(INFO) << " i = " << i << " <128 ? " << (i < 128);
+    NodeInfo node;
+    node.address.port = i;
+    servers.add(part_size * i, node);
+  }
+  NodeInfo obj_node, hash_node;
+  servers.get(oid, &obj_node);
+  servers.get(hash, &hash_node);
+  EXPECT_EQ(obj_node.address.port, hash_node.address.port);
 }
 
 }  // namespace masterd

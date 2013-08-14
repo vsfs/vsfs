@@ -107,6 +107,21 @@ Status Namespace::file_path(ObjectId oid, string *path) {
   return Status::OK;
 }
 
+void Namespace::find_objects(const vector<string>& paths,
+                             vector<ObjectId>* object_ids) {
+  CHECK_NOTNULL(object_ids);
+  object_ids->reserve(paths.size());
+  MutexGuard guard(mutex_);
+  for (const auto& path : paths) {
+    auto it = metadata_map_.find(path);
+    if (it == metadata_map_.end()) {
+      object_ids->push_back(0);
+    } else {
+      object_ids->push_back(it->second.object_id);
+    }
+  }
+}
+
 Status Namespace::find_files(const vector<ObjectId>& object_ids,
                              vector<string>* paths) {
   CHECK_NOTNULL(paths);
@@ -127,7 +142,7 @@ Status Namespace::object_id(const string &path, ObjectId *oid) {
   MutexGuard guard(mutex_);
   auto it = metadata_map_.find(path);
   if (it == metadata_map_.end()) {
-    return Status(-ENOENT, strerror(ENOENT));
+    return Status::system_error(ENOENT);
   }
   *oid = it->second.object_id;
   return Status::OK;
@@ -138,17 +153,51 @@ Status Namespace::getattr(const string &path, RpcFileInfo *info) {
   MutexGuard guard(mutex_);
   auto meta = find_or_null(metadata_map_, path);
   if (!meta) {
-    return Status(-ENOENT, strerror(ENOENT));
+    return Status::system_error(ENOENT);
   }
-  info->id = meta->object_id;
-  info->uid = meta->uid;
-  info->gid = meta->gid;
-  info->mode = meta->mode;
-  info->size = meta->size;
-  info->atime = meta->atime;
-  info->ctime = meta->ctime;
-  info->mtime = meta->mtime;
+  info->__set_object_id(meta->object_id);
+  info->__set_uid(meta->uid);
+  info->__set_gid(meta->gid);
+  info->__set_mode(meta->mode);
+  info->__set_size(meta->size);
+  info->__set_atime(meta->atime);
+  info->__set_ctime(meta->ctime);
+  info->__set_mtime(meta->mtime);
   return Status::OK;
+}
+
+Status Namespace::setattr(const string& path, const RpcFileInfo& info) {
+  MutexGuard guard(mutex_);
+  auto meta = find_or_null(metadata_map_, path);
+  if (!meta) {
+    return Status::system_error(ENOENT);
+  }
+  if (info.__isset.uid) {
+    meta->uid = info.uid;
+  }
+  if (info.__isset.gid) {
+    meta->gid = info.gid;
+  }
+  if (info.__isset.mode) {
+    meta->mode = info.mode;
+  }
+  if (info.__isset.size) {
+    meta->size = info.size;
+  }
+  if (info.__isset.atime) {
+    meta->atime = info.atime;
+  }
+  if (info.__isset.mtime) {
+    meta->mtime = info.mtime;
+  }
+  if (info.__isset.ctime) {
+    meta->ctime = info.ctime;
+  }
+  auto status = store_metadata(path, *meta);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to store metadata." << status.message();
+  }
+  return status;
 }
 
 Status Namespace::create(const string &path, int mode, uid_t uid,
@@ -323,7 +372,10 @@ ObjectId Namespace::get_object_id(const string &path) {
 
   // Object id is the first 16 bits from hash value and the last 48 bits from
   // the assigned obj id.
-  ObjectId obj_id = (hash_value & 0xFF000000) + (next_obj_id_ & 0x00FFFFFF);
+  const int kPrefixLen = 16;
+  ObjectId obj_id = (hash_value & (((1LL << kPrefixLen) - 1)
+                                   << (64 - kPrefixLen))) |
+                    (next_obj_id_ & ((1LL << (64 - kPrefixLen)) - 1));
   next_obj_id_++;
   return obj_id;
 }

@@ -26,23 +26,25 @@
 #include <gtest/gtest.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <algorithm>
 #include <memory>
+#include <set>
 #include <stack>
 #include <string>
-#include <thread>
 #include <vector>
-#include <set>
 #include "vobla/traits.h"
 #include "vobla/file.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/common/complex_query.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/testing/local_vsfs_cluster.h"
 
 using ::testing::ContainerEq;
+using ::testing::ElementsAre;
 using std::set;
+using std::sort;
 using std::stack;
-using std::thread;
 using std::to_string;
 using std::unique_ptr;
 using std::vector;
@@ -120,6 +122,22 @@ TEST_F(ClientMetadataTest, TestMakeDirs) {
   EXPECT_THAT(actual_files, ContainerEq(expected_files));
 }
 
+TEST_F(ClientMetadataTest, TestCreateUTF8FileNames) {
+  start(1, 1);
+  create_directories("/test");
+  for (int i = 0; i < 5; i++) {
+    ObjectId oid;
+    EXPECT_TRUE(client_->create("/test/测试" + to_string(i),
+                                0755, 100, 100, &oid).ok());
+  }
+  vector<string> files;
+  EXPECT_TRUE(client_->readdir("/test", &files).ok());
+  EXPECT_EQ(5u, files.size());
+  for (const auto& chn_file : files) {
+    LOG(INFO) << "Chinese filename: " << chn_file;
+  }
+}
+
 TEST_F(ClientMetadataTest, TestCreateIndices) {
   start(4, 1);
   create_directories("/foo/bar/test");
@@ -127,10 +145,13 @@ TEST_F(ClientMetadataTest, TestCreateIndices) {
 
   EXPECT_TRUE(client_->create_index("/foo/bar", "blue", IndexInfo::BTREE,
                                   INT32, 0755, 100, 100).ok());
+  EXPECT_TRUE(client_->create_index("/foo/bar", "蓝色", IndexInfo::BTREE,
+                                    INT32, 0755, 100, 100).ok());
   EXPECT_TRUE(client_->create_index("/foo/bar/zoo", "blue", IndexInfo::BTREE,
                                   INT32, 0755, 100, 100).ok());
   struct stat stbuf;
   EXPECT_TRUE(client_->getattr("/foo/bar/.vsfs/blue", &stbuf).ok());
+  EXPECT_TRUE(client_->getattr("/foo/bar/.vsfs/蓝色", &stbuf).ok());
   EXPECT_TRUE(client_->getattr("/foo/bar/zoo/.vsfs/blue", &stbuf).ok());
 }
 
@@ -148,6 +169,91 @@ TEST_F(ClientMetadataTest, TestLocateIndicesForSearch) {
   vector<string> actual_indices;
   EXPECT_TRUE(client_->locate_index_for_search(query, &actual_indices).ok());
   EXPECT_THAT(actual_indices, ContainerEq(expected_indices));
+}
+
+TEST_F(ClientMetadataTest, TestSearchSuccess) {
+  start(4, 4);
+  create_index("/foo/bar", "dog");
+  create_directories("/foo/bar/zoo");
+  create_directories("/foo/bar/dogs");
+  create_directories("/foo/bar/cat");
+
+  for (int i = 0; i < 100; i++) {
+    ObjectId oid;
+    client_->create("/foo/bar/zoo/zoo" + to_string(i), 0644, 100, 100, &oid);
+    client_->create("/foo/bar/dogs/dog" + to_string(i), 0644, 100, 100, &oid);
+    client_->create("/foo/bar/cat/cat" + to_string(i), 0644, 100, 100, &oid);
+  }
+
+  vector<VSFSRpcClient::IndexUpdateRequest> requests;
+  for (int i = 0; i < 100; i++) {
+    requests.emplace_back(VSFSRpcClient::IndexUpdateRequest::INSERT,
+                          "/foo/bar/dogs/dog" + to_string(i),
+                          "dog",
+                          to_string(i));
+  }
+  EXPECT_TRUE(client_->update(requests).ok());
+
+  vector<string> expected_files;
+  for (int i = 51; i < 100; i++) {
+    expected_files.push_back("/foo/bar/dogs/dog" + to_string(i));
+  }
+
+  ComplexQuery query;
+  query.parse("/foo?dog>50");
+  vector<string> actual_files;
+  EXPECT_TRUE(client_->search(query, &actual_files).ok());
+  sort(actual_files.begin(), actual_files.end());
+  EXPECT_THAT(actual_files, ContainerEq(expected_files));
+}
+
+TEST_F(ClientMetadataTest, TestIndexInfo) {
+  start(2, 2);
+  create_index("/foo/bar", "a");
+  create_index("/foo/bar", "b");
+  create_index("/foo/bar/zoo", "a");
+  create_index("/foo/bar/zoo", "b");
+
+  vector<IndexInfo> infos;
+  EXPECT_TRUE(client_->info("/foo/bar", &infos).ok());
+  EXPECT_EQ(4u, infos.size());
+  vector<string> actual_indices;
+  for (const auto& info : infos) {
+    actual_indices.emplace_back(PathUtil::index_path(info.path(),
+                                                     info.index_name()));
+    EXPECT_EQ(IndexInfo::BTREE, info.index_type());
+    EXPECT_EQ(INT32, info.key_type());
+  }
+  sort(begin(actual_indices), end(actual_indices));
+  EXPECT_THAT(actual_indices, ElementsAre(
+      "/foo/bar/.vsfs/a", "/foo/bar/.vsfs/b", "/foo/bar/zoo/.vsfs/a",
+      "/foo/bar/zoo/.vsfs/b"));
+}
+
+TEST_F(ClientMetadataTest, TestSearchUTF8Indices) {
+  start(2, 2);
+  create_index("/foo/bar", "测试");
+  create_directories("/foo/bar/dog");
+  for (int i = 0; i < 100; i++) {
+    ObjectId oid;
+    client_->create("/foo/bar/dog/dog" + to_string(i), 0644, 100, 100, &oid);
+  }
+
+  vector<VSFSRpcClient::IndexUpdateRequest> requests;
+  for (int i = 0; i < 100; i++) {
+    requests.emplace_back(VSFSRpcClient::IndexUpdateRequest::INSERT,
+                          "/foo/bar/dog/dog" + to_string(i),
+                          "测试",
+                          to_string(i));
+  }
+  LOG(INFO) << "Update request;";
+  EXPECT_TRUE(client_->update(requests).ok());
+
+  ComplexQuery query;
+  EXPECT_TRUE(query.parse("/foo?测试>50").ok());
+  vector<string> actual_files;
+  EXPECT_TRUE(client_->search(query, &actual_files).ok());
+  EXPECT_EQ(49u, actual_files.size());
 }
 
 }  // namespace client

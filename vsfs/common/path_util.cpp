@@ -39,6 +39,24 @@ string PathUtil::index_path(const string& root, const string& name) {
   return (fs::path(root) / ".vsfs" / name).string();
 }
 
+bool PathUtil::split_index_path(
+    const string& path, string* root, string* name) {
+  const string kVsfsDir("/.vsfs/");
+  size_t pos = path.find("/.vsfs/");
+  if (pos == string::npos) {
+    return false;
+  }
+  if (path.size() <= pos + kVsfsDir.size()) {
+    return false;
+  }
+  *root = path.substr(0, pos);
+  *name = path.substr(pos + kVsfsDir.size());
+  if (root->empty()) {
+    *root = "/";
+  }
+  return true;
+}
+
 string PathUtil::partition_path(const string& root, const string& name,
                                 HashValueType sep) {
   return (fs::path(root) / ".vsfs" / name / to_string(sep)).string();

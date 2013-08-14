@@ -28,6 +28,7 @@
 #include "vsfs/common/complex_query.h"
 #include "vsfs/common/path_util.h"
 #include "vsfs/common/types.h"
+#include "vsfs/index/index_info.h"
 #include "vsfs/rpc/thrift_utils.h"
 #include "vsfs/rpc/vsfs_types.h"
 
@@ -39,6 +40,7 @@ using std::to_string;
 using std::vector;
 using vobla::Status;
 using vobla::ThreadPool;
+using vsfs::index::IndexInfo;
 namespace fs = boost::filesystem;
 
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
@@ -65,6 +67,10 @@ RpcNodeAddress string_to_address(const string& addr_str) {
   result.host = fields[0];
   result.port = stoi(fields[1]);
   return result;
+}
+
+string address_to_string(const RpcNodeAddress& addr) {
+  return addr.host + ":" + to_string(addr.port);
 }
 
 }  // namespace
@@ -301,9 +307,9 @@ Status VSFSRpcClient::mkdir(
     auto master_client = master_client_factory_->open(node.address.host,
                                                       node.address.port);
     RpcFileInfo dir_info;
-    dir_info.mode = mode | S_IFDIR;
-    dir_info.uid = uid;
-    dir_info.gid = gid;
+    dir_info.__set_mode(mode | S_IFDIR);
+    dir_info.__set_uid(uid);
+    dir_info.__set_gid(gid);
     master_client->handler()->mkdir(path, dir_info);
     master_client_factory_->close(master_client);
   } catch (RpcInvalidOp ouch) {  // NOLINT
@@ -376,9 +382,8 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
 
 Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   CHECK_NOTNULL(stbuf);
-  auto hash = PathUtil::path_to_hash(path);
   NodeInfo node;
-  CHECK(master_map_.get(hash, &node).ok());
+  CHECK(master_map_.get(path, &node).ok());
   RpcFileInfo file_info;
   try {
     auto client = master_client_factory_->open(node.address);
@@ -401,18 +406,57 @@ Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   return Status::OK;
 }
 
+Status VSFSRpcClient::setattr(const string& path, const RpcFileInfo& info) {
+  NodeInfo node;
+  CHECK(master_map_.get(path, &node).ok());
+  Status status;
+  try {
+    auto client = master_client_factory_->open(node.address);
+    client->handler()->setattr(path, info);
+    master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    status.set(ouch.what, ouch.why);
+  } catch (TTransportException e) {  // NOLINT
+    LOG(ERROR) << "Thrift Transport Exception: (" << e.getType() << "): "
+               << e.what();
+    status.set(e.getType(), e.what());
+  }
+  return status;
+}
+
+Status VSFSRpcClient::chmod(const string& path, mode_t mode) {
+  RpcFileInfo file_info;
+  file_info.__set_mode(mode);
+  return setattr(path, file_info);
+}
+
+Status VSFSRpcClient::chown(const string& path, int64_t uid, int64_t gid) {
+  RpcFileInfo file_info;
+  file_info.__set_uid(uid);
+  file_info.__set_gid(gid);
+  return setattr(path, file_info);
+}
+
+Status VSFSRpcClient::utimens(const string& path,
+                              int64_t atime, int64_t mtime) {
+  RpcFileInfo file_info;
+  file_info.__set_atime(atime);
+  file_info.__set_mtime(mtime);
+  return setattr(path, file_info);
+}
+
 Status VSFSRpcClient::create_index(const string& root, const string& name,
                                    int index_type, int key_type,
                                    int64_t mode, int64_t uid, int64_t gid) {
   struct stat stbuf;
   auto status = getattr(root, &stbuf);
   if (!status.ok()) {
-    LOG(ERROR) << "Can not create log: " << status.message();
+    LOG(ERROR) << "Can not create index: " << status.message();
     return status;
   }
   if (!S_ISDIR(stbuf.st_mode)) {
     LOG(ERROR) << "Can not create index on an non-dir path.";
-    return Status::system_error(-ENOTDIR);
+    return Status::system_error(ENOTDIR);
   }
 
   string partition_path = PathUtil::partition_path(root, name, 0);
@@ -452,6 +496,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
     status = remove_index(root, name);
     return status;
   }
+  status = Status::OK;  // resets the status.
 
   auto full_path = PathUtil::index_path(root, name);
   hash = PathUtil::path_to_hash(full_path);
@@ -460,6 +505,7 @@ Status VSFSRpcClient::create_index(const string& root, const string& name,
   try {
     auto client = master_client_factory_->open(master_server.address);
     create_request.root = root;
+    create_request.name = name;
     client->handler()->create_index(create_request);
     master_client_factory_->close(client);
   } catch (RpcInvalidOp ouch) {  // NOLINT
@@ -531,25 +577,48 @@ Status VSFSRpcClient::search(const ComplexQuery& query,
     return status;
   }
 
-  auto rpc_query = ThriftUtils::complex_query_to_rpc_complex_query(query);
   vector<ObjectId> objects;
   // TODO(lxu): use multithread to do parallel query.
   for (const auto& addr_and_partitions : plan) {
     auto address = string_to_address(addr_and_partitions.first);
+    RpcComplexQuery rpc_query;
+    rpc_query.root = query.root();
+    for (const auto& part : addr_and_partitions.second) {
+      auto index_name = fs::path(part).parent_path().filename().string();
+      auto range = query.range_query(index_name);
+      rpc_query.range_queries.emplace_back();
+      auto& sub_query = rpc_query.range_queries.back();
+      sub_query.index_path = part;
+      sub_query.name = index_name;
+      sub_query.upper = range->upper;
+      sub_query.upper_open = !range->upper_closed;
+      sub_query.lower = range->lower;
+      sub_query.lower_open = !range->lower_closed;
+    }
+    vector<ObjectId> tmp;
     try {
       auto client = index_client_factory_->open(address);
-      for (const auto& part : addr_and_partitions.second) {
-        vector<ObjectId> tmp;
-        rpc_query.root = part;
-        client->handler()->search(tmp, rpc_query);
-        objects.insert(end(objects), begin(tmp), end(tmp));
-      }
+      client->handler()->search(tmp, rpc_query);
       index_client_factory_->close(client);
+      objects.insert(end(objects), begin(tmp), end(tmp));
     } catch (RpcInvalidOp ouch) {  // NOLINT
-      return Status(ouch.what, ouch.why);
+      status.set(ouch.what, ouch.why);
+      break;
     } catch (TTransportException e) {  // NOLINT
-      return Status(e.getType(), e.what());
+      status.set(e.getType(), e.what());
+      break;
     }
+  }
+  if (!status.ok()) {
+    LOG(ERROR) << "VsfsRpcClient::search(): failed to search object ID: "
+               << status.message();
+    return status;
+  }
+
+  status = get_file_paths_from_objects(objects, results);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to resolve file path: " << status.message();
+    return status;
   }
   return Status::OK;
 }
@@ -614,7 +683,8 @@ Status VSFSRpcClient::IndexUpdateTask::reorder_requests_to_index_servers(
     ServerToRequestMap* request_map) {
   CHECK_NOTNULL(request_map);
 
-  for (const auto request : requests_) {
+  for (size_t pos = 0; pos < requests_.size(); ++pos) {
+    const auto request = requests_[pos];
     // The index path must exist, otherwise an exception will raise.
     string parent = fs::path(request->file_path).parent_path().string();
     const auto& index_path = index_map.at(parent)
@@ -625,7 +695,7 @@ Status VSFSRpcClient::IndexUpdateTask::reorder_requests_to_index_servers(
     NodeInfo node;
     CHECK(parent_->index_server_map_.get(hash, &node).ok());
     string addr = node.address.host + ":" + to_string(node.address.port);
-    (*request_map)[addr][index_path].push_back(request);
+    (*request_map)[addr][partition_path].push_back(pos);
   }
   return Status::OK;
 }
@@ -647,14 +717,27 @@ Status VSFSRpcClient::IndexUpdateTask::run() {
     return status;
   }
 
+  vector<ObjectId> object_ids;
+  vector<string> paths;
+  for (const auto& req : requests_) {
+    paths.push_back(req->file_path);
+  }
+  status = parent_->find_objects(paths, &object_ids);
+  if (!status.ok()) {
+    LOG(ERROR) << "IndexUpdateTask::run(): failed to resolve object IDs."
+               << status.message();
+    return status;
+  }
+
   for (const auto& server_and_requests : request_map) {
     RpcIndexUpdate update_request;
     // TODO(lxu): clean up the confusion names in Rpc structurs.
-    for (const auto& index_path_and_requests : server_and_requests.second) {
+    for (const auto& index_path_and_pos : server_and_requests.second) {
       update_request.updates.emplace_back();
       auto& record_list = update_request.updates.back();
-      record_list.root_path = index_path_and_requests.first;
-      for (const auto& req : index_path_and_requests.second) {
+      record_list.root_path = index_path_and_pos.first;
+      for (const auto& pos : index_path_and_pos.second) {
+        auto req = requests_[pos];
         record_list.record_updates.emplace_back();
         auto& record = record_list.record_updates.back();
         // TODO(lxu): merges IndexUpdateRequest::OP with RpcIndexUpdateOpCode.
@@ -674,11 +757,10 @@ Status VSFSRpcClient::IndexUpdateTask::run() {
             break;
         }
         record.key = req->key;
-        auto hash = PathUtil::path_to_hash(req->file_path);
-        record.__set_value(to_string(hash));
+        record.__set_value(to_string(object_ids[pos]));
         VLOG(3) << "Index update record: key:" << req->key
-                << " value: " << req->file_path << "(H:" << hash << ")"
-                << " root: " << record_list.root_path
+                << " value: " << req->file_path << "(OBJ:" << record.value
+                << ") root: " << record_list.root_path
                 << " name: " << record_list.name;
       }
     }
@@ -730,13 +812,113 @@ Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& requests) {
 Status VSFSRpcClient::info(const string& path,
                            vector<index::IndexInfo>* infos) {
   CHECK_NOTNULL(infos);
-  (void) path;
+  RpcIndexInfoRequest request;
+  request.path = path;
+  request.__set_recursive(true);
+
+  auto master_map = master_map_.get_ch_ring_as_map();
+  vector<string> indices;
+  Status status;
+  for (const auto& hash_and_node : master_map) {
+    const auto& node = hash_and_node.second;
+    vector<string> tmp;
+    try {
+      auto client = master_client_factory_->open(node.address);
+      client->handler()->locate_indices(tmp, request);
+      master_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      status.set(e.getType(), e.what());
+    }
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to locate indices on MasterNode: "
+          << node.address.host << ":" << node.address.port
+          << " because: " << status.message();
+      return status;
+    }
+    indices.insert(indices.end(), begin(tmp), end(tmp));
+  }
+
+  for (const auto& idx_path : indices) {
+    string root, name;
+    if (!PathUtil::split_index_path(idx_path, &root, &name)) {
+      LOG(ERROR) << "Index Path has wrong format: " << idx_path;
+      return Status(-1, "Wrong index path format.");
+    }
+
+    auto partition_path = idx_path + "/0";
+    NodeInfo node;
+    CHECK(index_server_map_.get(partition_path, &node).ok());
+    RpcIndexInfo rpc_info;
+    RpcIndexInfoRequest req;
+    req.path = partition_path;
+    VLOG(1) << "Getting Index Info for " << idx_path;
+    try {
+      auto client = index_client_factory_->open(node.address);
+      client->handler()->info(rpc_info, req);
+      index_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      status.set(e.getType(), e.what());
+    }
+    if (!status.ok()) {
+      LOG(ERROR) << "Can not access the index info for: " << idx_path
+                 << ", because: " << status.message();
+      return status;
+    }
+    VLOG(1) << "IndexInfo: " << root << " " << name
+            << " " << rpc_info.type << " " << rpc_info.key_type;
+    infos->emplace_back(root, name, rpc_info.type, rpc_info.key_type);
+  }
+
   return Status::OK;
 }
 
 bool VSFSRpcClient::is_initialized() {
   return !master_map_.empty();
 }
+
+Status VSFSRpcClient::find_objects(const vector<string>& paths,
+                                   vector<ObjectId>* objects) {
+  CHECK_NOTNULL(objects);
+  objects->reserve(paths.size());
+
+  map<string, vector<size_t>> reordered_path_pos_map;
+  for (size_t i = 0; i < paths.size(); ++i) {
+    NodeInfo node;
+    CHECK(master_map_.get(paths[i], &node).ok());
+    auto addr = address_to_string(node.address);
+    reordered_path_pos_map[addr].push_back(i);
+  }
+
+  for (const auto& addr_and_pos : reordered_path_pos_map) {
+    vector<string> tmp_files;
+    vector<ObjectId> tmp_objs;
+    const auto& positions = addr_and_pos.second;
+    for (auto pos : positions) {
+      tmp_files.push_back(paths[pos]);
+    }
+    RpcNodeAddress addr = string_to_address(addr_and_pos.first);
+    try {
+      auto client = master_client_factory_->open(addr);
+      client->handler()->find_objects(tmp_objs, tmp_files);
+      master_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      return Status(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      return Status(e.getType(), e.what());
+    }
+    CHECK_EQ(tmp_objs.size(), tmp_files.size());
+    size_t num_files = tmp_files.size();
+    for (size_t i = 0; i < num_files; ++i) {
+      (*objects)[positions[i]] = tmp_objs[i];
+    }
+  }
+  return Status::OK;
+}
+
 
 Status VSFSRpcClient::add_subfile(const string& path) {
   if (path == "/") {
@@ -817,6 +999,34 @@ Status VSFSRpcClient::gen_search_plan(const ComplexQuery& query,
     CHECK(index_server_map_.get(hash, &node).ok());
     auto addr = node.address.host + ":" + to_string(node.address.port);
     (*plan)[addr].insert(partition_path);
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::get_file_paths_from_objects(
+    const vector<ObjectId>& objects, vector<string>* paths) {
+  CHECK_NOTNULL(paths);
+  map<string, RpcObjectList> plan;
+  for (auto obj : objects) {
+    NodeInfo node;
+    CHECK(master_map_.get(obj, &node).ok());
+    auto addr = address_to_string(node.address);
+    plan[addr].push_back(obj);
+  }
+  // TODO(lxu): use threads to do parallel query.
+  for (const auto& addr_and_obj_list : plan) {
+    auto address = string_to_address(addr_and_obj_list.first);
+    vector<string> tmp;
+    try {
+      auto client = master_client_factory_->open(address);
+      client->handler()->find_files(tmp, addr_and_obj_list.second);
+      master_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      return Status(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
+      return Status(e.getType(), e.what());
+    }
+    paths->insert(paths->end(), tmp.begin(), tmp.end());
   }
   return Status::OK;
 }

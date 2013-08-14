@@ -98,6 +98,15 @@ void MasterServer::getattr(RpcFileInfo& info, const string& path) {  // NOLINT
   ThriftUtils::check_status(controller_->getattr(path, &info));
 }
 
+void MasterServer::setattr(const string& path, const RpcFileInfo& info) {
+  ThriftUtils::check_status(controller_->setattr(path, info));
+}
+
+void MasterServer::find_objects(RpcObjectList& results,  // NOLINT
+                                const RpcFileList& files) {
+  controller_->find_objects(files, &results);
+}
+
 void MasterServer::find_files(RpcFileList& files,  // NOLINT
                               const RpcObjectList& objects) {
   ThriftUtils::check_status(controller_->find_files(objects, &files));
@@ -114,6 +123,11 @@ void MasterServer::remove_index(const string& root, const string& name) {
 void MasterServer::locate_indices_for_search(
     vector<string>& results, const string& root, const vector<string>& names) {
   ThriftUtils::check_status(controller_->locate_indices(root, names, &results));
+}
+
+void MasterServer::locate_indices(vector<string>& results,  // NOLINT
+                                  const RpcIndexInfoRequest& request) {
+  results = controller_->locate_indices(request.path, request.recursive);
 }
 
 }  // namespace masterd

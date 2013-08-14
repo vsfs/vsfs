@@ -167,7 +167,11 @@ class MasterController : boost::noncopyable {
   Status object_id(const string& path, ObjectId* oid);
 
   /// Gets the attribute of a file / dir / index.
-  Status getattr(const string &path, RpcFileInfo *info);
+  Status getattr(const string& path, RpcFileInfo *info);
+
+  Status setattr(const string& path, const RpcFileInfo& info);
+
+  void find_objects(const vector<string>& files, vector<ObjectId>* objects);
 
   Status find_files(const vector<ObjectId>& objects, vector<string>* files);
 
@@ -189,6 +193,9 @@ class MasterController : boost::noncopyable {
    */
   Status locate_indices(const string& root, const vector<string>& names,
                         vector<string>* indices);
+
+  /// Finds all indices with any names under the directory 'root'
+  vector<string> locate_indices(const string& root, bool recursive);
 
   string host() const;
 

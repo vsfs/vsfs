@@ -38,6 +38,9 @@ int main(int argc, char* const argv[]) {
   unique_ptr<Command> command(Command::create_command(subcmd));
   argc--;
   argv++;
+  if (!command) {  // Unknown commands.
+    return 1;
+  }
   int ret = command->parse_args(argc, argv);
   if (ret) {
     if (ret == -1) {

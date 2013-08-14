@@ -18,6 +18,7 @@
 #define VSFS_MASTERD_NAMESPACE_H_
 
 #include <boost/utility.hpp>
+#include <gtest/gtest_prod.h>
 #include <sys/stat.h>
 #include <memory>
 #include <mutex>  // NOLINT
@@ -81,12 +82,20 @@ class Namespace : boost::noncopyable {
   Status find_files(const vector<ObjectId>& object_ids,
                     vector<string>* paths);
 
+  void find_objects(const vector<string>& paths,
+                    vector<ObjectId>* object_ids);
+
   /**
    * \brief Access the attributes of a file or directory.
    * \param[in] path the full path of the targeted file.
    * \param[out] info filled with the metadata of file.
    */
-  Status getattr(const string &path, RpcFileInfo *info);
+  Status getattr(const string& path, RpcFileInfo *info);
+
+  /**
+   * \brief Sets the attribute of one file.
+   */
+  Status setattr(const string& path, const RpcFileInfo& info);
 
   /**
    * \brief Creates a file and returns its file id.
@@ -126,6 +135,8 @@ class Namespace : boost::noncopyable {
   Status readdir(const string &path, vector<string>* results);  // NOLINT
 
  private:
+  FRIEND_TEST(NamespaceTest, TestObjectIdDistribution);
+
   /**
    * \brief Calculate object id from the file path.
    * \note the caller needs to hold the mutex_.

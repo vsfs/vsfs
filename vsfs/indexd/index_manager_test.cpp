@@ -232,7 +232,6 @@ TEST_F(IndexManagerTest, TestMergeForAnsweringInfoRequest) {
   RpcIndexInfoRequest request;
   request.txn_id = 101;
   request.path = "/path";
-  request.name = "index";
 
   RpcIndexInfo info;
   EXPECT_TRUE(manager.info(request, &info).ok());

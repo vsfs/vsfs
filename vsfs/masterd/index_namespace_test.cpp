@@ -174,6 +174,18 @@ TEST_F(IndexNamespaceTest, TestCollect) {
               ElementsAre("/foo/bar", "/foo/bar/data1", "/foo/sushi"));
 }
 
+TEST_F(IndexNamespaceTest, TestGetIndicesRecursively) {
+  EXPECT_CALL(*mock_db_, put(_, _))
+      .WillRepeatedly(Return(Status::OK));
+  test_ns_->insert("/foo/bar", "test");
+  test_ns_->insert("/foo/bar/data0", "data0");
+  test_ns_->insert("/foo/bar/data1", "test");
+  auto indices = test_ns_->get_indices("/foo", true);
+  EXPECT_THAT(indices, ElementsAre("/foo/bar/.vsfs/test",
+                                   "/foo/bar/data0/.vsfs/data0",
+                                   "/foo/bar/data1/.vsfs/test"));
+}
+
 TEST_F(IndexNamespaceTest, TestGetIndexNames) {
   EXPECT_CALL(*mock_db_, put(_, _))
       .WillRepeatedly(Return(Status::OK));

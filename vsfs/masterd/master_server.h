@@ -74,6 +74,10 @@ class MasterServer : public vsfs::MasterServerIf {
 
   void getattr(RpcFileInfo& info, const string& path);  // NOLINT
 
+  void setattr(const string& path, const RpcFileInfo& info);
+
+  void find_objects(RpcObjectList& objects, const RpcFileList& files);  // NOLINT
+
   void find_files(RpcFileList& files, const RpcObjectList& objects);  // NOLINT
 
   /**
@@ -87,6 +91,9 @@ class MasterServer : public vsfs::MasterServerIf {
   /// Locate index servers for a query.
   void locate_indices_for_search(
       vector<string>& results, const string& root, const vector<string>& names);
+
+  void locate_indices(vector<string>& results,  // NOLINT
+                      const RpcIndexInfoRequest& request);
 
  private:
   MasterController* controller_;

@@ -109,22 +109,6 @@ class VSFSClient : boost::noncopyable {
   /// Opens a file and get the file handler.
   virtual Status open(const string& path, ObjectId* id) = 0;
 
-  /*
-  // TODO(ziling): use const FileOp &file_op, need to modify all related
-  // operations in file_op, file_handler, storage_manager to const
-  /// Read a file and return the bytes that have been read
-  virtual int read(FileOp *file_op, char *buf, size_t size,
-                   off_t offset) = 0;
-
-  /// Write to a file and return the bytes that have been written
-  virtual int write(FileOp *file_op, const char *buf, size_t size,
-                    off_t offset, FileInfo *file) = 0;
-
-  // Updates the index of FileInfo
-  // Status index(const FileInfo &file, std::function<Operator> IdxOp);
-
-  */
-
   virtual Status create_index(
       const string& root, const string& name, int index_type, int key_type,
       int64_t mode, int64_t uid, int64_t gid) = 0;

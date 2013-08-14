@@ -19,22 +19,21 @@ typedef list<string> RpcKeywordList
 typedef string RpcRawData
 
 exception RpcInvalidOp {
-  1: i32 what,
-  2: string why,
+  1: required i32 what,
+  2: required string why,
 }
 
 // Rpcepresents a File object in VSFS namespace.
 // See common/file_info.h for more details.
 struct RpcFileInfo {
-  1: i64 id,
-  2: string path,
-  4: i64 uid,
-  5: i64 gid,
-  6: i64 mode,
-  7: i64 size,
-  8: i64 ctime,
-  9: i64 mtime,
-  10: i64 atime,
+  1: optional i64 object_id,
+  2: optional i64 uid,
+  3: optional i64 gid,
+  4: optional i64 mode,
+  5: optional i64 size,
+  6: optional i64 ctime,
+  7: optional i64 mtime,
+  8: optional i64 atime,
 }
 
 // IP address of a node.
@@ -84,13 +83,6 @@ struct RpcIndexName {
   2: required string name,
 }
 
-struct RpcIndexKeyValue {
-  1: required string root_path,
-  2: required string name,
-  3: required string key,
-  4: optional string value,
-}
-
 // The operations on index records.
 enum RpcIndexUpdateOpCode {
   UNKNOWN,
@@ -129,14 +121,6 @@ struct RpcIndexCreateRequest {
   7: required i64 gid,
 }
 
-struct RpcIndexLocation {
-  1: required string full_index_path,
-  2: required RpcNodeAddress server_addr,
-  3: required list<i64> file_ids
-}
-
-typedef list<RpcIndexLocation> RpcIndexLocationList
-
 /**
  * \brief Describes a Consistent Hash Ring for all the partitions of one index.
  */
@@ -148,42 +132,10 @@ struct RpcIndexPartitionRing {
 
 typedef list<RpcIndexPartitionRing> RpcIndexPartitionRingList
 
-struct RpcMetaLocation {
-  1: required i64 file_id,
-  2: required RpcNodeAddress server_addr,
-}
-
-typedef list<RpcMetaLocation> RpcMetaLocationList
-
-struct RpcMetaData {
-  1: required i64 file_id,
-  2: required string file_path;
-}
-
-typedef list<RpcMetaData> RpcMetaDataList
-
-/**
- * \brief Lookup request for index.
- *
- * It works in two ways:
- *  - No cached (cached = false), the optional field `dir_to_file_id_map` is
- *    used. This field is a map between "dir names" -> "vector<hash(file
- *    path)>".
- *  - Cached (cached = true), only 'dirs' is set. The 'dirs' is the common
-*     directories used by all files to index.
- */
-struct RpcIndexLookupRequest {
-  1: required string name,  // Index name
-  2: required bool cached,
-  3: optional map<string, list<i64>> dir_to_file_id_map,
-  4: optional list<string> dirs;
-}
-
 struct RpcIndexInfoRequest {
   1: required i64 txn_id,
   2: required string path,
-  3: optional string name,
-  4: optional bool recursive,
+  3: optional bool recursive
 }
 
 /**
@@ -194,7 +146,6 @@ struct RpcIndexInfo {
   2: required string name,
   3: required i32 type,  // index type
   4: required i32 key_type,
-  5: required RpcIndexLocationList locations,
   6: required i64 num_records,  // Number of records.
 }
 
@@ -252,6 +203,9 @@ service MasterServer {
   /// Obtains the object ID for a file.
   RpcObjectId object_id(1:string path) throws (1:RpcInvalidOp ouch);
 
+  /// Find the objects IDs for given files.
+  RpcObjectList find_objects(1:RpcFileList files) throws (1:RpcInvalidOp ouch);
+
   /// Removes a file.
   void remove(1:string path)
     throws (1:RpcInvalidOp ouch);
@@ -259,6 +213,9 @@ service MasterServer {
   /// Access the attributes of a file or a directory.
   RpcFileInfo getattr(1:string path)
     throws (1:RpcInvalidOp ouch);
+
+  /// Sets the attribute of a file.
+  void setattr(1:string path, 2:RpcFileInfo info) throws (1:RpcInvalidOp ouch);
 
   /// Returns a list of file paths.
   RpcFileList find_files(1:RpcObjectList objects) throws (1:RpcInvalidOp ouch);
@@ -281,6 +238,10 @@ service MasterServer {
    */
   list<string> locate_indices_for_search(
 	  1:string root, 2:list<string> names) throws (1:RpcInvalidOp ouch);
+
+  /// Locate all indices under the directory.
+  list<string> locate_indices(1:RpcIndexInfoRequest request)
+      throws (1:RpcInvalidOp ouch);
 }
 
 /**
