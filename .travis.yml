@@ -35,7 +35,7 @@ script:
   - if [[ $TEST == 'release' ]]; then make release; else make -j && make $TEST; fi
 after_success:
   - cp vobla/.libs/libvobla_la-*.gc* vobla
-  - if [[ $CXX == 'g++-4.7' -a $TEST != 'release' ]]; then coveralls --gcov gcov-4.7 -e lib -e thrift-0.9.0 -e glog-0.3.3; fi
+  - if [[ $CXX == 'g++-4.7' && $TEST != 'release' ]]; then coveralls --gcov gcov-4.7 -e lib -e thrift-0.9.0 -e glog-0.3.3; fi
 notifications:
   email:
     recipients:
