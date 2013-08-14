@@ -9,7 +9,6 @@ env:
 before_install:
 # g++ 4.7/4.8
   - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-# thrift 0.9.0
   - sudo add-apt-repository -y ppa:fcitx-team/nightly
   - sudo add-apt-repository -y ppa:dns/gnu
   - sudo add-apt-repository -y ppa:apokluda/boost1.53
@@ -29,11 +28,11 @@ before_install:
   - make && sudo make install
   - cd ..
 before_script:
-  - ./bootstrap
+  - if [[ $TEST == 'release' ]]; then mkdir -p ~/rpmbuild/{SOURCES,SPECS}; else ./bootstrap; fi
 script:
   - export LD_LIBRARY_PATH=/usr/local/lib
   - if [[ $CXX == 'g++-4.7' ]]; then CFLAGS='-g -O0' CXXFLAGS='-g -O0' ./configure --enable-gcov --disable-shared; else ./configure; fi
-  - if [[ $TEST == 'release' ]]; then mkdir -p ~/rpmbuild/{SOURCES,SPECS}; make release; else make -j && make $TEST; fi
+  - if [[ $TEST == 'release' ]]; then make release; else make -j && make $TEST; fi
 after_success:
   - cp vobla/.libs/libvobla_la-*.gc* vobla
   - if [[ $CXX == 'g++-4.7' -a $TEST != 'release' ]]; then coveralls --gcov gcov-4.7 -e lib -e thrift-0.9.0 -e glog-0.3.3; fi

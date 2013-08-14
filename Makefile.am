@@ -17,6 +17,7 @@ coverage:
 #$(RM) raw_coverage.info coverage.info
 
 release:
+	make  # Generate all thrift files
 	make dist
 	cp vsfs-*.gz ~/rpmbuild/SOURCES
 	rpmbuild -ba contrib/vsfs.spec
