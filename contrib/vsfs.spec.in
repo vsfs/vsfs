@@ -12,8 +12,21 @@ Versatile searchable file system.
 
 %prep
 %setup -q
+cd lib
+if [ ! -f gmock.zip ]; then
+	wget -O gmock.zip https://googlemock.googlecode.com/files/gmock-1.6.0.zip
+	unzip gmock.zip
+	cd gmock-*
+	./configure && make
+fi
+cd ..
 
 %build
+cd lib/vobla
+%configure
+make
+
+cd -
 %configure
 #make %{?_smp_mflags}
 make
@@ -27,5 +40,10 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
+/usr/bin/indexd
+/usr/bin/masterd
+/usr/bin/mount.vsfs
+/usr/bin/vsfs
+/usr/lib64/libvsfs-client.a
 
 %changelog

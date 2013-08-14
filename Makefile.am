@@ -6,7 +6,8 @@ DIST_SUBDIRS = lib/vobla $(SUBDIRS)
 
 EXTRA_DIST = \
   LICENSE \
-  README.md
+  README.md \
+  bootstrap
 
 coverage:
 	lcov -c -d . -o raw_coverage.info
@@ -16,6 +17,8 @@ coverage:
 #$(RM) raw_coverage.info coverage.info
 
 release:
+	make dist
+	cp vsfs-*.gz ~/rpmbuild/SOURCES
 	rpmbuild -ba contrib/vsfs.spec
 
 test: check integration-test
