@@ -57,7 +57,9 @@ class PosixStorageManager : public StorageManager {
    */
   Status destroy();
 
-  FileObject open(const string& path, int flags);
+  FileObject* open(const string& path, int flags);
+
+  FileObject* open(const string& path, int flags, mode_t mode);
 
   Status close(FileHandler* handler) const;
 

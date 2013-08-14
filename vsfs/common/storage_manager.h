@@ -55,7 +55,9 @@ class StorageManager : boost::noncopyable {
      * \return a new FileObject object, caller now has the ownership of this
      * FileObject object.
      */
-    virtual FileObject open(const string& path, int flags) = 0;
+    virtual FileObject* open(const string& path, int flags) = 0;
+
+    virtual FileObject* open(const string& path, int flags, mode_t mode) = 0;
 
     /// Closes an opened file handler.
     virtual Status close(FileHandler* file_handler) const = 0;

@@ -49,14 +49,27 @@ Status PosixStorageManager::destroy() {
   return Status::OK;
 }
 
-FileObject PosixStorageManager::open(const string& path, int flags) {
+FileObject* PosixStorageManager::open(const string& path, int flags) {
   const string local_path = translate_path(path);
   int fd = ::open(local_path.c_str(), flags);
   if (fd < 0) {
     LOG(ERROR) << "Failed to open file: " << local_path;
-    return FileObject(nullptr);
+    return nullptr;
   }
-  return FileObject(new PosixFileHandler(this, fd));
+  FileObject *file_obj = new FileObject(new PosixFileHandler(this, fd));
+  return file_obj;
+}
+
+FileObject* PosixStorageManager::open(const string& path, int flags,
+                                     mode_t mode) {
+  const string local_path = translate_path(path);
+  int fd = ::open(local_path.c_str(), flags, mode);
+  if (fd < 0) {
+    LOG(ERROR) << "Failed to open file: " << local_path;
+    return nullptr;
+  }
+  FileObject *file_obj = new FileObject(new PosixFileHandler(this, fd));
+  return file_obj;
 }
 
 Status PosixStorageManager::close(vsfs::FileHandler* handler) const {

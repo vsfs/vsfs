@@ -290,11 +290,11 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
     return status.error();
   }
   // TODO(ziling): Add mode to open.
-  FileObject file_obj =
+  FileObject *file_obj =
       VsfsFuse::instance()->storage_manager()->open(abspath.c_str(),
-                                                    fi->flags | O_CREAT);
-  int fd = file_obj.file_handler()->objectId();
-  VsfsFuse::instance()->add_obj(fd, &file_obj);
+                                                    fi->flags | O_CREAT, mode);
+  int fd = file_obj->file_handler()->objectId();
+  VsfsFuse::instance()->add_obj(fd, file_obj);
   if (fd == -1) {
     LOG(ERROR) << strerror(errno);
     return -errno;
@@ -305,11 +305,11 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
 
 int vsfs_open(const char* path, struct fuse_file_info *fi) {
   string abspath = VsfsFuse::instance()->abspath(path);
-  FileObject file_obj =
+  FileObject *file_obj =
       VsfsFuse::instance()->storage_manager()->open(abspath.c_str(),
                                                     fi->flags | O_CREAT);
-  int fd = file_obj.file_handler()->objectId();
-  VsfsFuse::instance()->add_obj(fd, &file_obj);
+  int fd = file_obj->file_handler()->objectId();
+  VsfsFuse::instance()->add_obj(fd, file_obj);
   if (fd == -1) {
     LOG(ERROR) << "Failed to open file: " << path << ": " << strerror(errno);
     return -errno;

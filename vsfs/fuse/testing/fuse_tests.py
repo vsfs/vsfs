@@ -94,16 +94,16 @@ class FuseTests(unittest.TestCase):
         statinfo = os.stat('%s/a/b/c' % self.mount_dir)
         self.assertEqual(0777 | stat.S_IFDIR, statinfo.st_mode)
 
-#    def test_create_file(self):
-#        self.assertEqual(0, os.system('touch %s/abc.txt' % self.mount_dir))
-#        self.assertTrue(os.path.exists('%s/abc.txt' % self.base_dir))
-#
-#        self.assertEqual(0, os.system('echo 123 > %s/123.txt' %
-#                                      self.mount_dir))
-#        with open('%s/123.txt' % self.mount_dir) as fobj:
-#            content = fobj.read()
-#            self.assertEqual('123', content.strip())
-#
+    def test_create_file(self):
+        self.assertEqual(0, os.system('touch %s/abc.txt' % self.mount_dir))
+        self.assertTrue(os.path.exists('%s/abc.txt' % self.base_dir))
+
+        self.assertEqual(0, os.system('echo 123 > %s/123.txt' %
+                                      self.mount_dir))
+        with open('%s/123.txt' % self.mount_dir) as fobj:
+            content = fobj.read()
+            self.assertEqual('123', content.strip())
+
 #    def test_remove_file(self):
 #        for i in range(10):  # Create 10 files first.
 #            with open('%s/%d.txt' % (self.mount_dir, i), 'w') as fobj:
