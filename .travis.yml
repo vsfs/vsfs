@@ -28,7 +28,8 @@ before_install:
   - make && sudo make install
   - cd ..
 before_script:
-  - if [[ $TEST == 'release' ]]; then mkdir -p ~/rpmbuild/{SOURCES,SPECS}; else ./bootstrap; fi
+  - ./bootstrap
+  - mkdir -p ~/rpmbuild/{SOURCES,SPECS}
 script:
   - export LD_LIBRARY_PATH=/usr/local/lib
   - if [[ $CXX == 'g++-4.7' ]]; then CFLAGS='-g -O0' CXXFLAGS='-g -O0' ./configure --enable-gcov --disable-shared; else ./configure; fi
