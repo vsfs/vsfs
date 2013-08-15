@@ -108,30 +108,12 @@ class FuseTests(unittest.TestCase):
         for i in range(10):  # Create 10 files first.
             with open('%s/%d.txt' % (self.mount_dir, i), 'w') as fobj:
                 fobj.write('%s\n' % i)
+            self.assertTrue(os.path.exists('%s/%d.txt' % (self.base_dir, i)))
 
         for i in range(10):
             os.remove('%s/%d.txt' % (self.mount_dir, i))
+            self.assertFalse(os.path.exists('%s/%d.txt' % (self.base_dir, i)))
 
-#    def test_create_and_read(self):
-#        test_file = '%s/test.txt' % self.mount_dir
-#        with open(test_file, 'w') as fobj:
-#            for i in range(32):
-#                fobj.write(os.urandom(1024 * 1024))
-#            fobj.flush()
-#            fobj.close()
-#
-#        with open('%s/test.txt' % self.mount_dir) as fobj:
-#            data = fobj.read()
-#            self.assertEquals(32 * 1024 * 1024, len(data))
-#            #self.assertEqual('A test file.', data)
-#
-#    def test_delete_files(self):
-#        os.makedirs('%s/test' % self.mount_dir)
-#        for i in range(10):
-#            with open('%s/test/file-%d.txt' % (self.mount_dir, i), 'w') as fobj:
-#                fobj.write('%s\n' % i)
-#        shutil.rmtree('%s/test' % self.mount_dir)
-#
 #    def _index_file(self, name, path, key):
 #        """Insert a record into VSFS.
 #        @param name the name of index
