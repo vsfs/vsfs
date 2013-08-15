@@ -44,7 +44,7 @@ class FileHandler : boost::noncopyable {
   virtual ~FileHandler() {}
 
   /// Returns the ID for this file handler.
-  virtual ObjectId objectId() const = 0;
+  virtual ObjectId object_id() const = 0;
 
   /// close the file and return Status object.
   virtual Status close() = 0;

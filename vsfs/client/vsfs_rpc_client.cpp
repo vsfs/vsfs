@@ -43,11 +43,15 @@ using vobla::ThreadPool;
 using vsfs::index::IndexInfo;
 namespace fs = boost::filesystem;
 
+/*
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
              "VSFS client can use.");
 
 DEFINE_int32(vsfs_client_batch_size, 2048, "Sets the batch size of sending "
              "index update requests.");
+             */
+const int FLAGS_vsfs_client_num_thread = 16;
+const int FLAGS_vsfs_client_batch_size = 2048;
 
 const int kNumBackOffs = 3;
 
@@ -260,31 +264,28 @@ Status VSFSRpcClient::unlink(const string& path) {
   // First remove the subfile from its parent node.
   NodeInfo parent_node;
   auto parent = fs::path(path).parent_path().string();
-  auto parent_hash = PathUtil::path_to_hash(parent);
   auto filename = fs::path(path).filename().string();
-  auto status = master_map_.get(parent_hash, &parent_node);
-  if (!status.ok()) {
-    return status;
-  }
+  CHECK(master_map_.get(parent, &parent_node).ok());
   // Removes this file from its parent directory first.
   try {
     auto client = master_client_factory_->open(parent_node.address);
     client->handler()->remove_subfile(parent, filename);
     master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    LOG(ERROR) << "Failed to delete " << filename << " from parent: " << parent;
+    return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     return Status(e.getType(), e.what());
   }
 
   NodeInfo node;
-  auto hash = PathUtil::path_to_hash(path);
-  status = master_map_.get(hash, &node);
-  if (!status.ok()) {
-    return status;
-  }
+  CHECK(master_map_.get(path, &node).ok());
   try {
     auto client = master_client_factory_->open(node.address);
     client->handler()->remove(path);
     master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     return Status(e.getType(), e.what());
   }

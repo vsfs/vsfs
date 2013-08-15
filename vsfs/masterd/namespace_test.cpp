@@ -31,6 +31,7 @@
 
 using ::testing::ContainerEq;
 using ::testing::Contains;
+using ::testing::ElementsAre;
 using std::set;
 using std::string;
 using std::to_string;
@@ -125,7 +126,7 @@ TEST_F(NamespaceTest, TestRemoveDirs) {
 TEST_F(NamespaceTest, TestAddSubFiles) {
   EXPECT_FALSE(test_ns_->add_subfile("/foo", "bar").ok());
 
-  test_ns_->mkdir("/foo", 0x666, 100, 100);
+  test_ns_->mkdir("/foo", 0666, 100, 100);
   EXPECT_TRUE(test_ns_->add_subfile("/foo", "bar").ok());
   EXPECT_TRUE(test_ns_->add_subfile("/foo", "zoo").ok());
   EXPECT_FALSE(test_ns_->add_subfile("/foo", "bar").ok());
@@ -134,6 +135,20 @@ TEST_F(NamespaceTest, TestAddSubFiles) {
   EXPECT_TRUE(test_ns_->readdir("/foo", &subfiles).ok());
   EXPECT_EQ("bar", subfiles[0]);
   EXPECT_EQ("zoo", subfiles[1]);
+}
+
+TEST_F(NamespaceTest, TestRemoveSubFiles) {
+  test_ns_->mkdir("/foo", 0666, 100, 100);
+  test_ns_->add_subfile("/foo", "bar");
+  test_ns_->add_subfile("/foo", "zoo");
+
+  EXPECT_TRUE(test_ns_->remove_subfile("/foo", "zoo").ok());
+
+  vector<string> subfiles;
+  EXPECT_TRUE(test_ns_->readdir("/foo", &subfiles).ok());
+  EXPECT_THAT(subfiles, ElementsAre("bar"));
+
+  EXPECT_FALSE(test_ns_->remove_subfile("/foo", "nonexist").ok());
 }
 
 TEST_F(NamespaceTest, TestInitialize) {
