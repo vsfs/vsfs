@@ -102,17 +102,16 @@ class FuseTests(unittest.TestCase):
                                       self.mount_dir))
         with open('%s/123.txt' % self.mount_dir) as fobj:
             content = fobj.read()
-            print('CONTENT:', content)
             self.assertEqual('123', content.strip())
 
-#    def test_remove_file(self):
-#        for i in range(10):  # Create 10 files first.
-#            with open('%s/%d.txt' % (self.mount_dir, i), 'w') as fobj:
-#                fobj.write('%s\n' % i)
-#
-#        for i in range(10):
-#            os.remove('%s/%d.txt' % (self.mount_dir, i))
-#
+    def test_remove_file(self):
+        for i in range(10):  # Create 10 files first.
+            with open('%s/%d.txt' % (self.mount_dir, i), 'w') as fobj:
+                fobj.write('%s\n' % i)
+
+        for i in range(10):
+            os.remove('%s/%d.txt' % (self.mount_dir, i))
+
 #    def test_create_and_read(self):
 #        test_file = '%s/test.txt' % self.mount_dir
 #        with open(test_file, 'w') as fobj:
