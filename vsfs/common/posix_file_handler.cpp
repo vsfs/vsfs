@@ -30,34 +30,34 @@ using std::string;
 
 namespace vsfs {
 
-PosixFileHandler::PosixFileHandler(PosixStorageManager *psm, ObjectId objectId)
-    : storage_manager_(psm), objectId_(objectId) {
+PosixFileHandler::PosixFileHandler(PosixStorageManager *psm, ObjectId object_id)
+    : storage_manager_(psm), object_id_(object_id) {
   CHECK_NOTNULL(psm);
-  CHECK_GT(objectId_, 0);
+//  CHECK_GT(object_id_, 0);
 }
 
 PosixFileHandler::~PosixFileHandler() {
-  if (objectId_) {
+  if (object_id_) {
     this->close();
   }
 }
 
 Status PosixFileHandler::close() {
   int ret = 0;
-  ret = ::close(objectId_);
+  ret = ::close(object_id_);
   if (ret) {
     return Status(ret, strerror(ret));
   }
-  objectId_ = 0;
+  object_id_ = 0;
   return Status::OK;
 }
 
 ssize_t PosixFileHandler::read(void *buf, size_t nbytes, off_t offset) {
-  return ::pread(objectId_, buf, nbytes, offset);
+  return ::pread(object_id_, buf, nbytes, offset);
 }
 
 ssize_t PosixFileHandler::write(const void *buf, size_t nbytes, off_t offset) {
-  return ::pwrite(objectId_, buf, nbytes, offset);
+  return ::pwrite(object_id_, buf, nbytes, offset);
 }
 
 }  // namespace vsfs
