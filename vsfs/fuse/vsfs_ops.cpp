@@ -19,6 +19,7 @@
 #include <dirent.h>
 #include <fcntl.h>
 #include <fuse.h>
+#include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -41,6 +42,7 @@
 #include "vsfs/common/file_object.h"
 #include "vsfs/common/posix_path.h"
 #include "vsfs/common/posix_storage_manager.h"
+#include "vsfs/common/thread.h"
 #include "vsfs/common/types.h"
 #include "vsfs/fuse/vsfs_ops.h"
 
@@ -52,10 +54,13 @@ using vsfs::client::VSFSRpcClient;
 
 namespace fs = boost::filesystem;
 
+DECLARE_int32(vsfs_client_num_thread);
+DECLARE_int32(vsfs_client_batch_size);
+
 namespace vsfs {
 namespace fuse {
 
-unique_ptr<VsfsFuse> VsfsFuse::instance_;
+unique_ptr<VsfsFuse> instance_;
 VsfsFuse *vsfs;
 
 Status VsfsFuse::init(const string &basedir, const string &mnt,
@@ -112,15 +117,23 @@ string VsfsFuse::mnt_path(const string &vsfs_path) const {
 }
 
 void VsfsFuse::add_obj(uint64_t fd, FileObject* file_obj) {
+  MutexGuard guard(obj_map_mutex_);
   fh_to_obj_map_[fd].reset(file_obj);
 }
 
 void VsfsFuse::remove_obj(uint64_t fd) {
+  MutexGuard guard(obj_map_mutex_);
   fh_to_obj_map_.erase(fd);
 }
 
 FileObject* VsfsFuse::get_obj(uint64_t fd) {
-  return fh_to_obj_map_[fd].get();
+  MutexGuard guard(obj_map_mutex_);
+  auto it = fh_to_obj_map_.find(fd);
+  if (it == fh_to_obj_map_.end()) {
+    return nullptr;
+  } else {
+    return it->second.get();
+  }
 }
 
 // VSFS Operations
@@ -145,7 +158,7 @@ int vsfs_statfs(const char* path , struct statvfs *stbuf) {
 }
 
 int vsfs_access(const char* path, int flag) {
-  LOG(INFO) << "VSFS_ACCESS";
+  LOG(ERROR) << "VSFS_ACCESS";
   PosixPath vsp(path);
   string abspath = VsfsFuse::instance()->abspath(path);
   if (!vsp.is_validate()) {
@@ -171,10 +184,17 @@ int vsfs_getattr(const char* path, struct stat* stbuf) {
     stbuf->st_mode |= S_IFLNK;
     stbuf->st_size = vsp.result().size();
   } else {
+    // TODO(eddyxu): replace with the below commented code when the writes can
+    // update file size.
+    if (stat(vsfs->abspath(path).c_str(), stbuf) == -1) {
+      return -errno;
+    }
+    /*
     auto status = VsfsFuse::instance()->client()->getattr(path, stbuf);
     if (!status.ok()) {
       return status.error();
     }
+    */
   }
   return 0;
 }
@@ -289,31 +309,31 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
     LOG(ERROR) << "Failed to create file: " << status.message();
     return status.error();
   }
-  // TODO(ziling): Add mode to open.
-  FileObject *file_obj =
-      VsfsFuse::instance()->storage_manager()->open(abspath.c_str(),
-                                                    fi->flags | O_CREAT, mode);
-  int fd = file_obj->file_handler()->objectId();
-  VsfsFuse::instance()->add_obj(fd, file_obj);
-  if (fd == -1) {
-    LOG(ERROR) << strerror(errno);
-    return -errno;
+  FileObject *file_obj;
+  status = VsfsFuse::instance()->storage_manager()
+      ->open(path, fi->flags | O_CREAT, mode, &file_obj);
+  if (!status.ok()) {
+    LOG(ERROR) << "StorageManager failed to create file: " << status.message();
+    return status.error();
   }
+  int fd = file_obj->file_handler()->object_id();
+  LOG(INFO) << "Create file with FD = " << fd;
   fi->fh = fd;
+  VsfsFuse::instance()->add_obj(fd, file_obj);
   return 0;
 }
 
 int vsfs_open(const char* path, struct fuse_file_info *fi) {
-  string abspath = VsfsFuse::instance()->abspath(path);
-  FileObject *file_obj =
-      VsfsFuse::instance()->storage_manager()->open(abspath.c_str(),
-                                                    fi->flags | O_CREAT);
-  int fd = file_obj->file_handler()->objectId();
-  VsfsFuse::instance()->add_obj(fd, file_obj);
-  if (fd == -1) {
-    LOG(ERROR) << "Failed to open file: " << path << ": " << strerror(errno);
-    return -errno;
+  FileObject *file_obj;
+  auto status = VsfsFuse::instance()->storage_manager()
+      ->open(path, fi->flags, &file_obj);
+  if (!status.ok()) {
+    LOG(ERROR) << "StorageManager failed to open file: " << status.message();
+    return status.error();
   }
+  int fd = file_obj->file_handler()->object_id();
+  LOG(INFO) << "Create file with FD = " << fd;
+  VsfsFuse::instance()->add_obj(fd, file_obj);
   fi->fh = fd;
   return 0;
 }
@@ -334,18 +354,14 @@ int vsfs_unlink(const char* path) {
 }
 
 int vsfs_release(const char* path, struct fuse_file_info *fi) {
-  if (fi->fh) {
-    FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
-    Status status =
-        VsfsFuse::instance()->storage_manager()->close(
-            file_obj->file_handler());
-    if (!status.ok()) {
-      LOG(ERROR) << "Failed to release file: " << path << ": "
-                 << status.message();
-      return status.error();
-    }
-    VsfsFuse::instance()->remove_obj(fi->fh);
+  FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
+  auto status = file_obj->close();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to release file: " << path << ": "
+        << status.message();
+    return status.error();
   }
+  VsfsFuse::instance()->remove_obj(fi->fh);
   return 0;
 }
 
@@ -376,9 +392,11 @@ int vsfs_readlink(const char* path, char *buf, size_t size) {
 int vsfs_read(const char*, char *buf, size_t size, off_t offset,
               struct fuse_file_info* fi) {
   FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
-  ssize_t nread =
-       VsfsFuse::instance()->storage_manager()->read(
-           file_obj->file_handler(), buf, size, offset);
+  if (!file_obj) {
+    LOG(ERROR) << "File does not existed.";
+    return -EBADF;
+  }
+  ssize_t nread = pread(fi->fh, buf, size, offset);
   if (nread == -1) {
     LOG(ERROR) << "VSFS_READ ERROR: " <<  strerror(errno);
     return -errno;
@@ -389,18 +407,26 @@ int vsfs_read(const char*, char *buf, size_t size, off_t offset,
 int vsfs_write(const char*, const char* buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
   FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
-  ssize_t nwrite =
-       VsfsFuse::instance()->storage_manager()->write(
-           file_obj->file_handler(), buf, size, offset);
+  if (!file_obj) {
+    LOG(ERROR) << "File object does not exist.";
+    return -EBADF;
+  }
+  ssize_t nwrite = file_obj->write(buf, size, offset);
   if (nwrite == -1) {
     LOG(ERROR) << strerror(errno);
     return -errno;
   }
+  // TODO(lxu): need to update size in masterd.
   return nwrite;
 }
 
-int vsfs_flush(const char* , struct fuse_file_info *) {
+int vsfs_flush(const char* , struct fuse_file_info* fi) {
   // We are using open(2), there is nothing to flush.
+  int res;
+  res = close(dup(fi->fh));
+  if (res == -1) {
+    return -errno;
+  }
   return 0;
 }
 
@@ -428,11 +454,12 @@ int vsfs_write_buf(const char* , struct fuse_bufvec *buf, off_t off,
                    struct fuse_file_info *fi) {
   ssize_t nwrite = 0;
   ssize_t total_write = 0;
-  for (size_t i = 0; i < buf->count; i++) {
   FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
-  nwrite =
-      VsfsFuse::instance()->storage_manager()->write(
-          file_obj->file_handler(), buf->buf[i].mem, buf->buf[i].size, off);
+  if (!file_obj) {
+    return -EINVAL;
+  }
+  for (size_t i = 0; i < buf->count; i++) {
+    nwrite = file_obj->write(buf->buf[i].mem, buf->buf[i].size, off);
     if (nwrite == -1) {
       return -errno;
     }
@@ -441,20 +468,6 @@ int vsfs_write_buf(const char* , struct fuse_bufvec *buf, off_t off,
   return total_write;
 }
 
-int vsfs_read_buf(const char*, struct fuse_bufvec **bufp, size_t size,
-                  off_t, struct fuse_file_info *fi) {
-  // NO IDEA what does this function do...
-  *bufp = static_cast<fuse_bufvec*>(malloc(sizeof(fuse_bufvec)));
-  (*bufp)->count = 1;
-  (*bufp)->idx = 0;
-  (*bufp)->off = 0;
-  (*bufp)->buf[0].size = size;
-  (*bufp)->buf[0].mem = malloc(size);
-  (*bufp)->buf[0].pos = 0;
-  (*bufp)->buf[0].flags = FUSE_BUF_IS_FD;
-  (*bufp)->buf[0].fd = fi->fh;
-  return 0;
-}
 
 #endif
 

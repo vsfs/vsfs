@@ -49,27 +49,32 @@ Status PosixStorageManager::destroy() {
   return Status::OK;
 }
 
-FileObject* PosixStorageManager::open(const string& path, int flags) {
+Status PosixStorageManager::open(
+    const string& path, int flags, FileObject** obj) {
+  CHECK_NOTNULL(obj);
   const string local_path = translate_path(path);
   int fd = ::open(local_path.c_str(), flags);
+  LOG(INFO) << "FD == " << fd;
   if (fd < 0) {
     LOG(ERROR) << "Failed to open file: " << local_path;
-    return nullptr;
+    return Status::system_error(errno);
   }
-  FileObject *file_obj = new FileObject(new PosixFileHandler(this, fd));
-  return file_obj;
+  LOG(INFO) << "SUCCESS OPEN " << local_path << " FD=" << fd;
+  *obj = new FileObject(new PosixFileHandler(this, fd));
+  return Status::OK;
 }
 
-FileObject* PosixStorageManager::open(const string& path, int flags,
-                                     mode_t mode) {
+Status PosixStorageManager::open(const string& path, int flags, mode_t mode,
+                                 FileObject** obj) {
+  CHECK_NOTNULL(obj);
   const string local_path = translate_path(path);
   int fd = ::open(local_path.c_str(), flags, mode);
   if (fd < 0) {
     LOG(ERROR) << "Failed to open file: " << local_path;
-    return nullptr;
+    return Status::system_error(errno);
   }
-  FileObject *file_obj = new FileObject(new PosixFileHandler(this, fd));
-  return file_obj;
+  *obj = new FileObject(new PosixFileHandler(this, fd));
+  return Status::OK;
 }
 
 Status PosixStorageManager::close(vsfs::FileHandler* handler) const {
@@ -91,7 +96,7 @@ ssize_t PosixStorageManager::write(FileHandler* handler, const void* buf,
 }
 
 string PosixStorageManager::translate_path(const string& path) const {
-  return base_path_ + "/" + path;
+  return base_path_ + path;
 }
 
 }  // namespace vsfs

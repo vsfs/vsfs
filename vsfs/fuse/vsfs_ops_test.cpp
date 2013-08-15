@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-#include <boost/filesystem.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <cstdio>
 #include <string>
 #include "vobla/file.h"
 #include "vobla/status.h"
-#include ""
 #include "vsfs/fuse/vsfs_ops.h"
 
-using std::string;
 using ::testing::Return;
-using boost::filesystem::remove_all;
+using std::string;
+
+namespace vsfs {
+namespace fuse {
 
 class VSFSOpsTest : public ::testing::Test {
  protected:
@@ -35,20 +35,20 @@ class VSFSOpsTest : public ::testing::Test {
     basedir_.reset(new vobla::TemporaryDirectory);
     mount_point_.reset(new vobla::TemporaryDirectory);
     testdir_ = tmpdir_->path();
-    fuse_.reset(new fuse::VsfsFuse(basedir_->path(), mount_point_->path(),
-                                   "localhost", "10000"));
   }
 
   void TearDown() {
   }
 
-  unique_ptr<fuse::VsfsFuse> fuse_;
+  unique_ptr<VsfsFuse> fuse_;
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
   unique_ptr<vobla::TemporaryDirectory> basedir_;
   unique_ptr<vobla::TemporaryDirectory> mount_point_;
   string testdir_;
-  MockVSFSClient* mock_client_;
 };
 
 TEST_F(VSFSOpsTest, testCreate) {
 }
+
+}  // namespace fuse
+}  // namespace vsfs

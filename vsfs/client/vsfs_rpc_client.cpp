@@ -43,11 +43,15 @@ using vobla::ThreadPool;
 using vsfs::index::IndexInfo;
 namespace fs = boost::filesystem;
 
+/*
 DEFINE_int32(vsfs_client_num_thread, 16, "Sets the number of thread one "
              "VSFS client can use.");
 
 DEFINE_int32(vsfs_client_batch_size, 2048, "Sets the batch size of sending "
              "index update requests.");
+             */
+const int FLAGS_vsfs_client_num_thread = 16;
+const int FLAGS_vsfs_client_batch_size = 2048;
 
 const int kNumBackOffs = 3;
 

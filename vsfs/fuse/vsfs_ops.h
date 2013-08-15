@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>  // NOLINT
 #include "vobla/macros.h"
@@ -33,6 +34,7 @@
 #define FUSE_29 1
 #endif
 
+using std::mutex;
 using std::string;
 using std::thread;
 using std::unique_ptr;
@@ -103,8 +105,6 @@ class VsfsFuse : boost::noncopyable {
   VsfsFuse(const string &basedir, const string &mount_point,
            const string &host, int port);
 
-  static unique_ptr<VsfsFuse> instance_;
-
   string basedir_;
 
   string mount_point_;
@@ -118,6 +118,9 @@ class VsfsFuse : boost::noncopyable {
   unique_ptr<client::VSFSRpcClient> client_;
 
   std::map<uint64_t, unique_ptr<FileObject>> fh_to_obj_map_;
+
+  // The mutex to protect fh_to_obj_mpa_
+  mutex obj_map_mutex_;
 };
 
 // VSFS operations
@@ -155,8 +158,6 @@ int vsfs_getxattr(const char *path, const char *name, char *value, size_t vlen);
 #if defined(FUSE_29)
 int vsfs_write_buf(const char *, struct fuse_bufvec *buf, off_t off,
                    struct fuse_file_info *);
-int vsfs_read_buf(const char *, struct fuse_bufvec **bufp, size_t size,
-                  off_t off, struct fuse_file_info *fi);
 int vsfs_flock(const char *, struct fuse_file_info *, int op);
 
 #endif
