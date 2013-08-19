@@ -41,6 +41,7 @@ class FileObject;
 class PosixStorageManager : public StorageManager {
  public:
   PosixStorageManager() = delete;
+
   explicit PosixStorageManager(const string &base_path);
 
   virtual ~PosixStorageManager();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,18 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * \file posix_file_handler.cpp
- *
- * \brief Implementation of PosixFileHandler.
- */
 
-#include "vsfs/common/posix_file_handler.h"
 #include <glog/logging.h>
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <string>
+#include "vsfs/common/posix_file_handler.h"
 
 using std::string;
 
@@ -37,18 +32,17 @@ PosixFileHandler::PosixFileHandler(PosixStorageManager *psm, ObjectId object_id)
 }
 
 PosixFileHandler::~PosixFileHandler() {
-  if (object_id_) {
+  if (object_id_ < 0) {
     this->close();
   }
 }
 
 Status PosixFileHandler::close() {
-  int ret = 0;
-  ret = ::close(object_id_);
+  int ret = ::close(object_id_);
   if (ret) {
-    return Status(ret, strerror(ret));
+    return Status::system_error(errno);
   }
-  object_id_ = 0;
+  object_id_ = -1;
   return Status::OK;
 }
 

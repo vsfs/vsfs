@@ -114,6 +114,18 @@ class FuseTests(unittest.TestCase):
             os.remove('%s/%d.txt' % (self.mount_dir, i))
             self.assertFalse(os.path.exists('%s/%d.txt' % (self.base_dir, i)))
 
+    def run_filebench(self, mntdir, workload, runtime):
+        conf = """load %s
+set $dir=%s
+run %d\n""" % (workload, mntdir, runtime)
+        conf_file = tempfile.NamedTemporaryFile()
+        conf_file.write(conf)
+        conf_file.flush()
+        subprocess.check_call('filebench -f %s' % conf_file.name, shell=True)
+
+    def test_filebench_varmail(self):
+        self.run_filebench(self.mount_dir, 'varmail', 10)
+
 #    def _index_file(self, name, path, key):
 #        """Insert a record into VSFS.
 #        @param name the name of index

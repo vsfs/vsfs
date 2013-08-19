@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,11 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/**
- * \file posix_file_handler.h
- * \brief FileHandler for Posix File API access.
  */
 
 #ifndef VSFS_COMMON_POSIX_FILE_HANDLER_H_
@@ -34,6 +29,10 @@ namespace vsfs {
 
 class PosixStorageManager;
 
+/**
+ * \class PosixFileHandler
+ * \brief Encapsures a file descriptor on UNIX.
+ */
 class PosixFileHandler : public FileHandler {
  public:
   PosixFileHandler(PosixStorageManager *psm, ObjectId objectId);

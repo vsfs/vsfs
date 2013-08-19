@@ -290,6 +290,7 @@ int vsfs_mkdir(const char* path, mode_t mode) {
   auto status = VsfsFuse::instance()->client()
       ->mkdir(path, mode, fuse_get_context()->uid, fuse_get_context()->gid);
   if (!status.ok()) {
+    LOG(ERROR) << "Failed to mkdir: " << status.message();
     return status.error();
   }
   string abspath = VsfsFuse::instance()->abspath(path);
@@ -323,7 +324,7 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
   return 0;
 }
 
-int vsfs_open(const char* path, struct fuse_file_info *fi) {
+int vsfs_open(const char* path, struct fuse_file_info* fi) {
   FileObject *file_obj;
   auto status = VsfsFuse::instance()->storage_manager()
       ->open(path, fi->flags, &file_obj);
@@ -355,10 +356,12 @@ int vsfs_unlink(const char* path) {
 
 int vsfs_release(const char* path, struct fuse_file_info *fi) {
   FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
+  CHECK_NOTNULL(file_obj);
   auto status = file_obj->close();
   if (!status.ok()) {
+    LOG(ERROR) << "Closing fd=" << file_obj->file_handler()->object_id();
     LOG(ERROR) << "Failed to release file: " << path << ": "
-        << status.message();
+               << status.message();
     return status.error();
   }
   VsfsFuse::instance()->remove_obj(fi->fh);

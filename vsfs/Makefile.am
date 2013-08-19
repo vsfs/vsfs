@@ -9,4 +9,4 @@ integration-test:
 	$(MAKE) -C testing $@
 #	$(MAKE) -C fuse $@
 
-.PHONY: rpc integratio-test
+.PHONY: rpc integration-test
