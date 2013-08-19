@@ -46,11 +46,19 @@ ssize_t FileObject::write(const void *buf, size_t count, off_t offset) {
 }
 
 Status FileObject::close() {
-  return file_handler_->close();
+  auto status = file_handler_->close();
+  if (status.ok()) {
+    file_handler_.reset();
+  }
+  return status;
 }
 
-FileHandler* FileObject::file_handler() {
+FileHandler* FileObject::file_handler() const {
   return file_handler_.get();
+}
+
+int FileObject::fd() const {
+  return file_handler_->fd();
 }
 
 }  // namespace vsfs

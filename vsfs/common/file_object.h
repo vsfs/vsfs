@@ -34,7 +34,7 @@ namespace vsfs {
 class FileHandler;
 
 /**
- * \class FileObject file_op.h
+ * \class FileObject file_object.h
  * \brief file operation wrapper for storage manager. It stores a file handler
  * of the file. Each FileObject instance has a one to one relationship with its
  * file handler.
@@ -69,7 +69,10 @@ class FileObject : private boost::noncopyable {
   vobla::Status close();
 
   /// Returns the pointer of the underlying file handler.
-  FileHandler* file_handler();
+  FileHandler* file_handler() const;
+
+  /// Returns the file descriptor.
+  int fd() const;
 
  private:
   // Pointer to File Handler

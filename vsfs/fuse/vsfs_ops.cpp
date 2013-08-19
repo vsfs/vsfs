@@ -38,7 +38,6 @@
 #include <vector>
 #include "vobla/status.h"
 #include "vsfs/common/complex_query.h"
-#include "vsfs/common/file_handler.h"
 #include "vsfs/common/file_object.h"
 #include "vsfs/common/posix_path.h"
 #include "vsfs/common/posix_storage_manager.h"
@@ -162,7 +161,7 @@ int vsfs_access(const char* path, int flag) {
   PosixPath vsp(path);
   string abspath = VsfsFuse::instance()->abspath(path);
   if (!vsp.is_validate()) {
-      return -EINVAL;
+    return -EINVAL;
   } else if (!vsp.is_query()) {
     return access(abspath.c_str(), flag);
   } else if (vsp.is_query()) {
@@ -317,8 +316,7 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
     LOG(ERROR) << "StorageManager failed to create file: " << status.message();
     return status.error();
   }
-  int fd = file_obj->file_handler()->object_id();
-  LOG(INFO) << "Create file with FD = " << fd;
+  int fd = file_obj->fd();
   fi->fh = fd;
   VsfsFuse::instance()->add_obj(fd, file_obj);
   return 0;
@@ -332,8 +330,7 @@ int vsfs_open(const char* path, struct fuse_file_info* fi) {
     LOG(ERROR) << "StorageManager failed to open file: " << status.message();
     return status.error();
   }
-  int fd = file_obj->file_handler()->object_id();
-  LOG(INFO) << "Create file with FD = " << fd;
+  int fd = file_obj->fd();
   VsfsFuse::instance()->add_obj(fd, file_obj);
   fi->fh = fd;
   return 0;
@@ -359,7 +356,7 @@ int vsfs_release(const char* path, struct fuse_file_info *fi) {
   CHECK_NOTNULL(file_obj);
   auto status = file_obj->close();
   if (!status.ok()) {
-    LOG(ERROR) << "Closing fd=" << file_obj->file_handler()->object_id();
+    LOG(ERROR) << "Closing fd=" << file_obj->fd();
     LOG(ERROR) << "Failed to release file: " << path << ": "
                << status.message();
     return status.error();

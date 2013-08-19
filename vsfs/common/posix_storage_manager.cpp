@@ -54,12 +54,10 @@ Status PosixStorageManager::open(
   CHECK_NOTNULL(obj);
   const string local_path = translate_path(path);
   int fd = ::open(local_path.c_str(), flags);
-  LOG(INFO) << "FD == " << fd;
   if (fd < 0) {
     LOG(ERROR) << "Failed to open file: " << local_path;
     return Status::system_error(errno);
   }
-  LOG(INFO) << "SUCCESS OPEN " << local_path << " FD=" << fd;
   *obj = new FileObject(new PosixFileHandler(this, fd));
   return Status::OK;
 }
@@ -72,9 +70,6 @@ Status PosixStorageManager::open(const string& path, int flags, mode_t mode,
   if (fd < 0) {
     LOG(ERROR) << "Failed to open file: " << local_path;
     return Status::system_error(errno);
-  }
-  if (fd == 0) {
-    LOG(ERROR) << "SUCCESS OPEN " << local_path << " FD=" << fd;
   }
   *obj = new FileObject(new PosixFileHandler(this, fd));
   return Status::OK;

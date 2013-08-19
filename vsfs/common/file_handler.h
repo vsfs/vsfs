@@ -29,13 +29,12 @@ using vobla::Status;
 namespace vsfs {
 
 /**
- * \class FileHandler
- * \breif Base Class of File Handler, a class to store File Infomation such
- * as FileHandle, Local File Path etc. It also stores a ptr to its storage
- * manager so that it can call the file operation through that ptr. File
- * Handler has a one to one relationship with FilOp class, each FileOp
- * instance contain one unique File Handler instance.
+ * \class FileHandler "vsfs/common/file_handler.h"
+ * \breif Interface of various file handlers, a class to store file information
+ * such as file descriptor on Unix or HdfsHandler for HDFS.
  *
+ * It provides a transparent abstraction of how to handling the resource that
+ * contacted with the underlying storage/file system.
  */
 class FileHandler : boost::noncopyable {
  public:
@@ -43,8 +42,8 @@ class FileHandler : boost::noncopyable {
 
   virtual ~FileHandler() {}
 
-  /// Returns the ID for this file handler.
-  virtual ObjectId object_id() const = 0;
+  /// Returns integer representation of file descriptor.
+  virtual int fd() const = 0;
 
   /// close the file and return Status object.
   virtual Status close() = 0;
