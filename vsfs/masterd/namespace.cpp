@@ -341,7 +341,7 @@ Status Namespace::remove_subfile(const string &parent, const string &subfile) {
   if (!dir) {
     return Status(-ENOENT, strerror(ENOENT));
   }
-  if (dir->subfiles.count(subfile) > 0) {
+  if (dir->subfiles.count(subfile) == 0) {
     return Status(-ENOENT, strerror(ENOENT));
   }
   auto fullpath = (fs::path(parent) / subfile).string();

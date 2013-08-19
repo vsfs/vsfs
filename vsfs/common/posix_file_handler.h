@@ -46,12 +46,12 @@ class PosixFileHandler : public FileHandler {
 
   ssize_t write(const void *buf, size_t nbytes, off_t offset);
 
-  ObjectId objectId() const { return objectId_; }
+  ObjectId object_id() const { return object_id_; }
 
  private:
   PosixStorageManager *storage_manager_;
 
-  int objectId_;
+  int object_id_;
 };
 
 }  // namespace vsfs

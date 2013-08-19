@@ -95,6 +95,7 @@ int vsfs_opt_proc(void *, const char *, int key, struct fuse_args *outargs) {
 }
 
 int main(int argc, char *argv[]) {
+  google::InitGoogleLogging(argv[0]);
   fuse_args args = FUSE_ARGS_INIT(argc, argv);
   memset(&options, 0, sizeof(struct options));
 
@@ -127,7 +128,8 @@ int main(int argc, char *argv[]) {
   opers.getxattr = vsfs_getxattr;
 #if defined(FUSE_29)
   opers.flock = vsfs_flock;
-  opers.read_buf = vsfs_read_buf;
+  // opers.read_buf = vsfs_read_buf;
+  opers.read_buf = NULL;
   opers.write_buf = vsfs_write_buf;
 #endif
 

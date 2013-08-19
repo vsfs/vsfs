@@ -22,9 +22,11 @@
 #include <sys/types.h>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>  // NOLINT
 #include "vobla/macros.h"
+#include "vsfs/common/file_object.h"
 #include "vsfs/common/storage_manager.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 
@@ -32,6 +34,7 @@
 #define FUSE_29 1
 #endif
 
+using std::mutex;
 using std::string;
 using std::thread;
 using std::unique_ptr;
@@ -92,11 +95,15 @@ class VsfsFuse : boost::noncopyable {
     return client_.get();
   }
 
+  void add_obj(uint64_t fd, FileObject* file_obj);
+
+  void remove_obj(uint64_t fd);
+
+  FileObject* get_obj(uint64_t fd);
+
  private:
   VsfsFuse(const string &basedir, const string &mount_point,
            const string &host, int port);
-
-  static unique_ptr<VsfsFuse> instance_;
 
   string basedir_;
 
@@ -109,6 +116,11 @@ class VsfsFuse : boost::noncopyable {
   unique_ptr<StorageManager> storage_manager_;
 
   unique_ptr<client::VSFSRpcClient> client_;
+
+  std::map<uint64_t, unique_ptr<FileObject>> fh_to_obj_map_;
+
+  // The mutex to protect fh_to_obj_mpa_
+  mutex obj_map_mutex_;
 };
 
 // VSFS operations
@@ -146,8 +158,6 @@ int vsfs_getxattr(const char *path, const char *name, char *value, size_t vlen);
 #if defined(FUSE_29)
 int vsfs_write_buf(const char *, struct fuse_bufvec *buf, off_t off,
                    struct fuse_file_info *);
-int vsfs_read_buf(const char *, struct fuse_bufvec **bufp, size_t size,
-                  off_t off, struct fuse_file_info *fi);
 int vsfs_flock(const char *, struct fuse_file_info *, int op);
 
 #endif

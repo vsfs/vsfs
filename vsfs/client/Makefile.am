@@ -16,6 +16,7 @@ vsfs_SOURCES = \
 libvsfs_client_a_SOURCES = \
   vsfs_client.h \
   commands.h commands.cpp \
+  mock_vsfs_client.h \
   vsfs_rpc_client.cpp vsfs_rpc_client.h
 
 TESTS = vsfs_rpc_client_test
