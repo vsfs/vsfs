@@ -17,6 +17,7 @@
 """Function tests for FUSE.
 """
 
+import io
 import os
 import shutil
 import stat
@@ -115,13 +116,23 @@ class FuseTests(unittest.TestCase):
             self.assertFalse(os.path.exists('%s/%d.txt' % (self.base_dir, i)))
 
     def run_filebench(self, mntdir, workload, runtime):
+        """Run filbench on mntdir
+        @param mntdir mount point of VSFS fuse
+        @param workload the filebench workload to run
+        @param runtime the seconds to run the benchmark
+        """
         conf = """load %s
 set $dir=%s
 run %d\n""" % (workload, mntdir, runtime)
         conf_file = tempfile.NamedTemporaryFile()
         conf_file.write(conf)
         conf_file.flush()
-        subprocess.check_call('filebench -f %s' % conf_file.name, shell=True)
+        p = subprocess.Popen('filebench -f %s' % conf_file.name,
+                             stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
+                             shell=True)
+        for line in p.stdout:
+            if line.find('NO VALID RESULTS') >= 0:
+                raise RuntimeError, "Failed filebench test."
 
     def test_filebench_varmail(self):
         self.run_filebench(self.mount_dir, 'varmail', 10)
