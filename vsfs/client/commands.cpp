@@ -554,8 +554,7 @@ Status IndexCommand::update_index() {
       size_t sep_pos = buf.find_first_of(" \t");
       size_t value_pos = buf.find_first_not_of(" \t", sep_pos);
       if (sep_pos == string::npos || value_pos == string::npos) {
-        LOG(ERROR) << "An error has occorred when read: "
-            << buf;
+        LOG(ERROR) << "An error has occorred when read: " << buf;
         return Status(-EINVAL, "Wrong index record format.");
       }
       string file_path = buf.substr(0, sep_pos);
