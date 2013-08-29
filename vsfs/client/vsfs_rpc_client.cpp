@@ -942,7 +942,6 @@ Status VSFSRpcClient::add_subfile(const string& path) {
       // TODO(eddyxu): clear the conflict resolving algorithm later.
       status.set(e.getType(), e.what());
       backoff--;
-      continue;
     }
   }
   return status;
@@ -970,7 +969,6 @@ Status VSFSRpcClient::remove_subfile(const string& path) {
     } catch (TTransportException e) {  // NOLINT
       status.set(e.getType(), e.what());
       backoff--;
-      continue;
     }
   }
   return status;
