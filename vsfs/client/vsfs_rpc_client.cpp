@@ -262,20 +262,10 @@ Status VSFSRpcClient::open(const string& path, ObjectId* oid) {
 
 Status VSFSRpcClient::unlink(const string& path) {
   // First remove the subfile from its parent node.
-  NodeInfo parent_node;
-  auto parent = fs::path(path).parent_path().string();
-  auto filename = fs::path(path).filename().string();
-  CHECK(master_map_.get(parent, &parent_node).ok());
-  // Removes this file from its parent directory first.
-  try {
-    auto client = master_client_factory_->open(parent_node.address);
-    client->handler()->remove_subfile(parent, filename);
-    master_client_factory_->close(client);
-  } catch (RpcInvalidOp ouch) {  // NOLINT
-    LOG(ERROR) << "Failed to delete " << filename << " from parent: " << parent;
-    return Status(ouch.what, ouch.why);
-  } catch (TTransportException e) {  // NOLINT
-    return Status(e.getType(), e.what());
+  auto status = remove_subfile(path);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to remove " << path << " from namespace";
+    return status;
   }
 
   NodeInfo node;
@@ -343,9 +333,14 @@ Status VSFSRpcClient::rmdir(const string& path) {
     VLOG(1) << "The VSFS RPC client has not initialized yet.";
     return Status(-1, "The client has not initialized yet.");
   }
+  auto status = remove_subfile(path);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to remove " << path << " from namespace";
+    return status;
+  }
   auto hash = PathUtil::path_to_hash(path);
   NodeInfo node;
-  auto status = master_map_.get(hash, &node);
+  status = master_map_.get(hash, &node);
   if (!status.ok()) {
     return status;
   }
@@ -354,6 +349,9 @@ Status VSFSRpcClient::rmdir(const string& path) {
                                                       node.address.port);
     master_client->handler()->rmdir(path);
     master_client_factory_->close(master_client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    LOG(ERROR) << "Failed to rmdir: " << ouch.why;
+    return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     status = Status(e.getType(), e.what());
     LOG(ERROR) << "Failed to run mkdir RPC to master node: "
@@ -942,6 +940,34 @@ Status VSFSRpcClient::add_subfile(const string& path) {
       status.set(ouch.what, ouch.why);
     } catch (TTransportException e) {  // NOLINT
       // TODO(eddyxu): clear the conflict resolving algorithm later.
+      status.set(e.getType(), e.what());
+      backoff--;
+      continue;
+    }
+  }
+  return status;
+}
+
+Status VSFSRpcClient::remove_subfile(const string& path) {
+  if (path == "/") {
+    return Status::OK;
+  }
+  auto parent = fs::path(path).parent_path().string();
+  auto hash = PathUtil::path_to_hash(parent);
+  auto filename = fs::path(path).filename().string();
+  NodeInfo node;
+  auto status = master_map_.get(hash, &node);
+  CHECK(status.ok());  // master_map_ must exist at this point.
+  int backoff = kNumBackOffs;
+  while (backoff) {
+    try {
+      auto client = master_client_factory_->open(node.address);
+      client->handler()->remove_subfile(parent, filename);
+      master_client_factory_->close(client);
+      break;
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set(ouch.what, ouch.why);
+    } catch (TTransportException e) {  // NOLINT
       status.set(e.getType(), e.what());
       backoff--;
       continue;

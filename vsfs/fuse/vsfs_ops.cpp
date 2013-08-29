@@ -120,9 +120,14 @@ void VsfsFuse::add_obj(uint64_t fd, FileObject* file_obj) {
   fh_to_obj_map_[fd].reset(file_obj);
 }
 
-void VsfsFuse::remove_obj(uint64_t fd) {
+Status VsfsFuse::close_obj(uint64_t fd) {
   MutexGuard guard(obj_map_mutex_);
+  auto it = fh_to_obj_map_.find(fd);
+  CHECK(it != fh_to_obj_map_.end());
+  auto file_obj = it->second.get();
+  auto status = file_obj->close();
   fh_to_obj_map_.erase(fd);
+  return status;
 }
 
 FileObject* VsfsFuse::get_obj(uint64_t fd) {
@@ -298,6 +303,11 @@ int vsfs_mkdir(const char* path, mode_t mode) {
 
 int vsfs_rmdir(const char* path) {
   string abspath = VsfsFuse::instance()->abspath(path);
+  auto status = VsfsFuse::instance()->client()->rmdir(path);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to rmdir: " << path << ": " << status.message();
+    return status.error();
+  }
   return rmdir(abspath.c_str());
 }
 
@@ -352,17 +362,13 @@ int vsfs_unlink(const char* path) {
 }
 
 int vsfs_release(const char* path, struct fuse_file_info *fi) {
-  FileObject *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
-  CHECK_NOTNULL(file_obj);
-  auto status = file_obj->close();
+  auto status = VsfsFuse::instance()->close_obj(fi->fh);
   if (!status.ok()) {
-    LOG(ERROR) << "Closing fd=" << file_obj->fd();
+    LOG(ERROR) << "Closing fd=" << fi->fh;
     LOG(ERROR) << "Failed to release file: " << path << ": "
                << status.message();
-    return status.error();
   }
-  VsfsFuse::instance()->remove_obj(fi->fh);
-  return 0;
+  return status.error();
 }
 
 int vsfs_readlink(const char* path, char *buf, size_t size) {

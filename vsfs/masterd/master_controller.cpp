@@ -116,16 +116,20 @@ MasterController::~MasterController() {
 Status MasterController::init() {
   auto status = index_namespace_->init();
   if (!status.ok()) {
+    LOG(ERROR) << "Failed to initialize index DB:" << status.message();
     return status;
   }
   status = index_partition_manager_->init();
   if (!status.ok()) {
+    LOG(ERROR) << "Failed to initialize partition DB:" << status.message();
     return status;
   }
   status = namespace_->init();
   if (!status.ok()) {
+    LOG(ERROR) << "Failed to initialize namespace DB:" << status.message();
     return status;
   }
+  LOG(INFO) << "MasterController has fully intialized.";
   return status;
 }
 

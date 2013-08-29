@@ -210,6 +210,9 @@ class VSFSRpcClient : public VSFSClient {
 
   Status add_subfile(const string& filepath);
 
+  /// Remove 'filepath' from its parent.
+  Status remove_subfile(const string& filepath);
+
   Status locate_index_for_search(const ComplexQuery& query,
                                  vector<string>* indices);
 

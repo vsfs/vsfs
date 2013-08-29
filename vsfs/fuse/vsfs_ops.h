@@ -97,7 +97,7 @@ class VsfsFuse : boost::noncopyable {
 
   void add_obj(uint64_t fd, FileObject* file_obj);
 
-  void remove_obj(uint64_t fd);
+  Status close_obj(uint64_t fd);
 
   FileObject* get_obj(uint64_t fd);
 
