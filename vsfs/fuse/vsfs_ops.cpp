@@ -297,18 +297,18 @@ int vsfs_mkdir(const char* path, mode_t mode) {
     LOG(ERROR) << "Failed to mkdir: " << status.message();
     return status.error();
   }
-  string abspath = VsfsFuse::instance()->abspath(path);
-  return mkdir(abspath.c_str(), mode);
+  status = VsfsFuse::instance()->storage_manager()->mkdir(path, mode);
+  return status.error();
 }
 
 int vsfs_rmdir(const char* path) {
-  string abspath = VsfsFuse::instance()->abspath(path);
   auto status = VsfsFuse::instance()->client()->rmdir(path);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to rmdir: " << path << ": " << status.message();
     return status.error();
   }
-  return rmdir(abspath.c_str());
+  status = VsfsFuse::instance()->storage_manager()->rmdir(path);
+  return status.error();
 }
 
 int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
@@ -321,7 +321,7 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
   }
   FileObject *file_obj;
   status = VsfsFuse::instance()->storage_manager()
-      ->open(path, fi->flags | O_CREAT, mode, &file_obj);
+      ->open(path, oid, fi->flags | O_CREAT, mode, &file_obj);
   if (!status.ok()) {
     LOG(ERROR) << "StorageManager failed to create file: " << status.message();
     return status.error();
@@ -333,9 +333,15 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
 }
 
 int vsfs_open(const char* path, struct fuse_file_info* fi) {
+  ObjectId oid;
+  auto status = vsfs->client()->open(path, &oid);
+  if (!status.ok()) {
+    LOG(ERROR) << "StorageManager failed to open file: " << status.message();
+    return status.error();
+  }
   FileObject *file_obj;
-  auto status = VsfsFuse::instance()->storage_manager()
-      ->open(path, fi->flags, &file_obj);
+  status = VsfsFuse::instance()->storage_manager()
+      ->open(path, oid, fi->flags, &file_obj);
   if (!status.ok()) {
     LOG(ERROR) << "StorageManager failed to open file: " << status.message();
     return status.error();

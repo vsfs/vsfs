@@ -12,6 +12,7 @@ libvsfs_common_a_SOURCES = \
   file_object.h file_object.cpp \
   key_value_store.h \
   leveldb_store.h leveldb_store.cpp \
+  object_storage_manager.h object_storage_manager.cpp \
   log_constants.h log_constants.cpp \
   log_manager.h \
   log_types.h log_types.cpp \

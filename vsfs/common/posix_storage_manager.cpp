@@ -21,6 +21,8 @@
 
 #include <fcntl.h>
 #include <glog/logging.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <memory>
 #include <string>
 #include "vobla/status.h"
@@ -50,7 +52,7 @@ Status PosixStorageManager::destroy() {
 }
 
 Status PosixStorageManager::open(
-    const string& path, int flags, FileObject** obj) {
+    const string& path, ObjectId, int flags, FileObject** obj) {
   CHECK_NOTNULL(obj);
   const string local_path = translate_path(path);
   int fd = ::open(local_path.c_str(), flags);
@@ -62,8 +64,8 @@ Status PosixStorageManager::open(
   return Status::OK;
 }
 
-Status PosixStorageManager::open(const string& path, int flags, mode_t mode,
-                                 FileObject** obj) {
+Status PosixStorageManager::open(
+    const string& path, ObjectId, int flags, mode_t mode, FileObject** obj) {
   CHECK_NOTNULL(obj);
   string local_path = translate_path(path);
   int fd = ::open(local_path.c_str(), flags, mode);
@@ -75,22 +77,22 @@ Status PosixStorageManager::open(const string& path, int flags, mode_t mode,
   return Status::OK;
 }
 
-Status PosixStorageManager::close(vsfs::FileHandler* handler) const {
-  CHECK_NOTNULL(handler);
-  return handler->close();
+Status PosixStorageManager::mkdir(const string& path, mode_t mode) {
+  string local_path = translate_path(path);
+  int ret = ::mkdir(local_path.c_str(), mode);
+  if (ret == -1) {
+    return Status::system_error(errno);
+  }
+  return Status::OK;
 }
 
-ssize_t PosixStorageManager::read(FileHandler* handler, void* buf,
-                                  size_t count, off_t offset) {
-  CHECK_NOTNULL(handler);
-  return handler->read(buf, count, offset);
-}
-
-ssize_t PosixStorageManager::write(FileHandler* handler, const void* buf,
-                                   size_t count, off_t offset) {
-  CHECK_NOTNULL(handler);
-  CHECK_NOTNULL(buf);
-  return handler->write(buf, count, offset);
+Status PosixStorageManager::rmdir(const string& path) {
+  string local_path = translate_path(path);
+  int ret = ::rmdir(local_path.c_str());
+  if (ret == -1) {
+    return Status::system_error(errno);
+  }
+  return Status::OK;
 }
 
 string PosixStorageManager::translate_path(const string& path) const {

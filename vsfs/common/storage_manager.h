@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <string>
 #include "vobla/status.h"
+#include "vsfs/common/types.h"
 
 using std::string;
 using vobla::Status;
@@ -55,27 +56,15 @@ class StorageManager : boost::noncopyable {
      * \return a new FileObject object, caller now has the ownership of this
      * FileObject object.
      */
-    virtual Status open(const string& path, int flags, FileObject** obj) = 0;
-
-    virtual Status open(const string& path, int flags, mode_t mode,
+    virtual Status open(const string& path, ObjectId obj_id, int flags,
                         FileObject** obj) = 0;
 
-    /// Closes an opened file handler.
-    virtual Status close(FileHandler* file_handler) const = 0;
+    virtual Status open(const string& path, ObjectId obj_id, int flags,
+                        mode_t mode, FileObject** obj) = 0;
 
-    /**
-     * \brief Reads from the file.
-     * \return Returns the number of bytes actually read, -1 on error
-     */
-    virtual ssize_t read(FileHandler* file_handler, void *buf,
-                         size_t count, off_t offset) = 0;
+    virtual Status mkdir(const string& path, mode_t mode) = 0;
 
-    /**
-     * \brief Writes to the file.
-     * \return Returns the number of bytes actually written, -1 on error
-     */
-    virtual ssize_t write(FileHandler* file_handler, const void *buf,
-                          size_t count, off_t offset) = 0;
+    virtual Status rmdir(const string& path) = 0;
 };
 
 }  // namespace vsfs
