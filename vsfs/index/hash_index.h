@@ -41,10 +41,15 @@ using vobla::find_or_null;
 namespace vsfs {
 namespace index {
 
+/**
+ * \class HashIndexInterface
+ * \brief The interface for a Hash-based index, providing faster point query.
+ */
 class HashIndexInterface : boost::noncopyable {
  public:
   typedef vector<ObjectId> FileIdVector;
 
+  /// Creates a HashIndex instance with the given key type.
   static HashIndexInterface* create_hash_index(int key_type);
 
   HashIndexInterface() = default;
@@ -87,6 +92,10 @@ class HashIndexInterface : boost::noncopyable {
   virtual void search(void* key, FileIdVector* results) = 0;
 };
 
+/**
+ * \class HashIndex
+ * \brief Hash-based index, providing fast point query.
+ */
 template <typename Key>
 class HashIndex : HashIndexInterface {
  public:
