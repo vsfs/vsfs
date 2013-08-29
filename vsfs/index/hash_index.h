@@ -17,6 +17,7 @@
 #ifndef VSFS_INDEX_HASH_INDEX_H_
 #define VSFS_INDEX_HASH_INDEX_H_
 
+#include <boost/call_traits.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/utility.hpp>
 #include <mutex>
@@ -30,6 +31,7 @@
 #include "vsfs/common/types.h"
 #include "vsfs/rpc/vsfs_types.h"
 
+using boost::call_traits;
 using boost::lexical_cast;
 using std::mutex;
 using std::unordered_map;
@@ -59,37 +61,41 @@ class HashIndexInterface : boost::noncopyable {
   virtual int key_type() const = 0;
 
   template <typename K>
-  void insert(K key, ObjectId obj_id) {
+  void insert(const K& key, ObjectId obj_id) {
     CHECK_EQ(TypeToInt<K>::value(), key_type());
-    insert(&key, obj_id);
+    insert_internal(&key, obj_id);
   }
 
   template <typename K>
-  void erase(K key) {
+  void erase(const K& key) {
     CHECK_EQ(TypeToInt<K>::value(), key_type());
-    erase(&key);
+    erase_internal(&key);
   }
 
   template <typename K>
-  void erase(K key, ObjectId obj_id) {
+  void erase(const K& key, ObjectId obj_id) {
     CHECK_EQ(TypeToInt<K>::value(), key_type());
-    erase(&key, obj_id);
+    erase_internal(&key, obj_id);
   }
 
+  /**
+   * \note the K type can not be 'char*' if using HashIndex<string>. The caller
+   * must pass a string as key.
+   */
   template <typename K>
-  void search(K key, FileIdVector *results) {
+  void search(const K& key, FileIdVector *results) {
     CHECK_EQ(TypeToInt<K>::value(), key_type());
-    search(&key, results);
+    search_internal(&key, results);
   }
 
   /// Apply a batch of modifications.
   virtual Status apply(const vector<RpcIndexRecordUpdateOp> &op) = 0;
 
  protected:
-  virtual void insert(void* key, ObjectId obj_id) = 0;
-  virtual void erase(void* key) = 0;
-  virtual void erase(void* key, ObjectId obj_id) = 0;
-  virtual void search(void* key, FileIdVector* results) = 0;
+  virtual void insert_internal(const void* key, ObjectId obj_id) = 0;
+  virtual void erase_internal(const void* key) = 0;
+  virtual void erase_internal(const void* key, ObjectId obj_id) = 0;
+  virtual void search_internal(const void* key, FileIdVector* results) = 0;
 };
 
 /**
@@ -97,7 +103,7 @@ class HashIndexInterface : boost::noncopyable {
  * \brief Hash-based index, providing fast point query.
  */
 template <typename Key>
-class HashIndex : HashIndexInterface {
+class HashIndex : public HashIndexInterface {
  public:
   typedef Key KeyType;
   typedef vector<ObjectId> FileIdVector;
@@ -119,22 +125,23 @@ class HashIndex : HashIndexInterface {
     return key_type_;
   }
 
-  void insert(KeyType key, ObjectId obj_id) {
+  void insert(typename call_traits<KeyType>::param_type key, ObjectId obj_id) {
     MutexGuard guard(lock_);
     index_[key].insert(obj_id);
   }
 
-  void erase(KeyType key) {
+  void erase(typename call_traits<KeyType>::param_type key) {
     MutexGuard lock(lock_);
     index_.erase(key);
   }
 
-  void erase(KeyType key, ObjectId obj_id) {
+  void erase(typename call_traits<KeyType>::param_type key, ObjectId obj_id) {
     MutexGuard guard(lock_);
     erase_with_lock(key, obj_id);
   }
 
-  void search(KeyType key, FileIdVector* results) {
+  void search(typename call_traits<KeyType>::param_type key,
+              FileIdVector* results) {
     CHECK_NOTNULL(results);
     MutexGuard lock(lock_);
     auto files = find_or_null(index_, key);
@@ -149,23 +156,27 @@ class HashIndex : HashIndexInterface {
   }
 
  protected:
-  void insert(void* key, ObjectId obj_id) {
-    Key k = *static_cast<Key*>(key);
+  void insert_internal(const void* key, ObjectId obj_id) {
+    typename call_traits<Key>::const_reference k =
+        *static_cast<const Key*>(key);
     insert(k, obj_id);
   }
 
-  void erase(void* key) {
-    Key k = *static_cast<Key*>(key);
+  void erase_internal(const void* key) {
+    typename call_traits<Key>::const_reference k =
+        *static_cast<const Key*>(key);
     erase(k);
   }
 
-  void erase(void* key, ObjectId obj_id) {
-    Key k = *static_cast<Key*>(key);
+  void erase_internal(const void* key, ObjectId obj_id) {
+    typename call_traits<Key>::const_reference k =
+        *static_cast<const Key*>(key);
     erase(k, obj_id);
   }
 
-  void search(void* key, FileIdVector* results) {
-    Key k = *static_cast<Key*>(key);
+  void search_internal(const void* key, FileIdVector* results) {
+    typename call_traits<Key>::const_reference k =
+        *static_cast<const Key*>(key);
     search(k, results);
   }
 
@@ -202,7 +213,9 @@ class HashIndex : HashIndexInterface {
 
   typedef unordered_map<KeyType, FileIdSet> IndexHashMap;
 
-  void erase_with_lock(KeyType key, ObjectId obj_id) {
+  /// The caller must hold the lock_.
+  void erase_with_lock(typename call_traits<KeyType>::param_type key,
+                       ObjectId obj_id) {
     auto obj_ids = find_or_null(index_, key);
     if (obj_ids) {
       obj_ids->erase(obj_id);

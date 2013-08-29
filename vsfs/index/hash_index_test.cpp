@@ -17,11 +17,13 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <string>
 #include "vsfs/index/hash_index.h"
 
 using ::testing::ContainerEq;
 using ::testing::ElementsAre;
 using std::sort;
+using std::string;
 
 namespace vsfs {
 namespace index {
@@ -71,6 +73,24 @@ TEST(HashIndexTest, TestEraseValues) {
   actual_ids.clear();
   idx.search(5, &actual_ids);
   EXPECT_TRUE(actual_ids.empty());
+}
+
+TEST(HashIndexTest, TestInsertString) {
+  HashIndex<string> idx;
+  idx.insert("abc", 0);
+  idx.insert("abc", 2);
+
+  FileIdVector actual_ids;
+  idx.search("abc", &actual_ids);
+  sort(actual_ids.begin(), actual_ids.end());
+  EXPECT_THAT(actual_ids, ElementsAre(0, 2));
+
+  HashIndexInterface* ifac = &idx;
+  actual_ids.clear();
+  string key("abc");
+  ifac->search(key, &actual_ids);
+  sort(actual_ids.begin(), actual_ids.end());
+  EXPECT_THAT(actual_ids, ElementsAre(0, 2));
 }
 
 }  // namespace index
