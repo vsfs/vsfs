@@ -20,6 +20,7 @@
 #include "vsfs/index/hash_index.h"
 
 using ::testing::ContainerEq;
+using ::testing::ElementsAre;
 using std::sort;
 
 namespace vsfs {
@@ -43,6 +44,33 @@ TEST(HashIndexTest, TestInsertUint64) {
   actual_ids.clear();
   idx.search(5, &actual_ids);
   EXPECT_EQ(0, actual_ids.size());
+}
+
+TEST(HashIndexTest, TestEraseValues) {
+  HashIndex<int> idx;
+  for (int i = 0; i < 10; i++) {
+    for (int j = 0; j < 10; j++) {
+      idx.insert(i, i * 10 + j);
+    }
+  }
+  FileIdVector actual_ids;
+  idx.search(4, &actual_ids);
+  sort(actual_ids.begin(), actual_ids.end());
+  EXPECT_THAT(actual_ids, ElementsAre(40, 41, 42, 43, 44, 45, 46, 47, 48, 49));
+
+  idx.erase(4, 42);
+  idx.erase(4, 43);
+  idx.erase(4, 44);
+  idx.erase(4, 45);
+  actual_ids.clear();
+  idx.search(4, &actual_ids);
+  sort(actual_ids.begin(), actual_ids.end());
+  EXPECT_THAT(actual_ids, ElementsAre(40, 41, 46, 47, 48, 49));
+
+  idx.erase(5);
+  actual_ids.clear();
+  idx.search(5, &actual_ids);
+  EXPECT_TRUE(actual_ids.empty());
 }
 
 }  // namespace index
