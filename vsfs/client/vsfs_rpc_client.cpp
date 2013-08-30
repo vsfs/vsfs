@@ -260,7 +260,7 @@ Status VSFSRpcClient::open(const string& path, ObjectId* oid) {
   return Status::OK;
 }
 
-Status VSFSRpcClient::unlink(const string& path) {
+Status VSFSRpcClient::unlink(const string& path, ObjectId* oid) {
   // First remove the subfile from its parent node.
   auto status = remove_subfile(path);
   if (!status.ok()) {
@@ -272,7 +272,7 @@ Status VSFSRpcClient::unlink(const string& path) {
   CHECK(master_map_.get(path, &node).ok());
   try {
     auto client = master_client_factory_->open(node.address);
-    client->handler()->remove(path);
+    *oid = client->handler()->remove(path);
     master_client_factory_->close(client);
   } catch (RpcInvalidOp ouch) {  // NOLINT
     return Status(ouch.what, ouch.why);
@@ -546,7 +546,8 @@ Status VSFSRpcClient::remove_index(const string& root, const string& name) {
   // Tries the best-efforts to delete all partitions.
   for (const auto& part : partitions) {
     auto partition_path = (fs::path(full_index_path) / part).string();
-    unlink(partition_path);
+    ObjectId obj_id;
+    unlink(partition_path, &obj_id);
     auto hash = PathUtil::path_to_hash(partition_path);
     NodeInfo node;
     CHECK(index_server_map_.get(hash, &node).ok());

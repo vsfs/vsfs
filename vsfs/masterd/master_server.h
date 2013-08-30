@@ -68,7 +68,7 @@ class MasterServer : public vsfs::MasterServerIf {
   RpcObjectId create(const string& path, const int64_t mode, const int64_t uid,
                      const int64_t gid);
 
-  void remove(const string& path);
+  RpcObjectId remove(const string& path);
 
   RpcObjectId object_id(const string& path);
 

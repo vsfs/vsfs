@@ -103,9 +103,10 @@ class VSFSRpcClient : public VSFSClient {
   Status create(const string& path, int64_t mode, int64_t uid, int64_t gid,
                 ObjectId* id);
 
-  Status open(const string& path, ObjectId *id);
+  Status open(const string& path, ObjectId* id);
 
-  Status unlink(const string& path);
+  /// Removes a file from namespace and return its old object ID.
+  Status unlink(const string& path, ObjectId* id);
 
   /**
    * \brief Creates a new directory on path.
