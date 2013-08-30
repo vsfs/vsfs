@@ -84,8 +84,10 @@ RpcObjectId MasterServer::create(const string& path, const int64_t mode,
   return tmp;
 }
 
-void MasterServer::remove(const string& path) {
-  ThriftUtils::check_status(controller_->remove(path));
+RpcObjectId MasterServer::remove(const string& path) {
+  RpcObjectId tmp = 0;
+  ThriftUtils::check_status(controller_->remove(path, &tmp));
+  return tmp;
 }
 
 RpcObjectId MasterServer::object_id(const string& path) {

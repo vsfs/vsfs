@@ -77,6 +77,15 @@ Status PosixStorageManager::open(
   return Status::OK;
 }
 
+Status PosixStorageManager::unlink(const string& path, ObjectId) {
+  string local_path = translate_path(path);
+  int ret = ::unlink(local_path.c_str());
+  if (ret == -1) {
+    return Status::system_error(errno);
+  }
+  return Status::OK;
+}
+
 Status PosixStorageManager::mkdir(const string& path, mode_t mode) {
   string local_path = translate_path(path);
   int ret = ::mkdir(local_path.c_str(), mode);

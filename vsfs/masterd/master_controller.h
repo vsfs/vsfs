@@ -160,8 +160,8 @@ class MasterController : boost::noncopyable {
   Status create(const string& path, int mode, uid_t uid, gid_t gid,
                 ObjectId* oid);
 
-  /// Removes a file if exists.
-  Status remove(const string& path);
+  /// Removes a file if exists and returns its object ID.
+  Status remove(const string& path, ObjectId* oid);
 
   /// Gets the object ID for the path, if existed.
   Status object_id(const string& path, ObjectId* oid);

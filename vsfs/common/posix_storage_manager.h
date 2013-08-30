@@ -89,6 +89,8 @@ class PosixStorageManager : public StorageManager {
   Status open(const string& path, ObjectId obj_id, int flags, mode_t mode,
               FileObject** obj);
 
+  Status unlink(const string& path, ObjectId obj_id);
+
   Status mkdir(const string& path, mode_t mode);
 
   Status rmdir(const string& path);

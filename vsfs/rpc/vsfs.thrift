@@ -206,8 +206,8 @@ service MasterServer {
   /// Find the objects IDs for given files.
   RpcObjectList find_objects(1:RpcFileList files) throws (1:RpcInvalidOp ouch);
 
-  /// Removes a file.
-  void remove(1:string path)
+  /// Removes a file and return its Object Id.
+  RpcObjectId remove(1:string path)
     throws (1:RpcInvalidOp ouch);
 
   /// Access the attributes of a file or a directory.

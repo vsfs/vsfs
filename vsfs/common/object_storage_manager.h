@@ -80,6 +80,8 @@ class ObjectStorageManager : public StorageManager {
    */
   ssize_t write(FileHandler* fh, const void* buf, size_t count, off_t offset);
 
+  Status unlink(const string& path, ObjectId obj_id);
+
   /// Always returns OK.
   Status mkdir(const string& path, mode_t mode);
 

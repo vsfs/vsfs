@@ -62,6 +62,8 @@ class StorageManager : boost::noncopyable {
     virtual Status open(const string& path, ObjectId obj_id, int flags,
                         mode_t mode, FileObject** obj) = 0;
 
+    virtual Status unlink(const string& path, ObjectId obj_id) = 0;
+
     virtual Status mkdir(const string& path, mode_t mode) = 0;
 
     virtual Status rmdir(const string& path) = 0;

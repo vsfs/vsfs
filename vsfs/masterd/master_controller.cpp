@@ -311,10 +311,10 @@ Status MasterController::create(const string &path, int mode, uid_t uid,
   return namespace_->create(path, mode, uid, gid, oid);
 }
 
-Status MasterController::remove(const string& path) {
+Status MasterController::remove(const string& path, ObjectId* oid) {
   // It does not need to check the validation of the 'path', because the
   // invalidate path does not exist in the namespace as well.
-  return namespace_->remove(path);
+  return namespace_->remove(path, oid);
 }
 
 Status MasterController::object_id(const string& path, ObjectId* oid) {

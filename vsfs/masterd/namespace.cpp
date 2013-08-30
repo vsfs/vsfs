@@ -231,7 +231,7 @@ Status Namespace::create(const string &path, int mode, uid_t uid,
   return status;
 }
 
-Status Namespace::remove(const string &path) {
+Status Namespace::remove(const string &path, ObjectId* oid) {
   MutexGuard guard(mutex_);
   if (!contain_key(metadata_map_, path)) {
     return Status(-ENOENT, strerror(ENOENT));
@@ -252,6 +252,7 @@ Status Namespace::remove(const string &path) {
       <<  obj << ", " << path << ")";
   metadata_map_.erase(path);
   id_to_path_map_.erase(obj);
+  *oid = obj;
   return Status::OK;
 }
 

@@ -52,7 +52,7 @@ class MockMasterServerClient : public MasterServerClient {
   MOCK_METHOD1(rmdir, void(const string&));
   MOCK_METHOD4(create, RpcObjectId(const string&, const int64_t, const int64_t,
                                    const int64_t));
-  MOCK_METHOD1(remove, void(const string&));
+  MOCK_METHOD1(remove, RpcObjectId(const string&));
   MOCK_METHOD2(add_subfile, void(const string&, const string&));
   MOCK_METHOD2(remove_subfile, void(const string&, const string&));
   MOCK_METHOD2(find_objects, void(RpcObjectList&, const RpcFileList&));

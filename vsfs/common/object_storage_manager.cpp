@@ -89,6 +89,16 @@ ssize_t ObjectStorageManager::write(FileHandler* handler, const void* buf,
   return handler->write(buf, count, offset);
 }
 
+Status ObjectStorageManager::unlink(const string& path, ObjectId obj_id) {
+  string local_path = translate_path(obj_id);
+  int ret = ::unlink(local_path.c_str());
+  if (ret == -1) {
+    LOG(ERROR) << "Failed to unlink " << path << " (Obj: " << obj_id << ")";
+    return Status::system_error(errno);
+  }
+  return Status::OK;
+}
+
 Status ObjectStorageManager::mkdir(const string&, mode_t) {
   return Status::OK;
 }

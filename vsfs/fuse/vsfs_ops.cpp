@@ -312,7 +312,6 @@ int vsfs_rmdir(const char* path) {
 }
 
 int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
-  string abspath = VsfsFuse::instance()->abspath(path);
   ObjectId oid;
   Status status = vsfs->client()->create(path, mode, getuid(), getgid(), &oid);
   if (!status.ok()) {
@@ -353,18 +352,15 @@ int vsfs_open(const char* path, struct fuse_file_info* fi) {
 }
 
 int vsfs_unlink(const char* path) {
-  Status status = vsfs->client()->unlink(path);
+  ObjectId obj_id;
+  Status status = vsfs->client()->unlink(path, &obj_id);
   if (!status.ok()) {
-    LOG(ERROR) << "Failed to remove a file from metaserver:"
+    LOG(ERROR) << "Failed to remove a file from master server:"
                << status.message();
     return status.error();
   }
-  string abspath = VsfsFuse::instance()->abspath(path);
-  int ret = unlink(abspath.c_str());
-  if (ret == -1) {
-    return -errno;
-  }
-  return 0;
+  status = VsfsFuse::instance()->storage_manager()->unlink(path, obj_id);
+  return status.error();
 }
 
 int vsfs_release(const char* path, struct fuse_file_info *fi) {
