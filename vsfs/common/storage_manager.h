@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <string>
 #include "vobla/status.h"
+#include "vsfs/common/types.h"
 
 using std::string;
 using vobla::Status;
@@ -36,12 +37,10 @@ class FileObject;
 
 /*
  * \class StorageManager
- * \brief Abstraction and Wrapper for underlying storage system.
+ * \brief Abstraction of underlying storage system.
  */
 class StorageManager : boost::noncopyable {
   public:
-    StorageManager() = default;
-
     virtual ~StorageManager() {}
 
     /// Initializes a particular storage manager.
@@ -51,31 +50,41 @@ class StorageManager : boost::noncopyable {
     virtual Status destroy() = 0;
 
     /**
-     * \brief open a file according to the logical path and context.
-     * \return a new FileObject object, caller now has the ownership of this
-     * FileObject object.
+     * \brief Opens a file and creates a new FileObject.
+     * \param[in] path the related path in VSFS.
+     * \param[in] obj_id the object id of the given file.
+     * \param[in] flags the open flags.
+     * \param[out] obj it is filled with new created FileObject's pointer.
+     * \return Status::OK if success.
      */
-    virtual Status open(const string& path, int flags, FileObject** obj) = 0;
-
-    virtual Status open(const string& path, int flags, mode_t mode,
+    virtual Status open(const string& path, ObjectId obj_id, int flags,
                         FileObject** obj) = 0;
 
-    /// Closes an opened file handler.
-    virtual Status close(FileHandler* file_handler) const = 0;
-
     /**
-     * \brief Reads from the file.
-     * \return Returns the number of bytes actually read, -1 on error
+     * \brief Opens a file with mode and creates a new FileObject.
+     * \param[in] path the related path in VSFS.
+     * \param[in] obj_id the object id of the opening file.
+     * \param[in] flags the open flags.
+     * \param[int] mode the mode to open a file.
+     * \param[out] obj it is filled with new created FileObject's pointer.
+     * \return Status::OK if success.
      */
-    virtual ssize_t read(FileHandler* file_handler, void *buf,
-                         size_t count, off_t offset) = 0;
+    virtual Status open(const string& path, ObjectId obj_id, int flags,
+                        mode_t mode, FileObject** obj) = 0;
 
-    /**
-     * \brief Writes to the file.
-     * \return Returns the number of bytes actually written, -1 on error
-     */
-    virtual ssize_t write(FileHandler* file_handler, const void *buf,
-                          size_t count, off_t offset) = 0;
+    /// Removes the object/file from the storage.
+    virtual Status unlink(const string& path, ObjectId obj_id) = 0;
+
+    /// Creates a directory if the underlying storage supports the directlry
+    /// semantics.
+    virtual Status mkdir(const string& path, mode_t mode) = 0;
+
+    /// Removes a directory if the storage manager supports.
+    virtual Status rmdir(const string& path) = 0;
+
+  protected:
+    // Do not allow to intialize StorageManager directly.
+    StorageManager() = default;
 };
 
 }  // namespace vsfs

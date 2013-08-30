@@ -108,9 +108,10 @@ class Namespace : boost::noncopyable {
 
   /**
    * \brief Removes a file.
-   * \param path the full path of the deleting file.
+   * \param[in] path the full path of the deleting file.
+   * \param[out] oid the old Object ID of the deleting file.
    */
-  Status remove(const string &path);
+  Status remove(const string &path, ObjectId* oid);
 
   /**
    * \brief Adds a file entry into the directory structure.

@@ -25,9 +25,9 @@ using std::string;
 
 namespace vsfs {
 
-PosixFileHandler::PosixFileHandler(PosixStorageManager *psm, int fd)
-    : storage_manager_(psm), fd_(fd) {
-  CHECK_NOTNULL(psm);
+PosixFileHandler::PosixFileHandler(StorageManager *sm, int fd)
+    : storage_manager_(sm), fd_(fd) {
+  CHECK_NOTNULL(sm);
 //  CHECK_GT(fd_, 0);
 }
 

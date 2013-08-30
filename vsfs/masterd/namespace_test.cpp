@@ -92,14 +92,16 @@ TEST_F(NamespaceTest, CreateFile) {
 }
 
 TEST_F(NamespaceTest, RemoveFile) {
-  EXPECT_FALSE(test_ns_->remove("/foo/bar").ok());
-
   ObjectId obj;
+  EXPECT_FALSE(test_ns_->remove("/foo/bar", &obj).ok());
+
   test_ns_->create("/foo", 0x666, 100, 200, &obj);
   string actual_path;
   EXPECT_TRUE(test_ns_->file_path(obj, &actual_path).ok());
 
-  EXPECT_TRUE(test_ns_->remove("/foo").ok());
+  ObjectId actual_obj;
+  EXPECT_TRUE(test_ns_->remove("/foo", &actual_obj).ok());
+  EXPECT_EQ(obj, actual_obj);
   EXPECT_FALSE(test_ns_->file_path(obj, &actual_path).ok());
   EXPECT_FALSE(test_ns_->object_id("/foo", &obj).ok());
 }

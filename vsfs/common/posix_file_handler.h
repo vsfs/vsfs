@@ -26,7 +26,7 @@ using std::string;
 
 namespace vsfs {
 
-class PosixStorageManager;
+class StorageManager;
 
 /**
  * \class PosixFileHandler
@@ -34,7 +34,7 @@ class PosixStorageManager;
  */
 class PosixFileHandler : public FileHandler {
  public:
-  PosixFileHandler(PosixStorageManager *psm, int fd);
+  PosixFileHandler(StorageManager *psm, int fd);
 
   virtual ~PosixFileHandler();
 
@@ -47,7 +47,7 @@ class PosixFileHandler : public FileHandler {
   int fd() const { return fd_; }
 
  private:
-  PosixStorageManager *storage_manager_;
+  StorageManager *storage_manager_;
 
   int fd_;
 };

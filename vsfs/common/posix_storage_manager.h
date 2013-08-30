@@ -1,5 +1,5 @@
 /*
- * Copyright 2011-2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,9 +26,11 @@
 #define VSFS_COMMON_POSIX_STORAGE_MANAGER_H_
 
 #include <string>
+#include "vobla/status.h"
 #include "vsfs/common/storage_manager.h"
 
 using std::string;
+using vobla::Status;
 
 namespace vsfs {
 
@@ -67,39 +69,16 @@ class PosixStorageManager : public StorageManager {
    */
   Status destroy();
 
-  /**
-   * \brief Opens a file and creates a new FileObject.
-   * \param[in] path the related path in VSFS.
-   * \param[in] flags the open flags.
-   * \param[out] obj it is filled with new created FileObject's pointer.
-   * \return Status::OK if success.
-   */
-  Status open(const string& path, int flags, FileObject** obj);
+  Status open(const string& path, ObjectId obj_id, int flags, FileObject** obj);
 
-  /**
-   * \brief Opens a file with mode and creates a new FileObject.
-   * \param[in] path the related path in VSFS.
-   * \param[in] flags the open flags.
-   * \param[int] mode the mode to open a file.
-   * \param[out] obj it is filled with new created FileObject's pointer.
-   * \return Status::OK if success.
-   */
-  Status open(const string& path, int flags, mode_t mode, FileObject** obj);
+  Status open(const string& path, ObjectId obj_id, int flags, mode_t mode,
+              FileObject** obj);
 
-  /// Closes a file handler.
-  Status close(FileHandler* handler) const;
+  Status unlink(const string& path, ObjectId obj_id);
 
-  /**
-   * \brief Reads content from file.
-   * \return The size of read content. Return -1 if failed.
-   */
-  ssize_t read(FileHandler* fh, void* buf, size_t count, off_t offset);
+  Status mkdir(const string& path, mode_t mode);
 
-  /**
-   * \brief Writes content from file.
-   * \return The size of read content. Return -1 if failed.
-   */
-  ssize_t write(FileHandler* fh, const void* buf, size_t count, off_t offset);
+  Status rmdir(const string& path);
 
  private:
   /// Returns the native path of the file requested.
