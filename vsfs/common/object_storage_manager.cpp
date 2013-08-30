@@ -76,19 +76,6 @@ Status ObjectStorageManager::open(const string&, ObjectId obj_id, int flags,
   return Status::OK;
 }
 
-ssize_t ObjectStorageManager::read(FileHandler* handler, void* buf,
-                                  size_t count, off_t offset) {
-  CHECK_NOTNULL(handler);
-  return handler->read(buf, count, offset);
-}
-
-ssize_t ObjectStorageManager::write(FileHandler* handler, const void* buf,
-                                   size_t count, off_t offset) {
-  CHECK_NOTNULL(handler);
-  CHECK_NOTNULL(buf);
-  return handler->write(buf, count, offset);
-}
-
 Status ObjectStorageManager::unlink(const string& path, ObjectId obj_id) {
   string local_path = translate_path(obj_id);
   int ret = ::unlink(local_path.c_str());

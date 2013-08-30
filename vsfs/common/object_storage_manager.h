@@ -29,6 +29,23 @@ namespace vsfs {
 
 class FileObject;
 
+/**
+ * \class ObjectStorageManager
+ * \brief The StorageManager that runs on a shared network file system or local
+ * file system and access files by ObjectId.
+ *
+ * The way to store the file/objects in ObjectStorageManager is that it manages
+ * the 'base_dir' as a two-level hash buckets:
+ *  - the first level is calculated by 'ObjectID % num_subdirs'
+ *  - the second level is using the object ID as filename.
+ *
+ *  E.g., suppose we have 'num_subdirs = 16', then the file with ObjectID 19
+ *  is stored on '/base/3/19', where '/base' is the base path of this
+ *  ObjectStorageManager.
+ *
+ *  \note ObjectStorageManager itself is not a distributed storage store: it
+ *  runs on top of existing networked file system like NFS or Lustre.
+ */
 class ObjectStorageManager : public StorageManager {
  public:
   enum {
@@ -37,52 +54,36 @@ class ObjectStorageManager : public StorageManager {
 
   ObjectStorageManager() = delete;
 
+  /**
+   * \brief Constructs a ObjectStorageManager.
+   * \param base_path the base directory path.
+   * \param num_subdirs the number of sub-directories on the first level.
+   */
   ObjectStorageManager(const string& base_path, int num_subdirs = NUM_SUBFILES);
 
   virtual ~ObjectStorageManager();
 
-  /// Initialize a ObjectStorageManager.
+  /**
+   * \brief Initialize a ObjectStorageManager.
+   *
+   * It creates all sub-directories if they are not existed.
+   */
   Status init();
 
   // Do nothing.
   Status destory();
 
-  /**
-   * \brief Opens a file and creates a new FileObject.
-   * \param[in] path not used in object store.
-   * \param[in] obj_id object id.
-   * \param[in] flags the open flags.
-   * \param[out] obj it is filled with new created FileObject's pointer.
-   * \return Status::OK if success.
-   */
   Status open(const string& path, ObjectId obj_id, int flags, FileObject** obj);
 
-  /**
-   * \brief Opens a file with mode and creates a new FileObject.
-   * \param[in] path the related path in VSFS.
-   * \param[in] flags the open flags.
-   * \param[int] mode the mode to open a file.
-   * \param[out] obj it is filled with new created FileObject's pointer.
-   * \return Status::OK if success.
-   */
   Status open(const string& path, ObjectId obj_id, int flags, mode_t mode,
               FileObject** obj);
 
-  /**
-   * \brief Reads content from file.
-   * \return The size of read content. Return -1 if failed.
-   */
-  ssize_t read(FileHandler* fh, void* buf, size_t count, off_t offset);
-
-  /**
-   * \brief Writes content from file.
-   * \return The size of read content. Return -1 if failed.
-   */
-  ssize_t write(FileHandler* fh, const void* buf, size_t count, off_t offset);
-
   Status unlink(const string& path, ObjectId obj_id);
 
-  /// Always returns OK.
+  /**
+   * \brief ObjectStorageManager does not support "directory" semantic. So it
+   * always returns OK.
+   */
   Status mkdir(const string& path, mode_t mode);
 
   /// Always returns OK.

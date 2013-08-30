@@ -69,23 +69,8 @@ class PosixStorageManager : public StorageManager {
    */
   Status destroy();
 
-  /**
-   * \brief Opens a file and creates a new FileObject.
-   * \param[in] path the related path in VSFS.
-   * \param[in] flags the open flags.
-   * \param[out] obj it is filled with new created FileObject's pointer.
-   * \return Status::OK if success.
-   */
   Status open(const string& path, ObjectId obj_id, int flags, FileObject** obj);
 
-  /**
-   * \brief Opens a file with mode and creates a new FileObject.
-   * \param[in] path the related path in VSFS.
-   * \param[in] flags the open flags.
-   * \param[int] mode the mode to open a file.
-   * \param[out] obj it is filled with new created FileObject's pointer.
-   * \return Status::OK if success.
-   */
   Status open(const string& path, ObjectId obj_id, int flags, mode_t mode,
               FileObject** obj);
 
