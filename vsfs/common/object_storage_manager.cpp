@@ -15,6 +15,7 @@
  */
 
 #include <boost/filesystem.hpp>
+#include <boost/system/error_code.hpp>
 #include <fcntl.h>
 #include <glog/logging.h>
 #include <memory>
@@ -41,12 +42,16 @@ Status ObjectStorageManager::init() {
   // Creates subdirs if not existed.
   for (int i = 0; i < num_subdirs_; i++) {
     auto subdir = fs::path(base_path_) / to_string(i);
-    create_directory(subdir);
+    boost::system::error_code ec;
+    create_directories(subdir, ec);
+    if (ec.value() > 0) {
+      return Status(ec.value(), ec.message());
+    }
   }
   return Status::OK;
 }
 
-Status ObjectStorageManager::destory() {
+Status ObjectStorageManager::destroy() {
   return Status::OK;
 }
 

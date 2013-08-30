@@ -43,7 +43,7 @@ class FileObject;
  *  is stored on '/base/3/19', where '/base' is the base path of this
  *  ObjectStorageManager.
  *
- *  \note ObjectStorageManager itself is not a distributed storage store: it
+ *  \note ObjectStorageManager itself is not a distributed storage storage: it
  *  runs on top of existing networked file system like NFS or Lustre.
  */
 class ObjectStorageManager : public StorageManager {
@@ -71,7 +71,7 @@ class ObjectStorageManager : public StorageManager {
   Status init();
 
   // Do nothing.
-  Status destory();
+  Status destroy();
 
   Status open(const string& path, ObjectId obj_id, int flags, FileObject** obj);
 
