@@ -22,9 +22,11 @@
 #include <stddef.h>
 #include <string.h>
 #include <cstdio>
+#include <string>
 #include "vobla/status.h"
 #include "vsfs/fuse/vsfs_ops.h"
 
+using std::string;
 using namespace vsfs::fuse;  // NOLINT
 
 /** command line options */
@@ -74,7 +76,7 @@ int vsfs_opt_proc(void *, const char *, int key, struct fuse_args *outargs) {
         "\n"
         "Mount options:\n"
         "    -b, --basedir DIR\tmount target directory (required)\n"
-        "    -H, --host HOST\tmasterd hostname.\n"
+        "    -H, --host HOST\tmasterd hostname (default: localhost).\n"
         "    -p, --port NUM\tmasterd listen port (default: 9876)\n"
         "\n"
         , outargs->argv[0]);
@@ -134,6 +136,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   Status status;
+  string host = "localhost";
   if (fuse_opt_parse(&args, &options, vsfs_opts, vsfs_opt_proc) == -1) {
     status = Status(-1, "Can not parse command line parameters");
     goto exit_handler;
@@ -143,19 +146,16 @@ int main(int argc, char *argv[]) {
     status = Status(-1, "Missing base dir");
     goto exit_handler;
   }
-  if (!options.master_host || strlen(options.master_host) == 0) {
-    status = Status(-1, "Missing Master Host");
-    goto exit_handler;
+  if (options.master_host && strlen(options.master_host) > 0) {
+    host = options.master_host;
   }
   if (options.master_port == 0) {
     options.master_port = 9876;
   }
   LOG(INFO) << "VSFS connect to " << options.master_host << ":"
             << options.master_port;
-  status = VsfsFuse::init(options.basedir,
-                          args.argv[args.argc-1],
-                          options.master_host,
-                          options.master_port);
+  status = VsfsFuse::init(options.basedir, args.argv[args.argc-1],
+                          host, options.master_port);
   if (!status.ok()) {
     goto exit_handler;
   }
