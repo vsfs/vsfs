@@ -94,6 +94,8 @@ class ObjectStorageManager : public StorageManager {
 
   Status getattr(const string&, ObjectId obj_id, struct stat* stbuf);
 
+  Status statfs(struct statvfs* stbuf);
+
  private:
   string translate_path(ObjectId obj_id) const;
 

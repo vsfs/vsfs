@@ -89,6 +89,9 @@ class StorageManager : boost::noncopyable {
     // system. Will change to query the master server directly.
     virtual Status getattr(const string& path, ObjectId obj_id,
                            struct stat* stbuf) = 0;
+
+    virtual Status statfs(struct statvfs* stbuf) = 0;
+
   protected:
     // Do not allow to intialize StorageManager directly.
     StorageManager() = default;
