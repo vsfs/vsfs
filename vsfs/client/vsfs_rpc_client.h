@@ -126,6 +126,8 @@ class VSFSRpcClient : public VSFSClient {
 
   Status getattr(const string& path, struct stat* stbuf);
 
+  Status object_id(const string& path, ObjectId* obj_id);
+
   Status chmod(const string& path, mode_t mode);
 
   Status chown(const string& path, int64_t uid, int64_t gid);

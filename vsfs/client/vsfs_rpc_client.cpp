@@ -405,6 +405,22 @@ Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
   return Status::OK;
 }
 
+Status VSFSRpcClient::object_id(const string& path, ObjectId* oid) {
+  CHECK_NOTNULL(oid);
+  NodeInfo node;
+  CHECK(master_map_.get(path, &node).ok());
+  try {
+    auto client = master_client_factory_->open(node.address);
+    *oid = client->handler()->object_id(path);
+    master_client_factory_->close(client);
+  } catch (RpcInvalidOp ouch) {  // NOLINT
+    return Status(ouch.what, ouch.why);
+  } catch (TTransportException e) {  // NOLINT
+    return Status(e.getType(), e.what());
+  }
+  return Status::OK;
+}
+
 Status VSFSRpcClient::setattr(const string& path, const RpcFileInfo& info) {
   NodeInfo node;
   CHECK(master_map_.get(path, &node).ok());
