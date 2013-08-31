@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <glog/logging.h>
 #include <sys/stat.h>
+#include <sys/statvfs.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <memory>
@@ -116,6 +117,15 @@ Status ObjectStorageManager::getattr(
     const string&, ObjectId obj_id, struct stat* stbuf) {
   string local_path = translate_path(obj_id);
   int ret = ::stat(local_path.c_str(), stbuf);
+  if (ret == -1) {
+    return Status::system_error(errno);
+  }
+  return Status::OK;
+}
+
+Status ObjectStorageManager::statfs(struct statvfs* stbuf) {
+  CHECK_NOTNULL(stbuf);
+  int ret = statvfs(base_path_.c_str(), stbuf);
   if (ret == -1) {
     return Status::system_error(errno);
   }
