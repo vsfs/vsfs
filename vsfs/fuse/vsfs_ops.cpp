@@ -163,6 +163,7 @@ int vsfs_access(const char* path, int flag) {
   if (!vsp.is_validate()) {
     return -EINVAL;
   } else if (!vsp.is_query()) {
+    (void) flag;
     /// TODO(eddyxu): always success for now.
     return 0;
     // return access(abspath.c_str(), flag);
