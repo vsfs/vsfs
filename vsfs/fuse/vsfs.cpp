@@ -33,6 +33,7 @@ using namespace vsfs::fuse;  // NOLINT
 struct options {
   char *basedir;
   char *master_host;
+  char *storage;  // Name of the storage manager.
   int master_port;
 } options;
 
@@ -52,6 +53,8 @@ struct fuse_opt vsfs_opts[] = {
   VSFS_OPT_KEY("-H %s", master_host, 0),
   VSFS_OPT_KEY("--port %d", master_port, 9876),
   VSFS_OPT_KEY("-p %d", master_port, 9876),
+  VSFS_OPT_KEY("--storage %s", storage, 0),
+  VSFS_OPT_KEY("-s %s", storage, 0),
 
   FUSE_OPT_KEY("--version", KEY_VERSION),
   FUSE_OPT_KEY("-h", KEY_HELP),
@@ -78,6 +81,9 @@ int vsfs_opt_proc(void *, const char *, int key, struct fuse_args *outargs) {
         "    -b, --basedir DIR\tmount target directory (required)\n"
         "    -H, --host HOST\tmasterd hostname (default: localhost).\n"
         "    -p, --port NUM\tmasterd listen port (default: 9876)\n"
+        "    -s, --storage NAME\tchoose a storage manager (choices: posix, "
+        "object).\n"
+        "\t\t\tdefault: posix.\n"
         "\n"
         , outargs->argv[0]);
     fuse_opt_add_arg(outargs, "-ho");
@@ -137,6 +143,7 @@ int main(int argc, char *argv[]) {
 
   Status status;
   string host = "localhost";
+  string storage = "posix";  // Default storage manager is PosixStorageManager;
   if (fuse_opt_parse(&args, &options, vsfs_opts, vsfs_opt_proc) == -1) {
     status = Status(-1, "Can not parse command line parameters");
     goto exit_handler;
@@ -148,6 +155,13 @@ int main(int argc, char *argv[]) {
   }
   if (options.master_host && strlen(options.master_host) > 0) {
     host = options.master_host;
+  }
+  if (options.storage && strlen(options.storage) > 0) {
+    storage = options.storage;
+  }
+  if (storage != "posix" && storage != "object") {
+    status = Status(-1, "Wrong storage type.");
+    goto exit_handler;
   }
   if (options.master_port == 0) {
     options.master_port = 9876;

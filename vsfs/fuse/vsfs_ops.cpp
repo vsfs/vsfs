@@ -39,6 +39,7 @@
 #include "vobla/status.h"
 #include "vsfs/common/complex_query.h"
 #include "vsfs/common/file_object.h"
+#include "vsfs/common/object_storage_manager.h"
 #include "vsfs/common/posix_path.h"
 #include "vsfs/common/posix_storage_manager.h"
 #include "vsfs/common/thread.h"
@@ -53,9 +54,6 @@ using vsfs::client::VSFSRpcClient;
 
 namespace fs = boost::filesystem;
 
-DECLARE_int32(vsfs_client_num_thread);
-DECLARE_int32(vsfs_client_batch_size);
-
 namespace vsfs {
 namespace fuse {
 
@@ -63,14 +61,14 @@ unique_ptr<VsfsFuse> instance_;
 VsfsFuse *vsfs;
 
 Status VsfsFuse::init(const string &basedir, const string &mnt,
-                      const string &host, int port) {
+                      const string &host, int port, const string& sm) {
   LOG(INFO) << "VsfsFuse starts initilizing...";
   // This function should be only called once.
   CHECK(instance_.get() == NULL)
       << "VsfsFuse should only be initialized once.";
   string absolute_basedir = fs::absolute(basedir).string();
   string absolute_mnt = fs::absolute(mnt).string();
-  instance_.reset(new VsfsFuse(absolute_basedir, absolute_mnt, host, port));
+  instance_.reset(new VsfsFuse(absolute_basedir, absolute_mnt, host, port, sm));
   vsfs = instance_.get();
   LOG(INFO) << "VsfsFuse fully initialized.";
   auto status = vsfs->client_->init();
