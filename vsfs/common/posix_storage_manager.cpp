@@ -23,6 +23,7 @@
 #include <glog/logging.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <memory>
 #include <string>
 #include "vobla/status.h"
@@ -98,6 +99,26 @@ Status PosixStorageManager::mkdir(const string& path, mode_t mode) {
 Status PosixStorageManager::rmdir(const string& path) {
   string local_path = translate_path(path);
   int ret = ::rmdir(local_path.c_str());
+  if (ret == -1) {
+    return Status::system_error(errno);
+  }
+  return Status::OK;
+}
+
+Status PosixStorageManager::readlink(
+    const string& path, ObjectId, char* buf, size_t size, ssize_t* retlen) {
+  string local_path = translate_path(path);
+  *retlen = ::readlink(local_path.c_str(), buf, size);
+  if (*retlen < 0) {
+    return Status::system_error(errno);
+  }
+  return Status::OK;
+}
+
+Status PosixStorageManager::getattr(
+    const string& path, ObjectId, struct stat* stbuf) {
+  string local_path = translate_path(path);
+  int ret = ::stat(local_path.c_str(), stbuf);
   if (ret == -1) {
     return Status::system_error(errno);
   }

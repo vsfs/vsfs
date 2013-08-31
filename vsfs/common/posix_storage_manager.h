@@ -80,6 +80,11 @@ class PosixStorageManager : public StorageManager {
 
   Status rmdir(const string& path);
 
+  Status readlink(const string& path, ObjectId, char* buf,
+                  size_t size, ssize_t* retlen);
+
+  Status getattr(const string& path, ObjectId, struct stat* stbuf);
+
  private:
   /// Returns the native path of the file requested.
   string translate_path(const string &path) const;
