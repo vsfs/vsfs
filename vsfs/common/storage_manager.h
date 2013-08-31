@@ -82,6 +82,13 @@ class StorageManager : boost::noncopyable {
     /// Removes a directory if the storage manager supports.
     virtual Status rmdir(const string& path) = 0;
 
+    virtual Status readlink(const string& path, ObjectId obj_id,
+                            char* buf, size_t size, ssize_t* retlen) = 0;
+
+    /// \TODO(eddyxu): It is a temporary to get inode information from file
+    // system. Will change to query the master server directly.
+    virtual Status getattr(const string& path, ObjectId obj_id,
+                           struct stat* stbuf) = 0;
   protected:
     // Do not allow to intialize StorageManager directly.
     StorageManager() = default;

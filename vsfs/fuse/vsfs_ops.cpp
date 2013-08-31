@@ -162,7 +162,6 @@ int vsfs_statfs(const char* path , struct statvfs *stbuf) {
 }
 
 int vsfs_access(const char* path, int flag) {
-  LOG(ERROR) << "VSFS_ACCESS";
   PosixPath vsp(path);
   string abspath = VsfsFuse::instance()->abspath(path);
   if (!vsp.is_validate()) {
@@ -190,15 +189,17 @@ int vsfs_getattr(const char* path, struct stat* stbuf) {
   } else {
     // TODO(eddyxu): replace with the below commented code when the writes can
     // update file size.
-    if (stat(vsfs->abspath(path).c_str(), stbuf) == -1) {
-      return -errno;
+    ObjectId obj_id;
+    auto status = VsfsFuse::instance()->client()->object_id(path, &obj_id);
+    if (!status.ok()) {
+      LOG(ERROR) << "GETATTR: Failed to get object_id: " << status.message();
+      return status.error();
     }
-    /*
-    auto status = VsfsFuse::instance()->client()->getattr(path, stbuf);
+    status = VsfsFuse::instance()->storage_manager()
+        ->getattr(path, obj_id, stbuf);
     if (!status.ok()) {
       return status.error();
     }
-    */
   }
   return 0;
 }
@@ -248,7 +249,6 @@ int vsfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
   filler(buf, "..", NULL, 0);
 
   Status status;
-  int ret = 0;
   if (vsp.is_query()) {
     ComplexQuery complex_query;
     status = complex_query.parse(path);
@@ -260,13 +260,12 @@ int vsfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
     }
     LOG(INFO) << result_files.size() << " files are found.";
     for (const string &file : result_files) {
-      string abspath = VsfsFuse::instance()->abspath(file);
       struct stat stbuf;
-      ret = stat(abspath.c_str(), &stbuf);
-      if (ret == -1) {
-        LOG(ERROR) << "vsfs_readdir: Failed to stat file: "
-                   << file << ": " << strerror(errno);
-        return -errno;
+      status = vsfs->client()->getattr(file, &stbuf);
+      if (!status.ok()) {
+        LOG(ERROR) << "Failed to get attribute for file: " << file
+                   << status.error();
+        return status.error();
       }
       stbuf.st_mode |= S_IFLNK;
       string name(file.size(), 0);
@@ -373,8 +372,7 @@ int vsfs_release(const char* path, struct fuse_file_info *fi) {
   return status.error();
 }
 
-int vsfs_readlink(const char* path, char *buf, size_t size) {
-  int ret = 0;
+int vsfs_readlink(const char* path, char* buf, size_t size) {
   PosixPath vsp(path);
   if (vsp.is_query()) {
   } else if (vsp.is_result()) {
@@ -387,14 +385,21 @@ int vsfs_readlink(const char* path, char *buf, size_t size) {
     strncpy(buf, mnt_path.c_str(), size);
     buf[mnt_path.size()] = 0;
   } else {
-    string abspath = VsfsFuse::instance()->abspath(path);
-    ret = readlink(abspath.c_str(), buf, size);
-    if (ret == -1) {
-      LOG(ERROR) << "Failed to read link: " << path << ": " << strerror(errno);
-      return -errno;
+    ObjectId object_id;
+    auto status = VsfsFuse::instance()->client()->object_id(path, &object_id);
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to get object ID for path: " << path;
+      return status.error();
+    }
+    ssize_t retlen;
+    status = VsfsFuse::instance()->storage_manager()
+        ->readlink(path, object_id, buf, size, &retlen);
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to read link: " << path << ": " << status.message();
+      return status.error();
     }
   }
-  return ret;
+  return 0;
 }
 
 int vsfs_read(const char*, char *buf, size_t size, off_t offset,

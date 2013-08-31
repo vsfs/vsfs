@@ -89,6 +89,11 @@ class ObjectStorageManager : public StorageManager {
   /// Always returns OK.
   Status rmdir(const string& path);
 
+  Status readlink(const string&, ObjectId oid, char* buf,
+                  size_t size, ssize_t* retlen);
+
+  Status getattr(const string&, ObjectId obj_id, struct stat* stbuf);
+
  private:
   string translate_path(ObjectId obj_id) const;
 

@@ -18,6 +18,9 @@
 #include <boost/system/error_code.hpp>
 #include <fcntl.h>
 #include <glog/logging.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <memory>
 #include <string>
 #include "vobla/status.h"
@@ -96,6 +99,26 @@ Status ObjectStorageManager::mkdir(const string&, mode_t) {
 }
 
 Status ObjectStorageManager::rmdir(const string&) {
+  return Status::OK;
+}
+
+Status ObjectStorageManager::readlink(
+    const string&, ObjectId oid, char* buf, size_t size, ssize_t* retlen) {
+  string local_path = translate_path(oid);
+  *retlen = ::readlink(local_path.c_str(), buf, size);
+  if (*retlen < 0) {
+    return Status::system_error(errno);
+  }
+  return Status::OK;
+}
+
+Status ObjectStorageManager::getattr(
+    const string&, ObjectId obj_id, struct stat* stbuf) {
+  string local_path = translate_path(obj_id);
+  int ret = ::stat(local_path.c_str(), stbuf);
+  if (ret == -1) {
+    return Status::system_error(errno);
+  }
   return Status::OK;
 }
 
