@@ -107,10 +107,6 @@ const string& VsfsFuse::basedir() const {
   return basedir_;
 }
 
-string VsfsFuse::abspath(const string &vsfs_path) const {
-  return (fs::path(basedir_) / vsfs_path).string();
-}
-
 string VsfsFuse::mnt_path(const string &vsfs_path) const {
   return (fs::path(mount_point_) / vsfs_path).string();
 }
@@ -153,21 +149,23 @@ void vsfs_destroy(void *data) {
   VsfsFuse::destory();
 }
 
-int vsfs_statfs(const char* path , struct statvfs *stbuf) {
-  string abspath = VsfsFuse::instance()->abspath(path);
-  if (statvfs(abspath.c_str(), stbuf) == -1) {
-    return -errno;
+int vsfs_statfs(const char*, struct statvfs *stbuf) {
+  auto status = VsfsFuse::instance()->storage_manager()->statfs(stbuf);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to statvfs: " << status.message();
+    return status.error();
   }
   return 0;
 }
 
 int vsfs_access(const char* path, int flag) {
   PosixPath vsp(path);
-  string abspath = VsfsFuse::instance()->abspath(path);
   if (!vsp.is_validate()) {
     return -EINVAL;
   } else if (!vsp.is_query()) {
-    return access(abspath.c_str(), flag);
+    /// TODO(eddyxu): always success for now.
+    return 0;
+    // return access(abspath.c_str(), flag);
   } else if (vsp.is_query()) {
     assert(true);
   } else {

@@ -83,8 +83,6 @@ class VsfsFuse : boost::noncopyable {
 
   const string& basedir() const;
 
-  string abspath(const string &vsfs_path) const;
-
   string mnt_path(const string &vsfs_path) const;
 
   StorageManager* storage_manager() {
