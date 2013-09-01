@@ -133,7 +133,7 @@ Status ObjectStorageManager::statfs(struct statvfs* stbuf) {
 }
 
 string ObjectStorageManager::translate_path(ObjectId obj_id) const {
-  int subdir_num = obj_id % num_subdirs_;
+  uint64_t subdir_num = obj_id % num_subdirs_;
   auto path = fs::path(base_path_) / to_string(subdir_num) / to_string(obj_id);
   return path.string();
 }

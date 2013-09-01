@@ -379,21 +379,30 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
   return Status::OK;
 }
 
-Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
-  CHECK_NOTNULL(stbuf);
+Status VSFSRpcClient::getattr(const string& path, RpcFileInfo* info) {
+  CHECK_NOTNULL(info);
   NodeInfo node;
   CHECK(master_map_.get(path, &node).ok());
-  RpcFileInfo file_info;
   try {
     auto client = master_client_factory_->open(node.address);
-    client->handler()->getattr(file_info, path);
+    client->handler()->getattr(*info, path);
     master_client_factory_->close(client);
   } catch (RpcInvalidOp ouch) {  // NOLINT
     return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     LOG(ERROR) << "Thrift Transport Exception: (" << e.getType() << "): "
-               << e.what();
+        << e.what();
     return Status(e.getType(), e.what());
+  }
+  return Status::OK;
+}
+
+Status VSFSRpcClient::getattr(const string& path, struct stat* stbuf) {
+  CHECK_NOTNULL(stbuf);
+  RpcFileInfo file_info;
+  auto status = getattr(path, &file_info);
+  if (!status.ok()) {
+    return status;
   }
   stbuf->st_mode = file_info.mode;
   stbuf->st_size = file_info.size;
