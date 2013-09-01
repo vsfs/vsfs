@@ -71,8 +71,9 @@ class VsfsFuse : boost::noncopyable {
    *  }
    *  fuse_main(...);
    */
-  static Status init(const string &basedir, const string &mount_point,
-                     const string &host, int port);
+  static Status init(const string& basedir, const string& mount_point,
+                     const string& host, int port,
+                     const string& storage_manager);
 
   /// Destroy VsfsFuse object.
   static void destory();
@@ -83,7 +84,7 @@ class VsfsFuse : boost::noncopyable {
 
   const string& basedir() const;
 
-  string mnt_path(const string &vsfs_path) const;
+  string mnt_path(const string& vsfs_path) const;
 
   StorageManager* storage_manager() {
     return storage_manager_.get();
@@ -100,8 +101,8 @@ class VsfsFuse : boost::noncopyable {
   FileObject* get_obj(uint64_t fd);
 
  private:
-  VsfsFuse(const string &basedir, const string &mount_point,
-           const string &host, int port);
+  VsfsFuse(const string& basedir, const string& mount_point,
+           const string& host, int port, const string& sm);
 
   string basedir_;
 

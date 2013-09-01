@@ -39,6 +39,7 @@
 #include "vobla/status.h"
 #include "vsfs/common/complex_query.h"
 #include "vsfs/common/file_object.h"
+#include "vsfs/common/object_storage_manager.h"
 #include "vsfs/common/posix_path.h"
 #include "vsfs/common/posix_storage_manager.h"
 #include "vsfs/common/thread.h"
@@ -53,8 +54,8 @@ using vsfs::client::VSFSRpcClient;
 
 namespace fs = boost::filesystem;
 
-DECLARE_int32(vsfs_client_num_thread);
-DECLARE_int32(vsfs_client_batch_size);
+DEFINE_int32(object_storage_dirwidth, 8192,
+             "Directory width for ObjectStorageManager");
 
 namespace vsfs {
 namespace fuse {
@@ -63,17 +64,22 @@ unique_ptr<VsfsFuse> instance_;
 VsfsFuse *vsfs;
 
 Status VsfsFuse::init(const string &basedir, const string &mnt,
-                      const string &host, int port) {
+                      const string &host, int port, const string& sm) {
   LOG(INFO) << "VsfsFuse starts initilizing...";
   // This function should be only called once.
   CHECK(instance_.get() == NULL)
       << "VsfsFuse should only be initialized once.";
   string absolute_basedir = fs::absolute(basedir).string();
   string absolute_mnt = fs::absolute(mnt).string();
-  instance_.reset(new VsfsFuse(absolute_basedir, absolute_mnt, host, port));
+  instance_.reset(new VsfsFuse(absolute_basedir, absolute_mnt, host, port, sm));
+  auto status = instance_->storage_manager()->init();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to initialize StorageManager: " << status.message();
+    return status;
+  }
   vsfs = instance_.get();
   LOG(INFO) << "VsfsFuse fully initialized.";
-  auto status = vsfs->client_->init();
+  status = vsfs->client_->init();
   if (!status.ok()) {
     LOG(ERROR) << "Failed to initialize RPC connection to VSFS: "
                << status.message();
@@ -94,10 +100,17 @@ VsfsFuse* VsfsFuse::instance() {
 }
 
 VsfsFuse::VsfsFuse(const string &basedir, const string &mnt,
-                   const string &host, int port)
+                   const string &host, int port, const string& sm)
   : basedir_(basedir), mount_point_(mnt), host_(host), port_(port),
-    storage_manager_(new PosixStorageManager(basedir)),
     client_(new VSFSRpcClient(host, port)) {
+  if (sm == "posix") {
+    storage_manager_.reset(new PosixStorageManager(basedir));
+  } else if (sm == "object") {
+    storage_manager_.reset(
+        new ObjectStorageManager(basedir, FLAGS_object_storage_dirwidth));
+  } else {
+    CHECK(false) << "Unknown StorageManager type: " << sm;
+  }
 }
 
 VsfsFuse::~VsfsFuse() {
@@ -188,14 +201,25 @@ int vsfs_getattr(const char* path, struct stat* stbuf) {
   } else {
     // TODO(eddyxu): replace with the below commented code when the writes can
     // update file size.
-    ObjectId obj_id;
-    auto status = VsfsFuse::instance()->client()->object_id(path, &obj_id);
+    RpcFileInfo file_info;
+    auto status = VsfsFuse::instance()->client()->getattr(path, &file_info);
     if (!status.ok()) {
-      LOG(ERROR) << "GETATTR: Failed to get object_id: " << status.message();
+      LOG(ERROR) << "GETATTR: Failed to getattr from master server: "
+                 << status.message();
       return status.error();
     }
+    if (S_ISDIR(file_info.mode)) {
+      stbuf->st_uid = file_info.uid;
+      stbuf->st_gid = file_info.gid;
+      stbuf->st_mode = file_info.mode;
+      stbuf->st_size = file_info.size;
+      stbuf->st_atime = file_info.atime;
+      stbuf->st_ctime = file_info.ctime;
+      stbuf->st_mtime = file_info.mtime;
+      return 0;
+    }
     status = VsfsFuse::instance()->storage_manager()
-        ->getattr(path, obj_id, stbuf);
+        ->getattr(path, file_info.object_id, stbuf);
     if (!status.ok()) {
       return status.error();
     }
@@ -479,7 +503,6 @@ int vsfs_write_buf(const char* , struct fuse_bufvec *buf, off_t off,
   }
   return total_write;
 }
-
 
 #endif
 
