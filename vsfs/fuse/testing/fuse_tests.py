@@ -32,11 +32,10 @@ INDEXD = os.path.join(CWD, os.pardir, os.pardir, 'indexd', 'indexd')
 VSFSUTIL = os.path.join(CWD, os.pardir, os.pardir, 'client', 'vsfs')
 
 
-class FuseTests(unittest.TestCase):
-    """System tests on the FUSE-based VSFS.
-    """
+class FuseTestBase(unittest.TestCase):
+
     def setUp(self):
-        script_dir = os.path.dirname(__file__)
+        self.script_dir = os.path.dirname(__file__)
         self.base_dir = tempfile.mkdtemp()
 
         # Starts the VSFS cluster.
@@ -62,12 +61,6 @@ class FuseTests(unittest.TestCase):
         # TODO(lxu): scans the output of each server to determine whether it is
         # fully started.
         time.sleep(5)
-        subprocess.check_call('%s/../mount.vsfs -b %s -H localhost %s' %
-                              (script_dir, self.base_dir, self.mount_dir),
-                              shell=True)
-        time.sleep(1)
-        # Check we are running on a successfully mounted FUSE system.
-        self.assertTrue(os.path.ismount(self.mount_dir))
 
     def tearDown(self):
         os.system('fusermount -u %s' % self.mount_dir)
@@ -80,6 +73,38 @@ class FuseTests(unittest.TestCase):
         self.masterd_proc.wait()
         shutil.rmtree(self.base_dir)
         shutil.rmtree(self.mount_dir)
+
+    def run_filebench(self, mntdir, workload, runtime):
+        """Run filbench on mntdir
+        @param mntdir mount point of VSFS fuse
+        @param workload the filebench workload to run
+        @param runtime the seconds to run the benchmark
+        """
+        conf = """load %s
+set $dir=%s
+run %d\n""" % (workload, mntdir, runtime)
+        conf_file = tempfile.NamedTemporaryFile()
+        conf_file.write(conf)
+        conf_file.flush()
+        p = subprocess.Popen('filebench -f %s' % conf_file.name,
+                             stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
+                             shell=True)
+        for line in p.stdout:
+            if line.find('NO VALID RESULTS') >= 0:
+                raise RuntimeError, "Failed filebench test."
+
+
+class FusePosixStorageTest(FuseTestBase):
+    """System tests on the FUSE-based VSFS.
+    """
+    def setUp(self):
+        super(FusePosixStorageTest, self).setUp()
+        subprocess.check_call('%s/../mount.vsfs -b %s -H localhost %s' %
+                              (self.script_dir, self.base_dir, self.mount_dir),
+                              shell=True)
+        time.sleep(1)
+        # Check we are running on a successfully mounted FUSE system.
+        self.assertTrue(os.path.ismount(self.mount_dir))
 
     def test_mkdirs(self):
         self.assertEqual(0, os.system('mkdir -p %s/a/b/c' % self.mount_dir))
@@ -115,24 +140,6 @@ class FuseTests(unittest.TestCase):
             os.remove('%s/%d.txt' % (self.mount_dir, i))
             self.assertFalse(os.path.exists('%s/%d.txt' % (self.base_dir, i)))
 
-    def run_filebench(self, mntdir, workload, runtime):
-        """Run filbench on mntdir
-        @param mntdir mount point of VSFS fuse
-        @param workload the filebench workload to run
-        @param runtime the seconds to run the benchmark
-        """
-        conf = """load %s
-set $dir=%s
-run %d\n""" % (workload, mntdir, runtime)
-        conf_file = tempfile.NamedTemporaryFile()
-        conf_file.write(conf)
-        conf_file.flush()
-        p = subprocess.Popen('filebench -f %s' % conf_file.name,
-                             stderr=subprocess.STDOUT, stdout=subprocess.PIPE,
-                             shell=True)
-        for line in p.stdout:
-            if line.find('NO VALID RESULTS') >= 0:
-                raise RuntimeError, "Failed filebench test."
 
     def test_filebench_varmail(self):
         self.run_filebench(self.mount_dir, 'varmail', 10)
@@ -172,6 +179,23 @@ run %d\n""" % (workload, mntdir, runtime)
 #        with open('%s/energy/?energy>5/#energy#file-20.txt' % self.mount_dir) \
 #                as fobj:
 #            self.assertEqual('20', fobj.read().strip())
+
+class FuseObjectStorageTest(FuseTestBase):
+    def setUp(self):
+        super(FuseObjectStorageTest, self).setUp()
+        subprocess.check_call(
+            '%s/../mount.vsfs -b %s -s object -w 32 -H localhost %s' %
+            (self.script_dir, self.base_dir, self.mount_dir),
+            shell=True)
+        time.sleep(1)
+        # Check we are running on a successfully mounted FUSE system.
+        self.assertTrue(os.path.ismount(self.mount_dir))
+
+    def test_mkdirs(self):
+        pass
+
+    def test_filebench_varmail(self):
+        self.run_filebench(self.mount_dir, 'varmail', 10)
 
 if __name__ == '__main__':
     unittest.main()
