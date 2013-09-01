@@ -391,7 +391,7 @@ Status VSFSRpcClient::getattr(const string& path, RpcFileInfo* info) {
     return Status(ouch.what, ouch.why);
   } catch (TTransportException e) {  // NOLINT
     LOG(ERROR) << "Thrift Transport Exception: (" << e.getType() << "): "
-        << e.what();
+               << e.what();
     return Status(e.getType(), e.what());
   }
   return Status::OK;
