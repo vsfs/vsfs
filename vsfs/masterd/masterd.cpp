@@ -31,6 +31,8 @@ DEFINE_bool(primary, false, "Sets this node as primary master node.");
 DEFINE_string(pidfile, "", "Sets the pid file.");
 DEFINE_string(dir, ".", "Sets the directory to store metadata.");
 DEFINE_int32(port, 9876, "Sets the listening port.");
+DEFINE_string(primary_host, "", "Sets the primary host.");
+DEFINE_int32(primary_port, 9876, "Sets the primary port.");
 
 unique_ptr<MasterController> controller;
 
@@ -64,7 +66,8 @@ int main(int argc, char *argv[]) {
   }
 
   controller.reset(new MasterController(FLAGS_dir, "", FLAGS_port,
-                                        FLAGS_primary));
+                                        FLAGS_primary, FLAGS_primary_host,
+                                        FLAGS_primary_port));
   auto status = controller->init();
   if (!status.ok()) {
     LOG(ERROR) << "Failed to open metadata db: " << status.message();
