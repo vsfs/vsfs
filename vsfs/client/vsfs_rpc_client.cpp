@@ -215,6 +215,11 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
       *id = client->handler()->create(path, mode, uid, gid);
       master_client_factory_->close(client);
       break;
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      status.set_error(ouch.what);
+      status.set_message(ouch.why);
+      backoff--;
+      continue;
     } catch (TTransportException e) {  // NOLINT
       // TODO(eddyxu): clear the conflict resolving algorithm later.
       status.set_error(e.getType());
@@ -235,6 +240,8 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
       auto client = master_client_factory_->open(file_node.address);
       client->handler()->remove(path);
       master_client_factory_->close(client);
+    } catch (RpcInvalidOp ouch) {  // NOLINT
+      return Status(ouch.what, ouch.why);
     } catch (TTransportException e) {  // NOLINT
       return Status(e.getType(), e.what());
     }
