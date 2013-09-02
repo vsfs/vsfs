@@ -72,6 +72,10 @@ TEST_F(ObjectStorageManagerTest, TestCreateFile) {
   delete fobj;
 
   EXPECT_TRUE(fs::exists(tmpdir_->path() + "/4/12"));
+
+  EXPECT_TRUE(osm.open("", -6981142372377690111, O_CREAT, 0666, &fobj).ok());
+  fobj->close();
+  delete fobj;
 }
 
 }  // namespace vsfs
