@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <leveldb/cache.h>
 #include <glog/logging.h>
 #include <map>
 #include <string>
