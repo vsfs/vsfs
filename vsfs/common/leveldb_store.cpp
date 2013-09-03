@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <leveldb/cache.h>
 #include <glog/logging.h>
 #include <map>
 #include <string>
@@ -83,13 +84,16 @@ bool LevelDBStore::LevelDBStoreIterator::equal(
   }
 }
 
-LevelDBStore::LevelDBStore(const string &path) : db_path_(path) {
+LevelDBStore::LevelDBStore(const string &path, int bufsize)
+    : db_path_(path), bufsize_mb_(bufsize) {
 }
 
 Status LevelDBStore::open() {
+  const int kMB = 1024 * 1024;
   leveldb::DB *db;
   leveldb::Options options;
   options.create_if_missing = true;
+  options.write_buffer_size = bufsize_mb_ * kMB;
   leveldb::Status status = leveldb::DB::Open(options, db_path_, &db);
   if (!status.ok()) {
     return to_status(status);
