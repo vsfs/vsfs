@@ -20,6 +20,7 @@
 #include <vector>
 #include "vobla/file.h"
 #include "vobla/status.h"
+#include "vsfs/index/index_info.h"
 #include "vsfs/indexd/index_controller.h"
 #include "vsfs/rpc/mock_rpc_clients.h"
 #include "vsfs/rpc/vsfs_types.h"
@@ -37,11 +38,11 @@ namespace vsfs {
 namespace indexd {
 
 class IndexControllerTest : public ::testing::Test {
-  typedef RpcClient<MasterServerClient, TFramedTransport> ClientType;
+  typedef RpcClient<MasterServerClient, TFramedTransport> MasterClientType;
  protected:
   void SetUp() {
     shared_ptr<MockMasterServerClient> mock_master_(new MockMasterServerClient);
-    unique_ptr<MasterServerClient> master(new MasterServerClient(mock_master_));
+    unique_ptr<MasterClientType> master(new MasterClientType(mock_master_));
 
     tmpdir_.reset(new vobla::TemporaryDirectory);
     controller_.reset(new IndexController(tmpdir_->path(), "", 9876,
@@ -56,7 +57,9 @@ class IndexControllerTest : public ::testing::Test {
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
 };
 
-TEST_F(IndexControllerTest, TestInsert) {
+TEST_F(IndexControllerTest, TestCreateIndex) {
+  EXPECT_TRUE(controller_->create_index("/foo/bar", "test", IndexInfo::BTREE,
+                                        UINT64).ok());
 }
 
 }  // namespace indexd
