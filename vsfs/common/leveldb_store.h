@@ -91,8 +91,17 @@ class LevelDBStore  : public KeyValueStore {
 
   typedef LevelDBStoreIterator iterator;
 
-  /// Constructs a LevelDB on the given path.
-  explicit LevelDBStore(const string &path);
+  enum {
+    DEFAULT_BUFSIZE_MB = 128,  // 128 MB
+  };
+
+  /**
+   * \brief Constructs a LevelDB on the given path.
+   * \param path the path of LevelDB.
+   * \param bufsize_mb the size of LevelDB's buffer, in metabytes.
+   */
+  explicit LevelDBStore(const string &path,
+                        int bufsize_mb = DEFAULT_BUFSIZE_MB);
 
   virtual ~LevelDBStore() {}
 
@@ -131,6 +140,9 @@ class LevelDBStore  : public KeyValueStore {
   Status to_status(const leveldb::Status& l_status) const;
 
   string db_path_;
+
+  /// LevelDB buffer size in MB.
+  int bufsize_mb_;
 
   /// The instance of a LevelDB.
   unique_ptr<leveldb::DB> db_;
