@@ -14,41 +14,42 @@
  * limitations under the License.
  */
 
+#include <stdint.h>
 #include <string>
 #include "vobla/traits.h"
-#include "vsfs/index/range_index.h"
+#include "vsfs/index/hash_index.h"
 
 using std::string;
 
 namespace vsfs {
 namespace index {
 
-RangeIndexInterface* RangeIndexInterface::create_range_index(int key_type) {
+HashIndexInterface* HashIndexInterface::create_hash_index(int key_type) {
   switch (key_type) {
     case TypeIDs::UINT64:
-      return new RangeIndex<uint64_t>();
+      return new HashIndex<uint64_t>();
     case TypeIDs::INT64:
-      return new RangeIndex<int64_t>();
+      return new HashIndex<int64_t>();
     case TypeIDs::FLOAT:
-      return new RangeIndex<float>();
+      return new HashIndex<float>();
     case TypeIDs::DOUBLE:
-      return new RangeIndex<double>();
+      return new HashIndex<double>();
     case TypeIDs::STRING:
-      return new RangeIndex<std::string>();
+      return new HashIndex<std::string>();
     case TypeIDs::INT32:
-      return new RangeIndex<int32_t>();
+      return new HashIndex<int32_t>();
     case TypeIDs::UINT32:
-      return new RangeIndex<uint32_t>();
+      return new HashIndex<uint32_t>();
     case TypeIDs::INT16:
-      return new RangeIndex<int16_t>();
+      return new HashIndex<int16_t>();
     case TypeIDs::UINT16:
-      return new RangeIndex<uint16_t>();
+      return new HashIndex<uint16_t>();
     case TypeIDs::CHAR:
-      return new RangeIndex<char>();
+      return new HashIndex<char>();
     case TypeIDs::INT8:
-      return new RangeIndex<int8_t>();
+      return new HashIndex<int8_t>();
     case TypeIDs::UINT8:
-      return new RangeIndex<uint8_t>();
+      return new HashIndex<uint8_t>();
     default:
       return nullptr;
   }
