@@ -267,6 +267,7 @@ Status IndexManager::create(
     string base_path = get_index_file_base_path(root_path);
     range_index_map_[index_key].reset(
         new RangeIndexWrapper(base_path, range_index.release(), true));
+  } else if (index_type == IndexInfo::HASH) {
   } else {
     return Status(-EINVAL, "Unknown index type.");
   }
