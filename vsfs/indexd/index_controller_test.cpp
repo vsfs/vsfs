@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <memory>
@@ -42,7 +43,7 @@ class IndexControllerTest : public ::testing::Test {
   typedef RpcClient<MasterServerClient, TFramedTransport> MasterClientType;
  protected:
   void SetUp() {
-    shared_ptr<MockMasterServerClient> mock_master_(new MockMasterServerClient);
+    mock_master_.reset(new MockMasterServerClient);
     unique_ptr<MasterClientType> master(new MasterClientType(mock_master_));
 
     tmpdir_.reset(new vobla::TemporaryDirectory);
@@ -51,10 +52,12 @@ class IndexControllerTest : public ::testing::Test {
   }
 
   void TearDown() {
+    controller_.reset();
+    tmpdir_.reset();
   }
 
   unique_ptr<IndexController> controller_;
-  MockMasterServerClient* mock_master_;
+  shared_ptr<MockMasterServerClient> mock_master_;
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
 };
 
