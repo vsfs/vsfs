@@ -401,6 +401,8 @@ Status IndexManager::info(const RpcIndexInfoRequest &request,
                 << request.path;
     return Status(-ENOENT, "The index does not exist.");
   }
+  result->path = info->path();
+  result->name = info->index_name();
   result->type = info->index_type();
   result->key_type = info->key_type();
   VLOG(1) << "type: " << result->type << " key: " << result->key_type;
