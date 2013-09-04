@@ -31,9 +31,9 @@ using std::to_string;
 using std::unique_ptr;
 using std::vector;
 using vobla::Status;
-using vsfs::RpcComplexQuery;
 using vsfs::rpc::MockMasterServerClient;
 using vsfs::rpc::TestRpcClientFactory;
+using vsfs::RpcComplexQuery;
 
 namespace vsfs {
 namespace indexd {
