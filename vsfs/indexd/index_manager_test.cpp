@@ -105,8 +105,8 @@ TEST_F(IndexManagerTest, TestCreateFailures) {
                               IndexInfo::BTREE, TypeIDs::FLOAT).ok());
 
   // Unsupported index types.
-  EXPECT_FALSE(manager.create(0, "/abc", "index",
-                              IndexInfo::HASH, TypeIDs::FLOAT).ok());
+  EXPECT_TRUE(manager.create(0, "/abc", "index",
+                             IndexInfo::HASH, TypeIDs::FLOAT).ok());
   EXPECT_FALSE(manager.create(0, "/abc", "index",
                               IndexInfo::UNKNOWN_INDEX, TypeIDs::FLOAT).ok());
   EXPECT_FALSE(manager.create(0, "/abc", "index",
