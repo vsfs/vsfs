@@ -24,8 +24,8 @@ indexd_LDADD = \
 	       @libthrift_LIBS@ -lthriftnb $(libprotobuf_LIBS)
 
 TESTS = \
-	index_manager_test
-#	index_server_test
+	index_manager_test \
+	index_controller_test
 
 check_PROGRAMS = $(TESTS)
 
@@ -37,4 +37,4 @@ LDADD = \
 	-lvobla -lgtest -lgmock -lgmock_main @libthrift_LIBS@
 
 index_manager_test_SOURCES = index_manager_test.cpp
-#index_server_test_SOURCES = index_server_test.cpp
+index_controller_test_SOURCES = index_controller_test.cpp
