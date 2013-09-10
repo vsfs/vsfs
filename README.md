@@ -8,6 +8,7 @@ The Official VSFS repo!
 
 # Dependancies
 
+ - automake/autoconf/libtool
  - g++ > 4.7.1
  - boost >= 1.53
  - thrift 0.9.0
