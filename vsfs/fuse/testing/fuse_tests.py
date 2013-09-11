@@ -17,11 +17,14 @@
 """Function tests for FUSE.
 """
 
+import fcntl
 import io
 import os
 import shutil
 import stat
+import struct
 import subprocess
+import termios
 import tempfile
 import time
 import unittest
@@ -129,6 +132,11 @@ class FusePosixStorageTest(FuseTestBase):
         with open('%s/123.txt' % self.mount_dir) as fobj:
             content = fobj.read()
             self.assertEqual('123', content.strip())
+
+    def test_ioctl(self):
+        grp = os.getpgrp()
+        io_grp = struct.unpack('h', fcntl.ioctl(0, termios.TIOCGPGRP, "  "))[0]
+        self.assertEqual(grp, io_grp)
 
     def test_remove_file(self):
         for i in range(10):  # Create 10 files first.
