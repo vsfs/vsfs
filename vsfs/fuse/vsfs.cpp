@@ -121,6 +121,7 @@ int main(int argc, char *argv[]) {
   opers.destroy = vsfs_destroy;
   opers.getattr = vsfs_getattr;
   opers.fgetattr = vsfs_fgetattr;
+  opers.ioctl = vsfs_ioctl;
   opers.init = vsfs_init;
   opers.mkdir = vsfs_mkdir;
   opers.open = vsfs_open;
