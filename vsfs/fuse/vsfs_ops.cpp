@@ -22,6 +22,7 @@
 #include <gflags/gflags.h>
 #include <glog/logging.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <sys/stat.h>
 #include <sys/statvfs.h>
 #include <sys/types.h>
@@ -229,6 +230,17 @@ int vsfs_getattr(const char* path, struct stat* stbuf) {
 
 int vsfs_fgetattr(const char*, struct stat* stbuf, struct fuse_file_info* fi) {
   int ret = fstat(fi->fh, stbuf);
+  if (ret == -1) {
+    return -errno;
+  }
+  return 0;
+}
+
+int vsfs_ioctl(const char*, int cmd, void *arg, struct fuse_file_info* fi,
+               unsigned int flags, void *data) {
+  (void) flags;
+  (void) data;
+  int ret = ioctl(fi->fh, cmd, arg);
   if (ret == -1) {
     return -errno;
   }
