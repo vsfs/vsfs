@@ -521,5 +521,13 @@ int vsfs_fsync(const char*, int, struct fuse_file_info* fi) {
   return -errno;
 }
 
+int vsfs_symlink(const char *path1, const char *path2) {
+  int ret = symlink(path1, path2);
+  if (ret == -1) {
+    return -errno;
+  }
+  return 0;
+}
+
 }  // namespace fuse
 }  // namespace vsfs

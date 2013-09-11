@@ -152,6 +152,7 @@ void vsfs_destroy(void *data);
 int vsfs_flush(const char *, struct fuse_file_info *);
 int vsfs_fsync(const char *, int, struct fuse_file_info*);
 int vsfs_statfs(const char *, struct statvfs *);
+int vsfs_symlink(const char *, const char *);
 int vsfs_getxattr(const char *path, const char *name, char *value, size_t vlen);
 
 #if defined(FUSE_29)
