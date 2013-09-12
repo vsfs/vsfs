@@ -96,6 +96,8 @@ class ObjectStorageManager : public StorageManager {
 
   Status statfs(struct statvfs* stbuf);
 
+  Status symlink(const string& fpath, const string&, ObjectId link_obj_id);
+
  private:
   string translate_path(ObjectId obj_id) const;
 

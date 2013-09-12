@@ -132,6 +132,16 @@ Status ObjectStorageManager::statfs(struct statvfs* stbuf) {
   return Status::OK;
 }
 
+Status ObjectStorageManager::symlink(const string& fpath, const string&,
+                                     ObjectId link_obj_id) {
+  string local_path = translate_path(link_obj_id);
+  int ret = ::symlink(fpath.c_str(), local_path.c_str());
+  if (ret == -1) {
+    return Status::system_error(errno);
+  }
+  return Status::OK;
+}
+
 string ObjectStorageManager::translate_path(ObjectId obj_id) const {
   uint64_t subdir_num = static_cast<uint64_t>(obj_id) %
                         static_cast<uint64_t>(num_subdirs_);
