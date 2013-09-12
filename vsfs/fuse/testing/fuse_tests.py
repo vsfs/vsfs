@@ -21,7 +21,7 @@ import fcntl
 import io
 import os
 import shutil
-import stat
+from stat import *
 import struct
 import subprocess
 import termios
@@ -137,6 +137,14 @@ class FusePosixStorageTest(FuseTestBase):
         grp = os.getpgrp()
         io_grp = struct.unpack('h', fcntl.ioctl(0, termios.TIOCGPGRP, "  "))[0]
         self.assertEqual(grp, io_grp)
+
+    def test_symlink(self):
+        self.assertEqual(0, os.symlink('%s/abc.txt' % self.mount_dir,
+                                       '%s/link' % self.mount_dir))
+
+        mode = os.stat('%s/link' % self.mount_dir).st_mode
+        self.assertTrue(S_ISLNK(mode))
+
 
     def test_remove_file(self):
         for i in range(10):  # Create 10 files first.

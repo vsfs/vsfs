@@ -543,8 +543,8 @@ int vsfs_symlink(const char *fpath, const char *link_path) {
     return status.error();
   }
   status = VsfsFuse::instance()->storage_manager()->symlink(fpath,
-                                                                 link_path,
-                                                                 oid);
+                                                            link_path,
+                                                            oid);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to symlink: " << status.message();
     return status.error();
