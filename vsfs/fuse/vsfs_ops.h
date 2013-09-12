@@ -123,44 +123,44 @@ class VsfsFuse : boost::noncopyable {
 };
 
 // VSFS operations
-int vsfs_access(const char *path, int flag);
-int vsfs_chmod(const char *path, mode_t mode);
-int vsfs_chmod(const char *path, mode_t mode);
-int vsfs_chown(const char *path, uid_t uid, gid_t gid);
-int vsfs_create(const char *path, mode_t mode, struct fuse_file_info *fi);
-int vsfs_getattr(const char *path, struct stat *stbuf);
-int vsfs_fgetattr(const char *, struct stat*, struct fuse_file_info*);
-int vsfs_ioctl(const char *, int cmd, void *arg, struct fuse_file_info*,
-               unsigned int flags, void *data);
-int vsfs_mkdir(const char *path, mode_t mode);
-int vsfs_open(const char *path, struct fuse_file_info *fi);
-int vsfs_read(const char *path, char *buf, size_t size, off_t offset,
-              struct fuse_file_info *fi);
-int vsfs_opendir(const char *path, struct fuse_file_info* info);
-int vsfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                 off_t offset, struct fuse_file_info *fi);
-int vsfs_releasedir(const char *, struct fuse_file_info *);
-int vsfs_release(const char *path, struct fuse_file_info *fi);
-int vsfs_readlink(const char *path, char *buf, size_t size);
-int vsfs_rmdir(const char *path);
-int vsfs_truncate(const char *path, off_t offset);
-int vsfs_unlink(const char *path);
-int vsfs_utimens(const char *path, const struct timespec tv[2]);
-int vsfs_write(const char *path, const char *buf, size_t size, off_t offset,
-               struct fuse_file_info *fi);
+int vsfs_access(const char* path, int flag);
+int vsfs_chmod(const char* path, mode_t mode);
+int vsfs_chmod(const char* path, mode_t mode);
+int vsfs_chown(const char* path, uid_t uid, gid_t gid);
+int vsfs_create(const char* path, mode_t mode, struct fuse_file_info* fi);
+int vsfs_getattr(const char* path, struct stat* stbuf);
+int vsfs_fgetattr(const char*, struct stat*, struct fuse_file_info*);
+int vsfs_ioctl(const char*, int cmd, void* arg, struct fuse_file_info*,
+               unsigned int flags, void* data);
+int vsfs_mkdir(const char* path, mode_t mode);
+int vsfs_open(const char* path, struct fuse_file_info* fi);
+int vsfs_read(const char* path, char* buf, size_t size, off_t offset,
+              struct fuse_file_info* fi);
+int vsfs_opendir(const char* path, struct fuse_file_info* info);
+int vsfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
+                 off_t offset, struct fuse_file_info* fi);
+int vsfs_releasedir(const char*, struct fuse_file_info*);
+int vsfs_release(const char* path, struct fuse_file_info* fi);
+int vsfs_readlink(const char* path, char* buf, size_t size);
+int vsfs_rmdir(const char* path);
+int vsfs_truncate(const char* path, off_t offset);
+int vsfs_unlink(const char* path);
+int vsfs_utimens(const char* path, const struct timespec tv[2]);
+int vsfs_write(const char* path, const char* buf, size_t size, off_t offset,
+               struct fuse_file_info* fi);
 int vsfs_lock(const char*, struct fuse_file_info*, int cmd, struct flock*);
-void* vsfs_init(struct fuse_conn_info *conn);
-void vsfs_destroy(void *data);
-int vsfs_flush(const char *, struct fuse_file_info *);
-int vsfs_fsync(const char *, int, struct fuse_file_info*);
-int vsfs_statfs(const char *, struct statvfs *);
-int vsfs_symlink(const char *, const char *);
-int vsfs_getxattr(const char *path, const char *name, char *value, size_t vlen);
+void* vsfs_init(struct fuse_conn_info* conn);
+void vsfs_destroy(void* data);
+int vsfs_flush(const char*, struct fuse_file_info*);
+int vsfs_fsync(const char*, int, struct fuse_file_info*);
+int vsfs_statfs(const char*, struct statvfs*);
+int vsfs_symlink(const char*, const char*);
+int vsfs_getxattr(const char* path, const char* name, char* value, size_t vlen);
 
 #if defined(FUSE_29)
-int vsfs_write_buf(const char *, struct fuse_bufvec *buf, off_t off,
-                   struct fuse_file_info *);
-int vsfs_flock(const char *, struct fuse_file_info *, int op);
+int vsfs_write_buf(const char*, struct fuse_bufvec* buf, off_t off,
+                   struct fuse_file_info*);
+int vsfs_flock(const char*, struct fuse_file_info*, int op);
 
 #endif
 

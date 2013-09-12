@@ -533,18 +533,18 @@ int vsfs_fsync(const char*, int, struct fuse_file_info* fi) {
   return -errno;
 }
 
-int vsfs_symlink(const char *fpath, const char *link_path) {
+int vsfs_symlink(const char* fpath, const char* link_path) {
   ObjectId oid;
-  Status status = vsfs->client()->create(link_path, S_IFLNK, getuid(),
-                                         getgid(), &oid);
+  Status status = vsfs->client()->create(
+      link_path, fuse_get_context()->umask | S_IFLNK, fuse_get_context()->uid,
+      fuse_get_context()->gid, &oid);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to create file in vsfs namespace: "
                << status.message();
     return status.error();
   }
-  status = VsfsFuse::instance()->storage_manager()->symlink(fpath,
-                                                            link_path,
-                                                            oid);
+  status = VsfsFuse::instance()->storage_manager()->symlink(
+      fpath, link_path, oid);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to symlink: " << status.message();
     return status.error();
