@@ -209,7 +209,7 @@ int vsfs_getattr(const char* path, struct stat* stbuf) {
                  << status.message();
       return status.error();
     }
-    if (S_ISDIR(file_info.mode)) {
+    if (S_ISDIR(file_info.mode) || S_ISLNK(file_info.mode)) {
       stbuf->st_uid = file_info.uid;
       stbuf->st_gid = file_info.gid;
       stbuf->st_mode = file_info.mode;
