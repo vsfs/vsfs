@@ -219,11 +219,26 @@ int vsfs_getattr(const char* path, struct stat* stbuf) {
       stbuf->st_mtime = file_info.mtime;
       return 0;
     }
+    struct stat buf;
     status = VsfsFuse::instance()->storage_manager()
-        ->getattr(path, file_info.object_id, stbuf);
+        ->getattr(path, file_info.object_id, &buf);
     if (!status.ok()) {
       return status.error();
     }
+    stbuf->st_uid = file_info.uid;
+    stbuf->st_gid = file_info.gid;
+    stbuf->st_mode = file_info.mode;
+    stbuf->st_atime = file_info.atime;
+    stbuf->st_ctime = file_info.ctime;
+    stbuf->st_mtime = file_info.mtime;
+
+    stbuf->st_size = buf.st_size;
+    stbuf->st_ino = buf.st_ino;
+    stbuf->st_dev = buf.st_dev;
+    stbuf->st_nlink = buf.st_nlink;
+    stbuf->st_rdev = buf.st_rdev;
+    stbuf->st_blksize = buf.st_blksize;
+    stbuf->st_blocks = buf.st_blocks;
   }
   return 0;
 }
