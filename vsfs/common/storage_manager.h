@@ -92,6 +92,10 @@ class StorageManager : boost::noncopyable {
 
     virtual Status statfs(struct statvfs* stbuf) = 0;
 
+    /// Create a symbolic link from fpath to link_path.
+    virtual Status symlink(const string& fpath, const string& link_path,
+                           ObjectId link_obj_id) = 0;
+
   protected:
     // Do not allow to intialize StorageManager directly.
     StorageManager() = default;

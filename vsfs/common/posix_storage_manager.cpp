@@ -135,6 +135,16 @@ Status PosixStorageManager::statfs(struct statvfs* stbuf) {
   return Status::OK;
 }
 
+Status PosixStorageManager::symlink(const string& fpath,
+                                    const string& link_path, ObjectId) {
+  string local_path = translate_path(link_path);
+  int ret = ::symlink(fpath.c_str(), local_path.c_str());
+  if (ret == -1) {
+    return Status::system_error(errno);
+  }
+  return Status::OK;
+}
+
 string PosixStorageManager::translate_path(const string& path) const {
   return base_path_ + path;
 }
