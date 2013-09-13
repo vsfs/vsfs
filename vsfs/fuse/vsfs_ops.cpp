@@ -209,7 +209,7 @@ int vsfs_getattr(const char* path, struct stat* stbuf) {
                  << status.message();
       return status.error();
     }
-    if (S_ISDIR(file_info.mode)) {
+    if (S_ISDIR(file_info.mode) || S_ISLNK(file_info.mode)) {
       stbuf->st_uid = file_info.uid;
       stbuf->st_gid = file_info.gid;
       stbuf->st_mode = file_info.mode;
@@ -531,6 +531,25 @@ int vsfs_fsync(const char*, int, struct fuse_file_info* fi) {
     return 0;
   }
   return -errno;
+}
+
+int vsfs_symlink(const char* fpath, const char* link_path) {
+  ObjectId oid;
+  Status status = vsfs->client()->create(
+      link_path, (0666 && fuse_get_context()->umask) | S_IFLNK,
+      fuse_get_context()->uid, fuse_get_context()->gid, &oid);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to create file in vsfs namespace: "
+               << status.message();
+    return status.error();
+  }
+  status = VsfsFuse::instance()->storage_manager()
+      ->symlink(fpath, link_path, oid);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to symlink: " << status.message();
+    return status.error();
+  }
+  return 0;
 }
 
 }  // namespace fuse

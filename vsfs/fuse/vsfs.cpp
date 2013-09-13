@@ -140,6 +140,7 @@ int main(int argc, char *argv[]) {
   opers.flush = vsfs_flush;
   opers.lock = vsfs_lock;
   opers.statfs = vsfs_statfs;
+  opers.symlink = vsfs_symlink;
   opers.getxattr = vsfs_getxattr;
 #if defined(FUSE_29)
   opers.flock = vsfs_flock;

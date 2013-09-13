@@ -87,6 +87,9 @@ class PosixStorageManager : public StorageManager {
 
   Status statfs(struct statvfs* stbuf);
 
+  Status symlink(const string& fpath, const string& link_path,
+                 ObjectId);
+
  private:
   /// Returns the native path of the file requested.
   string translate_path(const string &path) const;
