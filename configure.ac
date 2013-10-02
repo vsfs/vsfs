@@ -86,11 +86,11 @@ AC_FUNC_ERROR_AT_LINE
 
 #CXXFLAGS="-Wall -Wextra -Werror -pedantic -Wunused-value $CXXFLAGS"
 CXXFLAGS="-Wall -Wextra -static -pedantic -Wunused-value $CXXFLAGS"
-AM_CXXFLAGS="-I\$(top_srcdir)/lib/vobla -isystem \$(top_srcdir)/lib/gmock-1.6.0/include"
-AM_CXXFLAGS="$AM_CXXFLAGS -isystem \$(top_srcdir)/lib/gmock-1.6.0/gtest/include"
+AM_CXXFLAGS="-I\$(top_srcdir)/lib/vobla -isystem \$(top_srcdir)/lib/gmock-1.7.0/include"
+AM_CXXFLAGS="$AM_CXXFLAGS -isystem \$(top_srcdir)/lib/gmock-1.7.0/gtest/include"
 AM_CXXFLAGS="$AM_CXXFLAGS \$(libthrift_CFLAGS)"
-AM_LDFLAGS="-L\$(top_srcdir)/lib/gmock-1.6.0/lib -L\$(top_srcdir)/lib/vobla/vobla"
-AM_LDFLAGS="$AM_LDFLAGS -L\$(top_srcdir)/lib/gmock-1.6.0/gtest/lib"
+AM_LDFLAGS="-L\$(top_srcdir)/lib/gmock-1.7.0/lib -L\$(top_srcdir)/lib/vobla/vobla"
+AM_LDFLAGS="$AM_LDFLAGS -L\$(top_srcdir)/lib/gmock-1.7.0/gtest/lib"
 
 AC_SUBST(CXXFLAGS)
 AC_SUBST(AM_LDFLAGS)
