@@ -124,32 +124,13 @@ class HashIndex : public HashIndexInterface {
   /// Returns true of two HashIndex both have the same key type and have the
   /// same content.
   bool operator==(const HashIndex& rhs) const {
-    return key_type_ == rhs.key_type_ && index_ == rhs.index_;
+    return key_type_ == rhs.key_type_ && index_impl_ == rhs.index_impl_;
   }
 
   /// Returns the integer representing the key type.
   int key_type() const {
     return key_type_;
   }
-
-  void insert(typename call_traits<KeyType>::param_type key, ObjectId obj_id) {
-    index_impl_.insert(key, obj_id);
-  }
-
-  void erase(typename call_traits<KeyType>::param_type key) {
-    index_impl_.erase(key);
-  }
-
-  void erase(typename call_traits<KeyType>::param_type key, ObjectId obj_id) {
-    index_impl_.erase(key, obj_id);
-  }
-
-  /*
-  void search(typename call_traits<KeyType>::param_type key,
-              FileIdVector* results) {
-    index_impl_.search(key, results);
-  }
-  */
 
   bool empty() {
     return index_impl_.empty();
@@ -159,19 +140,19 @@ class HashIndex : public HashIndexInterface {
   void insert_internal(const void* key, ObjectId obj_id) {
     typename call_traits<Key>::const_reference k =
         *static_cast<const Key*>(key);
-    insert(k, obj_id);
+    index_impl_.insert(k, obj_id);
   }
 
   void erase_internal(const void* key) {
     typename call_traits<Key>::const_reference k =
         *static_cast<const Key*>(key);
-    erase(k);
+    index_impl_.erase(k);
   }
 
   void erase_internal(const void* key, ObjectId obj_id) {
     typename call_traits<Key>::const_reference k =
         *static_cast<const Key*>(key);
-    erase(k, obj_id);
+    index_impl_.erase(k, obj_id);
   }
 
   void search_internal(const void* key, FileIdVector* results) {
@@ -189,25 +170,9 @@ class HashIndex : public HashIndexInterface {
 
   typedef unordered_map<KeyType, FileIdSet> IndexHashMap;
 
-  /// The caller must hold the lock_.
-  void erase_with_lock(typename call_traits<KeyType>::param_type key,
-                       ObjectId obj_id) {
-    auto obj_ids = find_or_null(index_, key);
-    if (obj_ids) {
-      obj_ids->erase(obj_id);
-      if (obj_ids->empty()) {
-        index_.erase(key);
-      }
-    }
-  }
-
   internal::IndexImpl<KeyType, IndexHashMap> index_impl_;
 
-  IndexHashMap index_;
-
   int key_type_;
-
-  mutex lock_;
 };
 
 }  // namespace index

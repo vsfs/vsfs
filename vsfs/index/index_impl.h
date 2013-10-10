@@ -49,6 +49,10 @@ class IndexImpl : boost::noncopyable {
 
   IndexImpl() {}
 
+  bool operator==(const IndexImpl& rhs) {
+    return index_ == rhs.index_;
+  }
+
   void insert(typename call_traits<KeyType>::param_type key,
               ObjectId obj_id) {
     MutexGuard guard(lock_);
