@@ -103,12 +103,13 @@ class HashIndexInterface : boost::noncopyable {
 /**
  * \class HashIndex
  * \brief Hash-based index, providing fast point query.
+ *
+ * This class should not be directly called.
  */
 template <typename Key>
 class HashIndex : public HashIndexInterface {
  public:
   typedef Key KeyType;
-  typedef vector<ObjectId> FileIdVector;
 
   HashIndex() : key_type_(TypeToInt<Key>::value()) {
   }

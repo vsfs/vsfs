@@ -20,7 +20,9 @@
 #include <boost/call_traits.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/utility.hpp>
+#include <glog/logging.h>
 #include <mutex>
+#include <string>
 #include <vector>
 #include "vobla/status.h"
 #include "vobla/map_util.h"
@@ -29,8 +31,9 @@
 
 using boost::call_traits;
 using boost::lexical_cast;
-using vobla::find_or_null;
+using std::string;
 using vobla::Status;
+using vobla::find_or_null;
 
 namespace vsfs {
 namespace index {
@@ -53,23 +56,36 @@ class IndexImpl : boost::noncopyable {
     return index_ == rhs.index_;
   }
 
+  /// Inserts one file with key.
   void insert(typename call_traits<KeyType>::param_type key,
               ObjectId obj_id) {
     MutexGuard guard(lock_);
     index_[key].insert(obj_id);
   }
 
-  /**
-   * \brief Applies the updates to the index.
-   */
+  Status insert_string_val(const string& key, const string& value) {
+    KeyType insert_key = 0;
+    ObjectId obj_id = 0;
+    try {
+      insert_key = lexical_cast<KeyType>(key);
+      obj_id = lexical_cast<ObjectId>(value);
+    } catch(boost::bad_lexical_cast e) {
+      LOG(ERROR) << "Failed to cast key: " << key << " value: " << value;
+      return Status(-EINVAL, "IndexImpl::insert_string_val: bad cast");
+    }
+    insert(insert_key, obj_id);
+    return Status::OK;
+  }
+
+  /// Applies a batch of updates to the index.
   Status apply(const vector<RpcIndexRecordUpdateOp>& updates) {
     MutexGuard guard(lock_);
     for (const auto& update : updates) {
       KeyType key = 0;
-      ObjectId file_id = 0;
+      ObjectId obj_id = 0;
       try {
         key = lexical_cast<KeyType>(update.key);
-        file_id = lexical_cast<ObjectId>(update.value);
+        obj_id = lexical_cast<ObjectId>(update.value);
       } catch(boost::bad_lexical_cast e) {
         return Status(-EINVAL, "IndexImpl::apply: bad cast.");
       }
@@ -77,10 +93,10 @@ class IndexImpl : boost::noncopyable {
       switch (update.op) {
         case RpcIndexUpdateOpCode::INSERT:
         case RpcIndexUpdateOpCode::UPDATE:
-          index_[key].insert(file_id);
+          index_[key].insert(obj_id);
           break;
         case RpcIndexUpdateOpCode::REMOVE:
-          erase_with_lock(key, file_id);
+          erase_with_lock(key, obj_id);
           break;
         default:
           LOG(ERROR) << "Unknown IndexUpdate operation: op:" << update.op;
@@ -90,6 +106,7 @@ class IndexImpl : boost::noncopyable {
     return Status::OK;
   }
 
+  /// Erases a record with given key and its obj id.
   void erase(typename call_traits<KeyType>::param_type key, ObjectId obj_id) {
     MutexGuard guard(lock_);
     erase_with_lock(key, obj_id);
@@ -100,9 +117,50 @@ class IndexImpl : boost::noncopyable {
     index_.erase(key);
   }
 
+  Status erase_string_val(const string &key, const string &value) {
+    KeyType erase_key = 0;
+    ObjectId erase_value = 0;
+    try {
+      erase_key = lexical_cast<KeyType>(key);
+    } catch(boost::bad_lexical_cast e) {
+      return Status(-EINVAL, "IndexImpl::erase_string_val: bad cast");
+    }
+    if (value.empty()) {
+      erase(erase_key);
+    } else {
+      try {
+        erase_value = lexical_cast<ObjectId>(value);
+      } catch(boost::bad_lexical_cast e) {
+        return Status(-EINVAL, "IndexImpl::erase_string_val: bad cast");
+      }
+      erase(erase_key, erase_value);
+    }
+    return Status::OK;
+  }
+
+  void clear() {
+    MutexGuard guard(lock_);
+    index_.clear();
+  }
+
   bool empty() {
     MutexGuard guard(lock_);
     return index_.empty();
+  }
+
+  size_t num_keys() {
+    MutexGuard guard(lock_);
+    return index_.size();
+  }
+
+  /// Returns the number of records.
+  size_t size() {
+    size_t ret = 0;
+    MutexGuard guard(lock_);
+    for (const auto& iter : index_) {
+      ret += iter.second.size();
+    }
+    return ret;
   }
 
   void search(typename call_traits<KeyType>::param_type key,
@@ -114,6 +172,14 @@ class IndexImpl : boost::noncopyable {
       results->insert(results->end(), files->begin(), files->end());
     }
   }
+
+  /// Access the underlying index.
+  Index* index() {
+    return &index_;
+  }
+
+  /// Access the underlying lock.
+  mutex* lock() { return &lock_; }
 
  private:
   /// The caller must hold the lock_.
