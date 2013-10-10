@@ -5,6 +5,7 @@ CLEANFILES=*.gcov *.gcno *.gcov *.gcda
 noinst_LIBRARIES = libvsfs-index.a
 libvsfs_index_a_SOURCES = \
 	hash_index.h hash_index.cpp \
+	index_impl.h \
 	index_info.h index_info.cpp \
 	range_index.h range_index.cpp
 

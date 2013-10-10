@@ -21,6 +21,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/utility.hpp>
 #include <mutex>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>  // NOLINT
 #include <vector>
@@ -29,6 +30,7 @@
 #include "vobla/traits.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/common/types.h"
+#include "vsfs/index/index_impl.h"
 #include "vsfs/rpc/vsfs_types.h"
 
 using boost::call_traits;
@@ -101,12 +103,13 @@ class HashIndexInterface : boost::noncopyable {
 /**
  * \class HashIndex
  * \brief Hash-based index, providing fast point query.
+ *
+ * This class should not be directly called.
  */
 template <typename Key>
 class HashIndex : public HashIndexInterface {
  public:
   typedef Key KeyType;
-  typedef vector<ObjectId> FileIdVector;
 
   HashIndex() : key_type_(TypeToInt<Key>::value()) {
   }
@@ -117,7 +120,7 @@ class HashIndex : public HashIndexInterface {
   /// Returns true of two HashIndex both have the same key type and have the
   /// same content.
   bool operator==(const HashIndex& rhs) const {
-    return key_type_ == rhs.key_type_ && index_ = rhs.index_;
+    return key_type_ == rhs.key_type_ && index_impl_ == rhs.index_impl_;
   }
 
   /// Returns the integer representing the key type.
@@ -125,87 +128,37 @@ class HashIndex : public HashIndexInterface {
     return key_type_;
   }
 
-  void insert(typename call_traits<KeyType>::param_type key, ObjectId obj_id) {
-    MutexGuard guard(lock_);
-    index_[key].insert(obj_id);
-  }
-
-  void erase(typename call_traits<KeyType>::param_type key) {
-    MutexGuard lock(lock_);
-    index_.erase(key);
-  }
-
-  void erase(typename call_traits<KeyType>::param_type key, ObjectId obj_id) {
-    MutexGuard guard(lock_);
-    erase_with_lock(key, obj_id);
-  }
-
-  void search(typename call_traits<KeyType>::param_type key,
-              FileIdVector* results) {
-    CHECK_NOTNULL(results);
-    MutexGuard lock(lock_);
-    auto files = find_or_null(index_, key);
-    if (files) {
-      results->insert(results->end(), files->begin(), files->end());
-    }
-  }
-
   bool empty() {
-    MutexGuard lock(lock_);
-    return index_.empty();
+    return index_impl_.empty();
   }
 
  protected:
   void insert_internal(const void* key, ObjectId obj_id) {
     typename call_traits<Key>::const_reference k =
         *static_cast<const Key*>(key);
-    insert(k, obj_id);
+    index_impl_.insert(k, obj_id);
   }
 
   void erase_internal(const void* key) {
     typename call_traits<Key>::const_reference k =
         *static_cast<const Key*>(key);
-    erase(k);
+    index_impl_.erase(k);
   }
 
   void erase_internal(const void* key, ObjectId obj_id) {
     typename call_traits<Key>::const_reference k =
         *static_cast<const Key*>(key);
-    erase(k, obj_id);
+    index_impl_.erase(k, obj_id);
   }
 
   void search_internal(const void* key, FileIdVector* results) {
     typename call_traits<Key>::const_reference k =
         *static_cast<const Key*>(key);
-    search(k, results);
+    index_impl_.search(k, results);
   }
 
   Status apply(const vector<RpcIndexRecordUpdateOp>& updates) {
-    MutexGuard guard(lock_);
-    for (const auto& update : updates) {
-      KeyType key = 0;
-      ObjectId file_id = 0;
-      try {
-        key = lexical_cast<KeyType>(update.key);
-        file_id = lexical_cast<ObjectId>(update.value);
-      } catch(boost::bad_lexical_cast e) {
-        return Status(-EINVAL, "HashIndex::update: Bad cast");
-      }
-
-      switch (update.op) {
-        case RpcIndexUpdateOpCode::INSERT:
-        case RpcIndexUpdateOpCode::UPDATE:
-          index_[key].insert(file_id);
-          break;
-        case RpcIndexUpdateOpCode::REMOVE:
-          erase_with_lock(key, file_id);
-          break;
-        default:
-          LOG(ERROR) << "Unknown IndexUpdate operation: op:" << update.op;
-          return Status(-EINVAL, "Unknown op.");
-      }
-    }
-    return Status::OK;
+    return index_impl_.apply(updates);
   }
 
  private:
@@ -213,23 +166,9 @@ class HashIndex : public HashIndexInterface {
 
   typedef unordered_map<KeyType, FileIdSet> IndexHashMap;
 
-  /// The caller must hold the lock_.
-  void erase_with_lock(typename call_traits<KeyType>::param_type key,
-                       ObjectId obj_id) {
-    auto obj_ids = find_or_null(index_, key);
-    if (obj_ids) {
-      obj_ids->erase(obj_id);
-      if (obj_ids->empty()) {
-        index_.erase(key);
-      }
-    }
-  }
-
-  IndexHashMap index_;
+  internal::IndexImpl<KeyType, IndexHashMap> index_impl_;
 
   int key_type_;
-
-  mutex lock_;
 };
 
 }  // namespace index

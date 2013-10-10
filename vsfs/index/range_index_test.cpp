@@ -117,6 +117,7 @@ TEST(RangeIndexTest, RangeSearchInFloatIndex) {
   EXPECT_THAT(actual_files, ElementsAre(8, 10, 12, 14));
 }
 
+/*
 TEST(RangeIndexTest, SplitRangeIndex) {
   // RangeIndex<uint64_t> idx;
   std::unique_ptr<RangeIndexInterface> idx(
@@ -139,5 +140,6 @@ TEST(RangeIndexTest, SplitRangeIndex) {
   EXPECT_EQ(size_t(50), new_idx->size());
   EXPECT_EQ(size_t(50), new_idx->num_keys());
 }
+*/
 
 }  // namespace vsfs

@@ -34,6 +34,7 @@
 #include "vobla/traits.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/common/types.h"
+#include "vsfs/index/index_impl.h"
 #include "vsfs/rpc/vsfs_types.h"
 
 using boost::lexical_cast;
@@ -78,9 +79,11 @@ class RangeIndexInterface {
 
   // virtual Status update(const vector<RpcIndexRecordUpdateOp> &op) = 0;
 
+  /*
   FileIdRangeType split(RangeIndexInterface* other) {
     return split_index(other);
   }
+  */
 
   /**
    * \brief Inserts key-value pair from a string format.
@@ -152,7 +155,7 @@ class RangeIndexInterface {
 
   virtual void search(void *key, size_t key_size, FileIdVector *results) = 0;
 
-  virtual FileIdRangeType split_index(RangeIndexInterface* other) = 0;
+  // virtual FileIdRangeType split_index(RangeIndexInterface* other) = 0;
 };
 
 
@@ -185,67 +188,32 @@ class RangeIndex : public RangeIndexInterface {
 
   /// Returns true if two indices are exactly the same.
   bool operator==(const RangeIndex &rhs) const {
-    return key_type_ == rhs.key_type_ && index_ == rhs.index_;
+    return key_type_ == rhs.key_type_ && index_impl_ == rhs.index_impl_;
   }
 
   void insert(KeyType key, ObjectId file_id) {
-    MutexGuard guard(lock_);
-    index_[key].insert(file_id);
+    index_impl_.insert(key, file_id);
   }
 
   Status insert_string_val(const string &key, const string &value) {
-    KeyType insert_key = 0;
-    ObjectId file_id = 0;
-    try {
-      insert_key = lexical_cast<KeyType>(key);
-      file_id = lexical_cast<ObjectId>(value);
-    } catch(boost::bad_lexical_cast e) {
-      return Status(-EINVAL, "RangeIndex::insert_string_val: Bad cast");
-    }
-    insert(insert_key, file_id);
-    return Status::OK;
+    return index_impl_.insert_string_val(key, value);
   }
 
   Status apply(const vector<RpcIndexRecordUpdateOp> &updates) {
-    MutexGuard guard(lock_);
-    for (const auto& update : updates) {
-      KeyType key = 0;
-      ObjectId file_id = 0;
-      try {
-        key = lexical_cast<KeyType>(update.key);
-        file_id = lexical_cast<ObjectId>(update.value);
-      } catch(boost::bad_lexical_cast e) {
-        return Status(-EINVAL, "RangeIndex::update: Bad cast");
-      }
-
-      switch (update.op) {
-        case RpcIndexUpdateOpCode::INSERT:
-        case RpcIndexUpdateOpCode::UPDATE:
-          index_[key].insert(file_id);
-          break;
-        case RpcIndexUpdateOpCode::REMOVE:
-          erase_with_lock(key, file_id);
-          break;
-        default:
-          LOG(ERROR) << "Unknown IndexUpdate operation: op:" << update.op;
-          return Status(-EINVAL, "Unknown op.");
-      }
-    }
-    return Status::OK;
+    return index_impl_.apply(updates);
   }
 
   /**
    * \brief Erases Key-FileId pair from the in-memory RangeIndex.
    * \tparam K the key type (e.g., uint64, int, float).
    * \param key the key to be erased.
-   * \param file_id the value to be erased.
+   * \param obj_id the value to be erased.
    *
    * It only erases the key-value pairs that are exactly same to the
    * parameters.
    */
-  void erase(KeyType key, ObjectId file_id) {
-    MutexGuard guard(lock_);
-    erase_with_lock(key, file_id);
+  void erase(KeyType key, ObjectId obj_id) {
+    index_impl_.erase(key, obj_id);
   }
 
   /**
@@ -253,29 +221,11 @@ class RangeIndex : public RangeIndexInterface {
    * \param key the key to be erased.
    */
   void erase(KeyType key) {
-    MutexGuard guard(lock_);
-    index_.erase(key);
+    index_impl_.erase(key);
   }
 
   Status erase_string_val(const string &key, const string &value) {
-    KeyType erase_key = 0;
-    ObjectId erase_value = 0;
-    try {
-      erase_key = lexical_cast<KeyType>(key);
-    } catch(boost::bad_lexical_cast e) {
-      return Status(-EINVAL, "RangeIndex::erase_string_val: Bad cast");
-    }
-    if (value.empty()) {
-      erase(erase_key);
-    } else {
-      try {
-        erase_value = lexical_cast<ObjectId>(value);
-      } catch(boost::bad_lexical_cast e) {
-        return Status(-EINVAL, "RangeIndex::erase_string_val: Bad cast");
-      }
-      erase(erase_key, erase_value);
-    }
-    return Status::OK;
+    return index_impl_.erase_string_val(key, value);
   }
 
   Status search(const RpcRangeQuery &query, FileIdVector* results) {
@@ -312,15 +262,15 @@ class RangeIndex : public RangeIndexInterface {
               KeyType upper, bool upper_open,
               FileIdVector *results) {
     CHECK_NOTNULL(results);
-    MutexGuard guard(lock_);
+    MutexGuard guard(*index_impl_.lock());
 
     typename IndexMap::iterator iter;
     if (lower_open) {
-      iter = index_.upper_bound(lower);
+      iter = index_impl_.index()->upper_bound(lower);
     } else {
-      iter = index_.lower_bound(lower);
+      iter = index_impl_.index()->lower_bound(lower);
     }
-    for (; iter != index_.end(); ++iter) {
+    for (; iter != index_impl_.index()->end(); ++iter) {
       if (iter->first > upper || (upper_open && iter->first >= upper)) {
         break;
       }
@@ -336,12 +286,7 @@ class RangeIndex : public RangeIndexInterface {
    * \param[out] results The output files.
    */
   void search(KeyType key, FileIdVector *results) {
-    CHECK_NOTNULL(results);
-    MutexGuard guard(lock_);
-    FileIdSet *files = find_or_null(index_, key);
-    if (files) {
-      results->insert(results->end(), files->begin(), files->end());
-    }
+    index_impl_.search(key, results);
   }
 
 
@@ -372,34 +317,26 @@ class RangeIndex : public RangeIndexInterface {
         sizeof(uint64_t) + sizeof(ObjectId)   // key and value
         + 3 * sizeof(char*)  // left/right/parent pointers // NOLINT
         + sizeof(char);  // color. // NOLINT
-    MutexGuard guard(lock_);
-    return index_.size() * kElementSize;
+    MutexGuard guard(*index_impl_.lock());
+    return index_impl_.index()->size() * kElementSize;
   }
 
   /// Returns the number of records.
   size_t size() {
-    size_t ret = 0;
-    MutexGuard guard(lock_);
-    for (const auto& iter : index_) {
-      ret += iter.second.size();
-    }
-    return ret;
+    return index_impl_.size();
   }
 
   /// Returns the number of unique keys.
   size_t num_keys() {
-    MutexGuard guard(lock_);
-    return index_.size();
+    return index_impl_.num_keys();
   }
 
   bool empty() {
-    MutexGuard guard(lock_);
-    return index_.empty();
+    return index_impl_.empty();
   }
 
   void clear() {
-    MutexGuard guard(lock_);
-    index_.clear();
+    index_impl_.clear();
   }
 
  protected:
@@ -435,82 +372,12 @@ class RangeIndex : public RangeIndexInterface {
     search(k, results);
   }
 
-  /**
-   * \brief Splits this RangeIndex based on the value range.
-   *
-   * It first finds the median of the value range, and separate this index
-   * into two value ranges : [start, median), [median, end]
-   *
-   * \param[out] other another empty range index to migrate the values from
-   * [median, end] to.
-   * \return Returns the median value and the end value.
-   *
-   * \pre The 'other' must be an empty RangeIndex.
-   */
-  FileIdRangeType split_index(RangeIndexInterface* other_interface) {
-    CHECK_NOTNULL(other_interface);
-    CHECK_EQ(other_interface->key_type(), this->key_type());
-    // TODO(lxu): avoid using dynamic_cast.
-    RangeIndex* other = dynamic_cast<RangeIndex*>(other_interface);  // NOLINT
-    CHECK(other->empty());
-    size_t total_size = this->size();
-    vector<ObjectId> all_file_ids;
-    MutexGuard guard(lock_);
-    for (const auto& iter : index_) {
-      for (const auto& file_id : iter.second) {
-        all_file_ids.push_back(file_id);
-      }
-    }
-    size_t median_pos = total_size / 2;
-    std::nth_element(all_file_ids.begin(), all_file_ids.begin() + median_pos,
-                     all_file_ids.end());
-
-    ObjectId median = all_file_ids[median_pos];
-    ObjectId end_pos = all_file_ids.back();
-    // Inserts all file id >= median to the new RangeIndex.
-    for (const auto& iter : index_) {
-      unordered_set<ObjectId> moved_file_ids;
-      for (const auto& file_id : iter.second) {
-        if (file_id >= median) {
-          moved_file_ids.insert(file_id);
-        }
-      }
-      if (!moved_file_ids.empty()) {
-        other->index_[iter.first].swap(moved_file_ids);
-      }
-    }
-    for (const auto& iter : other->index_) {
-      const auto& key = iter.first;
-      for (const auto& file_id : iter.second) {
-        index_[key].erase(file_id);
-      }
-      if (index_[key].empty()) {
-        index_.erase(key);
-      }
-    }
-    // Flag these splited elements from the original index and free them later.
-    return std::make_pair(median, end_pos);
-  };
-
  private:
   typedef unordered_set<ObjectId> FileIdSet;
 
   typedef map<KeyType, FileIdSet> IndexMap;
 
-  /// Caller must hold the lock.
-  void erase_with_lock(KeyType key, ObjectId file_id) {
-    FileIdSet *files = find_or_null(index_, key);
-    if (files) {
-      files->erase(file_id);
-      if (files->empty()) {
-        index_.erase(key);
-      }
-    }
-  }
-
-  IndexMap index_;
-
-  mutex lock_;
+  internal::IndexImpl<KeyType, IndexMap> index_impl_;
 
   int key_type_;
 
