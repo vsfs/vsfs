@@ -372,65 +372,6 @@ class RangeIndex : public RangeIndexInterface {
     search(k, results);
   }
 
-  /**
-   * \brief Splits this RangeIndex based on the value range.
-   *
-   * It first finds the median of the value range, and separate this index
-   * into two value ranges : [start, median), [median, end]
-   *
-   * \param[out] other another empty range index to migrate the values from
-   * [median, end] to.
-   * \return Returns the median value and the end value.
-   *
-   * \pre The 'other' must be an empty RangeIndex.
-   */
-  /* TODO(lxu): move to IndexImpl
-  FileIdRangeType split_index(RangeIndexInterface* other_interface) {
-    CHECK_NOTNULL(other_interface);
-    CHECK_EQ(other_interface->key_type(), this->key_type());
-    // TODO(lxu): avoid using dynamic_cast.
-    RangeIndex* other = dynamic_cast<RangeIndex*>(other_interface);  // NOLINT
-    CHECK(other->empty());
-    size_t total_size = this->size();
-    vector<ObjectId> all_file_ids;
-    MutexGuard guard(*index_impl_.lock());
-    for (const auto& iter : index_) {
-      for (const auto& file_id : iter.second) {
-        all_file_ids.push_back(file_id);
-      }
-    }
-    size_t median_pos = total_size / 2;
-    std::nth_element(all_file_ids.begin(), all_file_ids.begin() + median_pos,
-                     all_file_ids.end());
-
-    ObjectId median = all_file_ids[median_pos];
-    ObjectId end_pos = all_file_ids.back();
-    // Inserts all file id >= median to the new RangeIndex.
-    for (const auto& iter : index_) {
-      unordered_set<ObjectId> moved_file_ids;
-      for (const auto& file_id : iter.second) {
-        if (file_id >= median) {
-          moved_file_ids.insert(file_id);
-        }
-      }
-      if (!moved_file_ids.empty()) {
-        other->index_[iter.first].swap(moved_file_ids);
-      }
-    }
-    for (const auto& iter : *other->index_impl_->index()) {
-      const auto& key = iter.first;
-      for (const auto& file_id : iter.second) {
-        index_[key].erase(file_id);
-      }
-      if (index_[key].empty()) {
-        index_.erase(key);
-      }
-    }
-    // Flag these splited elements from the original index and free them later.
-    return std::make_pair(median, end_pos);
-  };
-  */
-
  private:
   typedef unordered_set<ObjectId> FileIdSet;
 

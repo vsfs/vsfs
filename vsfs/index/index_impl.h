@@ -23,6 +23,7 @@
 #include <glog/logging.h>
 #include <mutex>
 #include <string>
+#include <unordered_set>  // NOLINT
 #include <vector>
 #include "vobla/status.h"
 #include "vobla/map_util.h"
@@ -32,6 +33,7 @@
 using boost::call_traits;
 using boost::lexical_cast;
 using std::string;
+using std::unordered_set;
 using vobla::Status;
 using vobla::find_or_null;
 
@@ -180,6 +182,56 @@ class IndexImpl : boost::noncopyable {
 
   /// Access the underlying lock.
   mutex* lock() { return &lock_; }
+
+  /**
+   * \brief Splits this index based on the value (ObjectId) range.
+   *
+   * It first finds the median of the value (ObjectId) range, and separates
+   * this index into two value ranges : [start, median), [median, end]
+   *
+   * \param[out] other another empty index to migrate the values from [median,
+   * end] to.
+   * \return Returns the median value (ObjectId).
+   * \pre The 'other' index must be empty.
+   */
+  ObjectId split(IndexImpl* other) {
+    CHECK_NOTNULL(other);
+    CHECK(other->empty());
+    size_t total_size = this->size();
+    vector<ObjectId> all_obj_ids;
+    all_obj_ids.reserve(total_size);
+    MutexGuard guard(lock_);
+    for (const auto& iter : index_) {
+      for (const auto& file_id : iter.second) {
+        all_obj_ids.push_back(file_id);
+      }
+    }
+    size_t median_pos = total_size / 2;
+    std::nth_element(all_obj_ids.begin(), all_obj_ids.begin() + median_pos,
+                     all_obj_ids.end());
+    ObjectId median = all_obj_ids[median_pos];
+    for (const auto& iter : index_) {
+      unordered_set<ObjectId> moved_obj_ids;
+      for (const auto& obj_id : iter.second) {
+        if (obj_id >= median) {
+          moved_obj_ids.insert(obj_id);
+        }
+      }
+      if (!moved_obj_ids.empty()) {
+        other->index_[iter.first].swap(moved_obj_ids);
+      }
+    }
+    for (const auto& iter : *other->index_) {
+      const auto& key = iter.first;
+      for (const auto& obj_id : iter.second) {
+        index_[key].erase(obj_id);
+      }
+      if (index_[key].empty()) {
+        index_.erase(key);
+      }
+    }
+    return median;
+  }
 
  private:
   /// The caller must hold the lock_.
