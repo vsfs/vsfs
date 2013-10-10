@@ -17,6 +17,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <algorithm>
+#include <memory>
 #include <string>
 #include "vsfs/index/hash_index.h"
 
@@ -24,6 +25,7 @@ using ::testing::ContainerEq;
 using ::testing::ElementsAre;
 using std::sort;
 using std::string;
+using std::unique_ptr;
 
 namespace vsfs {
 namespace index {
@@ -31,64 +33,58 @@ namespace index {
 typedef HashIndexInterface::FileIdVector FileIdVector;
 
 TEST(HashIndexTest, TestInsertUint64) {
-  HashIndex<int> idx;
+  unique_ptr<HashIndexInterface> idx(new HashIndex<int>);
 
   FileIdVector ids = {10, 11, 12};
   for (auto id : ids) {
-    idx.insert(4, id);
+    idx->insert(4, id);
   }
 
   FileIdVector actual_ids;
-  idx.search(4, &actual_ids);
+  idx->search(4, &actual_ids);
   sort(actual_ids.begin(), actual_ids.end());
   EXPECT_THAT(actual_ids, ContainerEq(ids));
 
   actual_ids.clear();
-  idx.search(5, &actual_ids);
+  idx->search(5, &actual_ids);
   EXPECT_EQ(0, actual_ids.size());
 }
 
 TEST(HashIndexTest, TestEraseValues) {
-  HashIndex<int> idx;
+  unique_ptr<HashIndexInterface> idx(new HashIndex<int>);
   for (int i = 0; i < 10; i++) {
     for (int j = 0; j < 10; j++) {
-      idx.insert(i, i * 10 + j);
+      idx->insert(i, i * 10 + j);
     }
   }
   FileIdVector actual_ids;
-  idx.search(4, &actual_ids);
+  idx->search(4, &actual_ids);
   sort(actual_ids.begin(), actual_ids.end());
   EXPECT_THAT(actual_ids, ElementsAre(40, 41, 42, 43, 44, 45, 46, 47, 48, 49));
 
-  idx.erase(4, 42);
-  idx.erase(4, 43);
-  idx.erase(4, 44);
-  idx.erase(4, 45);
+  idx->erase(4, 42);
+  idx->erase(4, 43);
+  idx->erase(4, 44);
+  idx->erase(4, 45);
   actual_ids.clear();
-  idx.search(4, &actual_ids);
+  idx->search(4, &actual_ids);
   sort(actual_ids.begin(), actual_ids.end());
   EXPECT_THAT(actual_ids, ElementsAre(40, 41, 46, 47, 48, 49));
 
-  idx.erase(5);
+  idx->erase(5);
   actual_ids.clear();
-  idx.search(5, &actual_ids);
+  idx->search(5, &actual_ids);
   EXPECT_TRUE(actual_ids.empty());
 }
 
 TEST(HashIndexTest, TestInsertString) {
-  HashIndex<string> idx;
-  idx.insert("abc", 0);
-  idx.insert("abc", 2);
+  unique_ptr<HashIndexInterface> idx(new HashIndex<string>);
+  string key("abc");
+  idx->insert(key, 0);
+  idx->insert(key, 2);
 
   FileIdVector actual_ids;
-  idx.search("abc", &actual_ids);
-  sort(actual_ids.begin(), actual_ids.end());
-  EXPECT_THAT(actual_ids, ElementsAre(0, 2));
-
-  HashIndexInterface* ifac = &idx;
-  actual_ids.clear();
-  string key("abc");
-  ifac->search(key, &actual_ids);
+  idx->search(key, &actual_ids);
   sort(actual_ids.begin(), actual_ids.end());
   EXPECT_THAT(actual_ids, ElementsAre(0, 2));
 }

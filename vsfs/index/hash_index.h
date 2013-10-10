@@ -23,12 +23,14 @@
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>  // NOLINT
+#include <string>
 #include <vector>
 #include "vobla/map_util.h"
 #include "vobla/status.h"
 #include "vobla/traits.h"
 #include "vsfs/common/thread.h"
 #include "vsfs/common/types.h"
+#include "vsfs/index/index_impl.h"
 #include "vsfs/rpc/vsfs_types.h"
 
 using boost::call_traits;
@@ -88,6 +90,11 @@ class HashIndexInterface : boost::noncopyable {
     search_internal(&key, results);
   }
 
+  void search(const std::string& key, FileIdVector* results) {
+    CHECK_EQ(TypeToInt<std::string>::value(), key_type());
+    search_internal(&key, results);
+  }
+
   /// Apply a batch of modifications.
   virtual Status apply(const vector<RpcIndexRecordUpdateOp> &op) = 0;
 
@@ -117,7 +124,7 @@ class HashIndex : public HashIndexInterface {
   /// Returns true of two HashIndex both have the same key type and have the
   /// same content.
   bool operator==(const HashIndex& rhs) const {
-    return key_type_ == rhs.key_type_ && index_ = rhs.index_;
+    return key_type_ == rhs.key_type_ && index_ == rhs.index_;
   }
 
   /// Returns the integer representing the key type.
@@ -126,33 +133,26 @@ class HashIndex : public HashIndexInterface {
   }
 
   void insert(typename call_traits<KeyType>::param_type key, ObjectId obj_id) {
-    MutexGuard guard(lock_);
-    index_[key].insert(obj_id);
+    index_impl_.insert(key, obj_id);
   }
 
   void erase(typename call_traits<KeyType>::param_type key) {
-    MutexGuard lock(lock_);
-    index_.erase(key);
+    index_impl_.erase(key);
   }
 
   void erase(typename call_traits<KeyType>::param_type key, ObjectId obj_id) {
-    MutexGuard guard(lock_);
-    erase_with_lock(key, obj_id);
+    index_impl_.erase(key, obj_id);
   }
 
+  /*
   void search(typename call_traits<KeyType>::param_type key,
               FileIdVector* results) {
-    CHECK_NOTNULL(results);
-    MutexGuard lock(lock_);
-    auto files = find_or_null(index_, key);
-    if (files) {
-      results->insert(results->end(), files->begin(), files->end());
-    }
+    index_impl_.search(key, results);
   }
+  */
 
   bool empty() {
-    MutexGuard lock(lock_);
-    return index_.empty();
+    return index_impl_.empty();
   }
 
  protected:
@@ -177,35 +177,11 @@ class HashIndex : public HashIndexInterface {
   void search_internal(const void* key, FileIdVector* results) {
     typename call_traits<Key>::const_reference k =
         *static_cast<const Key*>(key);
-    search(k, results);
+    index_impl_.search(k, results);
   }
 
   Status apply(const vector<RpcIndexRecordUpdateOp>& updates) {
-    MutexGuard guard(lock_);
-    for (const auto& update : updates) {
-      KeyType key = 0;
-      ObjectId file_id = 0;
-      try {
-        key = lexical_cast<KeyType>(update.key);
-        file_id = lexical_cast<ObjectId>(update.value);
-      } catch(boost::bad_lexical_cast e) {
-        return Status(-EINVAL, "HashIndex::update: Bad cast");
-      }
-
-      switch (update.op) {
-        case RpcIndexUpdateOpCode::INSERT:
-        case RpcIndexUpdateOpCode::UPDATE:
-          index_[key].insert(file_id);
-          break;
-        case RpcIndexUpdateOpCode::REMOVE:
-          erase_with_lock(key, file_id);
-          break;
-        default:
-          LOG(ERROR) << "Unknown IndexUpdate operation: op:" << update.op;
-          return Status(-EINVAL, "Unknown op.");
-      }
-    }
-    return Status::OK;
+    return index_impl_.apply(updates);
   }
 
  private:
@@ -224,6 +200,8 @@ class HashIndex : public HashIndexInterface {
       }
     }
   }
+
+  internal::IndexImpl<KeyType, IndexHashMap> index_impl_;
 
   IndexHashMap index_;
 
