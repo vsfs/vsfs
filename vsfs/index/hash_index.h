@@ -21,9 +21,9 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/utility.hpp>
 #include <mutex>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>  // NOLINT
-#include <string>
 #include <vector>
 #include "vobla/map_util.h"
 #include "vobla/status.h"
