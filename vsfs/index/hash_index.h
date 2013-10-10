@@ -90,11 +90,6 @@ class HashIndexInterface : boost::noncopyable {
     search_internal(&key, results);
   }
 
-  void search(const std::string& key, FileIdVector* results) {
-    CHECK_EQ(TypeToInt<std::string>::value(), key_type());
-    search_internal(&key, results);
-  }
-
   /// Apply a batch of modifications.
   virtual Status apply(const vector<RpcIndexRecordUpdateOp> &op) = 0;
 
