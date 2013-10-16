@@ -60,8 +60,6 @@ class RangeIndex;
  */
 class RangeIndexInterface {
  public:
-  // TODO(ziling): use vsfs/common/range.h to replace this.
-  typedef std::pair<ObjectId, ObjectId> FileIdRangeType;
   typedef ObjectId value_type;
   typedef vector<ObjectId> FileIdVector;
 
@@ -78,12 +76,6 @@ class RangeIndexInterface {
   }
 
   // virtual Status update(const vector<RpcIndexRecordUpdateOp> &op) = 0;
-
-  /*
-  FileIdRangeType split(RangeIndexInterface* other) {
-    return split_index(other);
-  }
-  */
 
   /**
    * \brief Inserts key-value pair from a string format.
@@ -154,8 +146,6 @@ class RangeIndexInterface {
                       FileIdVector *results) = 0;
 
   virtual void search(void *key, size_t key_size, FileIdVector *results) = 0;
-
-  // virtual FileIdRangeType split_index(RangeIndexInterface* other) = 0;
 };
 
 
