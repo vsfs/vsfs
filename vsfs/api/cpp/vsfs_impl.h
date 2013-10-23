@@ -18,10 +18,13 @@
 #define VSFS_API_CPP_VSFS_IMPL_H_
 
 #include <boost/utility.hpp>
+#include <memory>
 #include <string>
 #include "vobla/status.h"
+#include "vsfs/client/vsfs_rpc_client.h"
 
 using std::string;
+using std::unique_ptr;
 using vobla::Status;
 
 namespace vsfs {
@@ -32,9 +35,25 @@ class VsfsImpl : boost::noncopyable {
 
   virtual ~VsfsImpl();
 
+  /**
+   * \brief Connect to the VSFS cluster.
+   * \return Status::OK if success.
+   */
+  Status connect();
+
+  Status disconnect();
+
+  /**
+   * \brief Creates an customize index on path, with index name.
+   * \param path the root directory of
+   */
+  Status create(const string& path, const string& name);
+
  private:
   string host_;
   int port_;
+
+  unique_ptr<client::VSFSRpcClient> conn_;
 };
 
 }  // namespace vsfs

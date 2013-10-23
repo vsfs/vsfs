@@ -18,13 +18,35 @@
 #define VSFS_API_CPP_VSFS_H_
 
 #include <memory>
+#include "vobla/traits.h"
 
 namespace vsfs {
 
 class VsfsImpl;
 
+/**
+ * \class Vsfs
+ * \brief Vsfs's C++ API.
+ */
 class Vsfs {
  public:
+  enum class KeyType {
+    CHAR = TypeIDs::CHAR,
+    UINT8 = TypeIDs::UINT8,
+    INT8 = TypeIDs::INT8,
+    UINT16 = TypeIDs::UINT16,
+    INT16 = TypeIDs::INT16,
+    UINT32 = TypeIDs::UINT32,
+    INT32 = TypeIDs::INT32,
+    UINT64 = TypeIDs::UINT64,
+    INT64 = TypeIDs::INT64,
+    FLOAT = TypeIDs::FLOAT,
+    DOUBLE = TypeIDs::DOUBLE,
+    STRING = TypeIDs::STRING
+  };
+
+  Vsfs();
+
   virtual ~Vsfs();
 
  private:

@@ -20,10 +20,17 @@
 
 namespace vsfs {
 
+using client::VSFSRpcClient;
+
 VsfsImpl::VsfsImpl(const string& host, int port) : host_(host), port_(port) {
+  conn_.reset(new VSFSRpcClient(host, port));
 }
 
 VsfsImpl::~VsfsImpl() {
+}
+
+Status VsfsImpl::connect() {
+  return conn_->init();
 }
 
 }  // namespace vsfs
