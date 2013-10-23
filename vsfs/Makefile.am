@@ -1,4 +1,4 @@
-SUBDIRS = rpc common query index masterd indexd client fuse testing
+SUBDIRS = rpc common query index masterd indexd client fuse testing api
 BUILT_SOURCES = rpc
 
 rpc:
