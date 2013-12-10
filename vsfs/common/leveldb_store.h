@@ -48,7 +48,7 @@ namespace vsfs {
  *  - get()
  *  - remove()
  */
-class LevelDBStore  : public KeyValueStore {
+class LevelDBStore : public KeyValueStore {
   typedef std::pair<string, string> KeyValuePair;
 
  public:
