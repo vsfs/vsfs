@@ -1,7 +1,22 @@
 # Makefile.am for VSFS's C++ API
 
-lib_LTLIBRARIES = libvsfs.la
+lib_LIBRARIES = libvsfs.a
 
-libvsfs_la_SOURCES = \
-   vsfs.h \
-   vsfs_impl.h vsfs_impl.cpp
+libvsfs_a_SOURCES = \
+  vsfs.h \
+  vsfs_impl.h vsfs_impl.cpp
+
+TESTS = \
+  vsfs_impl_test
+
+check_PROGRAMS = $(TESTS)
+LDADD = \
+	libvsfs.a \
+	${top_srcdir}/vsfs/client/libvsfs-client.a \
+	${top_srcdir}/vsfs/rpc/libvsfs-rpc.a \
+	${top_srcdir}/vsfs/index/libvsfs-index.a \
+	${top_srcdir}/vsfs/common/libvsfs-common.a \
+	-lgtest_main -lgtest -lgmock \
+	$(libthrift_LIBS) -lthriftnb
+
+vsfs_impl_test_SOURCES = vsfs_impl_test.cpp

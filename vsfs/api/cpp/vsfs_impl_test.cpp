@@ -14,33 +14,38 @@
  * limitations under the License.
  */
 
-#include <glog/logging.h>
-#include <string>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <memory>
 #include "vsfs/api/cpp/vsfs_impl.h"
+#include "vsfs/client/mock_vsfs_client.h"
+#include "vsfs/common/complex_query.h"
 
-using vsfs::client::VSFSClient;
+using std::unique_ptr;
+using vsfs::client::MockVSFSClient;
+using ::testing::Return;
 
 namespace vsfs {
 namespace api {
 
-using client::VSFSRpcClient;
+class VsfsImplTest : public ::testing::Test {
+ protected:
+  void SetUp() {
+    mock_client_ = new MockVSFSClient;
+    vsfs_.reset(new VsfsImpl(mock_client_));
+  }
 
-VsfsImpl::VsfsImpl(const string& host, int port) : host_(host), port_(port) {
-  conn_.reset(new VSFSRpcClient(host, port));
-}
+  void TearDown() {
+    mock_client_ = nullptr;
+  }
 
-VsfsImpl::VsfsImpl(VSFSClient* conn) : conn_(conn) {
-}
+  MockVSFSClient* mock_client_;
+  unique_ptr<VsfsImpl> vsfs_;
+};
 
-VsfsImpl::~VsfsImpl() {
-}
-
-Status VsfsImpl::connect() {
-  return conn_->init();
-}
-
-Status VsfsImpl::disconnect() {
-  return Status::OK;
+TEST_F(VsfsImplTest, TestConnect) {
+  EXPECT_CALL(*mock_client_, init()).WillOnce(Return(Status::OK));
+  EXPECT_TRUE(vsfs_->connect().ok());
 }
 
 }  // namespace api

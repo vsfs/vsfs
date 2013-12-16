@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2014 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,10 +28,17 @@ using std::unique_ptr;
 using vobla::Status;
 
 namespace vsfs {
+namespace api {
 
 class VsfsImpl : boost::noncopyable {
  public:
+  /**
+   * Constructs a Vsfs Client Implementation
+   */
   VsfsImpl(const string& host, int port);
+
+  /// Feeds VsfsImpl with a mock connection.
+  explicit VsfsImpl(client::VSFSClient* conn);
 
   virtual ~VsfsImpl();
 
@@ -41,6 +48,7 @@ class VsfsImpl : boost::noncopyable {
    */
   Status connect();
 
+  /// Disconnect from VSFS cluster.
   Status disconnect();
 
   /**
@@ -53,9 +61,10 @@ class VsfsImpl : boost::noncopyable {
   string host_;
   int port_;
 
-  unique_ptr<client::VSFSRpcClient> conn_;
+  unique_ptr<client::VSFSClient> conn_;
 };
 
+}  // namespace api
 }  // namespace vsfs
 
 #endif  // VSFS_API_CPP_VSFS_IMPL_H_

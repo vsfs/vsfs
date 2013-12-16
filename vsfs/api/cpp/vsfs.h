@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2014 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@
 #define VSFS_API_CPP_VSFS_H_
 
 #include <memory>
+#include <string>
+#include <vector>
+#include "vobla/status.h"
 #include "vobla/traits.h"
 
 namespace vsfs {
@@ -48,6 +51,11 @@ class Vsfs {
   Vsfs();
 
   virtual ~Vsfs();
+
+  vobla::Status connect(const std::string& host, int port);
+
+  volba::Status readdir(const std::string& root,  // NOLINT
+                        std::vector<std::string>& sub_files);
 
  private:
   std::unique_ptr<VsfsImpl> impl_;
