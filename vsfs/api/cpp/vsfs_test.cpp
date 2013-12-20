@@ -15,17 +15,41 @@
  */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
+#include <memory>
 #include "vsfs/api/cpp/vsfs.h"
+#include "vsfs/api/cpp/vsfs_impl.h"
+#include "vsfs/common/complex_query.h"
+#include "vsfs/client/mock_vsfs_client.h"
+
+using std::unique_ptr;
+using ::testing::_;
+using ::testing::NotNull;
+using ::testing::Return;
+using ::testing::SetArgPointee;
 
 namespace vsfs {
+
+using api::VsfsImpl;
+using client::MockVSFSClient;
 
 class VsfsAPITest : public ::testing::Test {
  protected:
   void SetUp() {
+    mock_client_ = new MockVSFSClient;
+    vsfs_.reset(new Vsfs(new VsfsImpl(mock_client_)));
   }
+
+  MockVSFSClient *mock_client_;
+  unique_ptr<Vsfs> vsfs_;
 };
 
 TEST_F(VsfsAPITest, TestConnect) {
+  EXPECT_CALL(*mock_client_, create("/abc", 10, 10, 10, NotNull()))
+      .WillOnce(DoAll(SetArgPointee<4>(10),
+                      Return(Status::OK)));
+  Vsfs::ObjectId id;
+  EXPECT_TRUE(vsfs_->create("/abc", 10, 10, 10, &id).ok());
 }
 
 }  // namespace vsfs

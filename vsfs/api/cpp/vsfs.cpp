@@ -17,11 +17,13 @@
 #include <glog/logging.h>
 #include <string>
 #include "vobla/status.h"
+#include "vobla/string_util.h"
 #include "vsfs/api/cpp/vsfs.h"
 #include "vsfs/api/cpp/vsfs_impl.h"
 
 using std::string;
 using vobla::Status;
+using vobla::stringprintf;
 
 namespace vsfs {
 
@@ -30,7 +32,7 @@ using api::VsfsImpl;
 Vsfs::Vsfs(const string& host, int port) : impl_(new VsfsImpl(host, port)) {
 }
 
-Vsfs::Vsfs(VsfsImpl* vsfs_impl) : impl_(vsfs_impl) {
+Vsfs::Vsfs(VsfsImpl* vsfs_impl) : impl_(CHECK_NOTNULL(vsfs_impl)) {
 }
 
 Vsfs::~Vsfs() {
@@ -43,11 +45,17 @@ Status Vsfs::connect() {
 Status Vsfs::create(const string& path, int64_t mode, int64_t uid,
                     int64_t gid, ObjectId* id) {
   CHECK_NOTNULL(id);
+  VLOG(0) << stringprintf("Creating file '%s' (mode=%ld, uid=%ld gid=%ld))",
+                          path.c_str(), mode, uid, gid);
   return impl_->connection()->create(path, mode, uid, gid, id);
 }
 
 Status Vsfs::mkdir(const string& path, int64_t mode, int64_t uid, int64_t gid) {
   return impl_->connection()->mkdir(path, mode, uid, gid);
+}
+
+Status Vsfs::rmdir(const string& path) {
+  return impl_->connection()->rmdir(path);
 }
 
 }  // namespace vsfs
