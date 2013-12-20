@@ -35,13 +35,5 @@ VsfsImpl::VsfsImpl(VSFSClient* conn) : conn_(conn) {
 VsfsImpl::~VsfsImpl() {
 }
 
-Status VsfsImpl::connect() {
-  return conn_->init();
-}
-
-Status VsfsImpl::disconnect() {
-  return Status::OK;
-}
-
 }  // namespace api
 }  // namespace vsfs

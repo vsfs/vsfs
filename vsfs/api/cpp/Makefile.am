@@ -3,11 +3,11 @@
 lib_LIBRARIES = libvsfs.a
 
 libvsfs_a_SOURCES = \
-  vsfs.h \
+  vsfs.h vsfs.cpp \
   vsfs_impl.h vsfs_impl.cpp
 
 TESTS = \
-  vsfs_impl_test
+  vsfs_test
 
 check_PROGRAMS = $(TESTS)
 LDADD = \
@@ -20,3 +20,4 @@ LDADD = \
 	$(libthrift_LIBS) -lthriftnb
 
 vsfs_impl_test_SOURCES = vsfs_impl_test.cpp
+vsfs_test_SOURCES = vsfs_test.cpp

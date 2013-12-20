@@ -42,20 +42,9 @@ class VsfsImpl : boost::noncopyable {
 
   virtual ~VsfsImpl();
 
-  /**
-   * \brief Connect to the VSFS cluster.
-   * \return Status::OK if success.
-   */
-  Status connect();
-
-  /// Disconnect from VSFS cluster.
-  Status disconnect();
-
-  /**
-   * \brief Creates an customize index on path, with index name.
-   * \param path the root directory of
-   */
-  Status create(const string& path, const string& name);
+  client::VSFSClient* connection() {
+    return conn_.get();
+  }
 
  private:
   string host_;

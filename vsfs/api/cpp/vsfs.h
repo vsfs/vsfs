@@ -17,15 +17,19 @@
 #ifndef VSFS_API_CPP_VSFS_H_
 #define VSFS_API_CPP_VSFS_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
 #include "vobla/status.h"
 #include "vobla/traits.h"
+#include "vsfs/common/types.h"
 
 namespace vsfs {
 
+namespace api {
 class VsfsImpl;
+}
 
 /**
  * \class Vsfs
@@ -33,6 +37,9 @@ class VsfsImpl;
  */
 class Vsfs {
  public:
+  // TODO(eddyxu): should move to a public head file
+  typedef vsfs::ObjectId ObjectId;
+
   enum class KeyType {
     CHAR = TypeIDs::CHAR,
     UINT8 = TypeIDs::UINT8,
@@ -48,17 +55,44 @@ class Vsfs {
     STRING = TypeIDs::STRING
   };
 
-  Vsfs();
+  Vsfs(const std::string& host, int port);
+
+  /// Used for dependancy injection.
+  explicit Vsfs(api::VsfsImpl* vsfs_impl);
 
   virtual ~Vsfs();
 
-  vobla::Status connect(const std::string& host, int port);
+  vobla::Status connect();
 
-  volba::Status readdir(const std::string& root,  // NOLINT
-                        std::vector<std::string>& sub_files);
+  vobla::Status disconnect();
+
+  /// Creates a new file in the VSFS namespace.
+  vobla::Status create(const std::string& path, int64_t mode, int64_t uid,
+                       int64_t gid, ObjectId* id);
+
+  /**
+   * \brief Creates a new directory on path.
+   * \param path the absolute path of directory to be created.
+   * \param mode the mode of the new created directory.
+   * \param uid the user id of the new created directory.
+   * \param gid the group id of the new created directory.
+   * \return Status::OK if success.
+   */
+  vobla::Status mkdir(const std::string& path, int64_t mode,
+                      int64_t uid, int64_t gid);
+
+  /**
+   * \brief Deletes a directory.
+   * \param path the absolute path of the directory to be deleted.
+   * \return Status::OK if success.
+   */
+  vobla::Status rmdir(const std::string& path);
+
+  vobla::Status readdir(const std::string& root,  // NOLINT
+                        std::vector<std::string>* sub_files);
 
  private:
-  std::unique_ptr<VsfsImpl> impl_;
+  std::unique_ptr<api::VsfsImpl> impl_;
 };
 
 }  // namespace vsfs
