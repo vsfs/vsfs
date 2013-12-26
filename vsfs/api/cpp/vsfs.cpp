@@ -25,6 +25,8 @@ using std::string;
 using vobla::Status;
 using vobla::stringprintf;
 
+// TODO(eddyxu): Merge with client/vsfs_rpc_client.h
+
 namespace vsfs {
 
 using api::VsfsImpl;
@@ -48,6 +50,18 @@ Status Vsfs::create(const string& path, int64_t mode, int64_t uid,
   VLOG(0) << stringprintf("Creating file '%s' (mode=%ld, uid=%ld gid=%ld))",
                           path.c_str(), mode, uid, gid);
   return impl_->connection()->create(path, mode, uid, gid, id);
+}
+
+Status Vsfs::unlink(const std::string& path, ObjectId* id) {
+  CHECK_NOTNULL(id);
+  return impl_->connection()->unlink(path, id);
+}
+
+Status Vsfs::getattr(const string& path, struct stat* stbuf) {
+  CHECK_NOTNULL(stbuf);
+  (void) path;
+  // return impl_->connection()->getattr(path, stbuf);
+  return Status::OK;
 }
 
 Status Vsfs::mkdir(const string& path, int64_t mode, int64_t uid, int64_t gid) {

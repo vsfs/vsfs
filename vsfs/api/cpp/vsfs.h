@@ -70,6 +70,11 @@ class Vsfs {
   vobla::Status create(const std::string& path, int64_t mode, int64_t uid,
                        int64_t gid, ObjectId* id);
 
+  /// Deletes a new file.
+  vobla::Status unlink(const std::string& path, ObjectId* id);
+
+  vobla::Status getattr(const std::string& path, struct stat* stbuf);
+
   /**
    * \brief Creates a new directory on path.
    * \param path the absolute path of directory to be created.
