@@ -1,0 +1,24 @@
+volume:
+subnet:
+security_group_ids:
+    - sg-xxxx
+master:
+    instance: m1.small
+    price: 0.01
+    start:
+    stop:
+indexd:
+    instance: m1.small
+    price: 0.01
+    start:
+    stop:
+client:
+    instance: m1.micro
+    start:
+    stop:
+tests:
+    - name: ab
+      command:
+        - echo something
+    - name: bc
+      command: vsfs-bench
