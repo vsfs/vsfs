@@ -1,8 +1,6 @@
 Running on EC2
 ======================
 
-[![Code Quality](https://landscape.io/github/eddyxu/ec2/master/landscape.png)](https://landscape.io/github/eddyxu/ec2/master)
-
 1. Setup
 ----------------------
 
