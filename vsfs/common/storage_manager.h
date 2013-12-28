@@ -33,7 +33,7 @@ using vobla::Status;
 namespace vsfs {
 
 class FileHandler;
-class FileObject;
+class File;
 
 /*
  * \class StorageManager
@@ -50,27 +50,27 @@ class StorageManager : boost::noncopyable {
   virtual Status destroy() = 0;
 
   /**
-   * \brief Opens a file and creates a new FileObject.
+   * \brief Opens a file and creates a new File.
    * \param[in] path the related path in VSFS.
    * \param[in] obj_id the object id of the given file.
    * \param[in] flags the open flags.
-   * \param[out] obj it is filled with new created FileObject's pointer.
+   * \param[out] file it is filled with new created File's pointer.
    * \return Status::OK if success.
    */
   virtual Status open(const string& path, ObjectId obj_id, int flags,
-                      FileObject** obj) = 0;
+                      File** file) = 0;
 
   /**
-   * \brief Opens a file with mode and creates a new FileObject.
+   * \brief Opens a file with mode and creates a new File.
    * \param[in] path the related path in VSFS.
    * \param[in] obj_id the object id of the opening file.
    * \param[in] flags the open flags.
    * \param[int] mode the mode to open a file.
-   * \param[out] obj it is filled with new created FileObject's pointer.
+   * \param[out] file it is filled with new created File's pointer.
    * \return Status::OK if success.
    */
   virtual Status open(const string& path, ObjectId obj_id, int flags,
-                      mode_t mode, FileObject** obj) = 0;
+                      mode_t mode, File** file) = 0;
 
   /// Removes the object/file from the storage.
   virtual Status unlink(const string& path, ObjectId obj_id) = 0;

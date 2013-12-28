@@ -26,7 +26,7 @@
 #include <vector>
 #include "vobla/file.h"
 #include "vobla/status.h"
-#include "vsfs/common/file_object.h"
+#include "vsfs/common/file.h"
 #include "vsfs/common/object_storage_manager.h"
 
 using ::testing::ElementsAre;
@@ -66,16 +66,16 @@ TEST_F(ObjectStorageManagerTest, TestCreateFile) {
   ObjectStorageManager osm(tmpdir_->path(), subdirs);
   EXPECT_TRUE(osm.init().ok());
 
-  FileObject* fobj;
-  EXPECT_TRUE(osm.open("/abcdef", 12, O_CREAT, 0666, &fobj).ok());
-  fobj->close();
-  delete fobj;
+  File* file;
+  EXPECT_TRUE(osm.open("/abcdef", 12, O_CREAT, 0666, &file).ok());
+  file->close();
+  delete file;
 
   EXPECT_TRUE(fs::exists(tmpdir_->path() + "/4/12"));
 
-  EXPECT_TRUE(osm.open("", -6981142372377690111, O_CREAT, 0666, &fobj).ok());
-  fobj->close();
-  delete fobj;
+  EXPECT_TRUE(osm.open("", -6981142372377690111, O_CREAT, 0666, &file).ok());
+  file->close();
+  delete file;
 }
 
 }  // namespace vsfs

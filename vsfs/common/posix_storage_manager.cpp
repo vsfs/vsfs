@@ -28,7 +28,7 @@
 #include <memory>
 #include <string>
 #include "vobla/status.h"
-#include "vsfs/common/file_object.h"
+#include "vsfs/common/file.h"
 #include "vsfs/common/posix_file_handler.h"
 #include "vsfs/common/posix_storage_manager.h"
 
@@ -54,28 +54,28 @@ Status PosixStorageManager::destroy() {
 }
 
 Status PosixStorageManager::open(
-    const string& path, ObjectId, int flags, FileObject** obj) {
-  CHECK_NOTNULL(obj);
+    const string& path, ObjectId, int flags, File** file) {
+  CHECK_NOTNULL(file);
   const string local_path = translate_path(path);
   int fd = ::open(local_path.c_str(), flags);
   if (fd < 0) {
     LOG(ERROR) << "Failed to open file: " << local_path;
     return Status::system_error(errno);
   }
-  *obj = new FileObject(new PosixFileHandler(this, fd));
+  *file = new File(new PosixFileHandler(this, fd));
   return Status::OK;
 }
 
 Status PosixStorageManager::open(
-    const string& path, ObjectId, int flags, mode_t mode, FileObject** obj) {
-  CHECK_NOTNULL(obj);
+    const string& path, ObjectId, int flags, mode_t mode, File** file) {
+  CHECK_NOTNULL(file);
   string local_path = translate_path(path);
   int fd = ::open(local_path.c_str(), flags, mode);
   if (fd < 0) {
     LOG(ERROR) << "Failed to open file: " << local_path;
     return Status::system_error(errno);
   }
-  *obj = new FileObject(new PosixFileHandler(this, fd));
+  *file = new File(new PosixFileHandler(this, fd));
   return Status::OK;
 }
 

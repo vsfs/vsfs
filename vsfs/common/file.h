@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VSFS_COMMON_FILE_OBJECT_H_
-#define VSFS_COMMON_FILE_OBJECT_H_
+#ifndef VSFS_COMMON_FILE_H_
+#define VSFS_COMMON_FILE_H_
 
 #include <boost/noncopyable.hpp>
 #include <sys/types.h>
@@ -34,21 +34,21 @@ namespace vsfs {
 class FileHandler;
 
 /**
- * \class FileObject file_object.h
+ * \class File file_object.h
  * \brief file operation wrapper for storage manager. It stores a file handler
- * of the file. Each FileObject instance has a one to one relationship with its
+ * of the file. Each File instance has a one to one relationship with its
  * file handler.
  */
-class FileObject : private boost::noncopyable {
+class File : private boost::noncopyable {
  public:
-  FileObject() = delete;
+  File() = delete;
 
-  explicit FileObject(FileHandler* file_handler);
+  explicit File(FileHandler* file_handler);
 
   /// Move constructor.
-  FileObject(FileObject&& rhs);
+  File(File&& rhs);
 
-  ~FileObject();
+  ~File();
 
   /**
    * \brief Reads data starting from an offset.
@@ -80,4 +80,4 @@ class FileObject : private boost::noncopyable {
 };
 
 }  // namespace vsfs
-#endif  // VSFS_COMMON_FILE_OBJECT_H_
+#endif  // VSFS_COMMON_FILE_H_

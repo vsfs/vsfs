@@ -27,7 +27,7 @@
 
 namespace vsfs {
 
-class FileObject;
+class File;
 class StorageManager;
 
 namespace client {
@@ -42,6 +42,7 @@ class Vsfs {
  public:
   // TODO(eddyxu): should move to a public head file
   typedef vsfs::ObjectId ObjectId;
+  typedef vsfs::File File;
 
   enum class KeyType {
     CHAR = TypeIDs::CHAR,
@@ -85,7 +86,7 @@ class Vsfs {
 
   /// Creates a new file in the VSFS namespace.
   vobla::Status create(const std::string& path, int64_t mode, int64_t uid,
-                       int64_t gid, FileObject** fobj);
+                       int64_t gid, File** fobj);
 
   /// Deletes a new file.
   vobla::Status unlink(const std::string& path);

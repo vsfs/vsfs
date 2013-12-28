@@ -25,7 +25,7 @@
 #include <memory>
 #include <string>
 #include "vobla/status.h"
-#include "vsfs/common/file_object.h"
+#include "vsfs/common/file.h"
 #include "vsfs/common/object_storage_manager.h"
 #include "vsfs/common/posix_file_handler.h"
 
@@ -60,28 +60,28 @@ Status ObjectStorageManager::destroy() {
 }
 
 Status ObjectStorageManager::open(const string&, ObjectId obj_id, int flags,
-                                  FileObject** object) {
-  CHECK_NOTNULL(object);
+                                  File** file) {
+  CHECK_NOTNULL(file);
   string local_path = translate_path(obj_id);
   int fd = ::open(local_path.c_str(), flags);
   if (fd < 0) {
     LOG(ERROR) << "Failed to open file: " << local_path;
     return Status::system_error(errno);
   }
-  *object = new FileObject(new PosixFileHandler(this, fd));
+  *file = new File(new PosixFileHandler(this, fd));
   return Status::OK;
 }
 
 Status ObjectStorageManager::open(const string&, ObjectId obj_id, int flags,
-                                  mode_t mode, FileObject** obj) {
-  CHECK_NOTNULL(obj);
+                                  mode_t mode, File** file) {
+  CHECK_NOTNULL(file);
   string local_path = translate_path(obj_id);
   int fd = ::open(local_path.c_str(), flags, mode);
   if (fd < 0) {
     LOG(ERROR) << "Failed to open file: " << local_path;
     return Status::system_error(errno);
   }
-  *obj = new FileObject(new PosixFileHandler(this, fd));
+  *file = new File(new PosixFileHandler(this, fd));
   return Status::OK;
 }
 

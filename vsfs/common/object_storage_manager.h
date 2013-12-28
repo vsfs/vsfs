@@ -27,7 +27,8 @@ using vobla::Status;
 
 namespace vsfs {
 
-class FileObject;
+// Forward declaration
+class File;
 
 /**
  * \class ObjectStorageManager
@@ -73,10 +74,10 @@ class ObjectStorageManager : public StorageManager {
   // Do nothing.
   Status destroy();
 
-  Status open(const string& path, ObjectId obj_id, int flags, FileObject** obj);
+  Status open(const string& path, ObjectId obj_id, int flags, File** file);
 
   Status open(const string& path, ObjectId obj_id, int flags, mode_t mode,
-              FileObject** obj);
+              File** file);
 
   Status unlink(const string& path, ObjectId obj_id);
 

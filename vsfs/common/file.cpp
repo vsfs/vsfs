@@ -17,35 +17,35 @@
 #include <glog/logging.h>
 #include "vobla/status.h"
 #include "vsfs/common/file_handler.h"
-#include "vsfs/common/file_object.h"
+#include "vsfs/common/file.h"
 
 using vobla::Status;
 
 namespace vsfs {
 
-FileObject::FileObject(FileHandler* fh) : file_handler_(fh) {
+File::File(FileHandler* fh) : file_handler_(fh) {
   CHECK_NOTNULL(fh);
 }
 
-FileObject::FileObject(FileObject&& rhs) {
+File::File(File&& rhs) {
   file_handler_ = std::move(rhs.file_handler_);
 }
 
-FileObject::~FileObject() {
+File::~File() {
   if (file_handler_) {
     file_handler_->close();
   }
 }
 
-ssize_t FileObject::read(void *buf, size_t count, off_t offset) {
+ssize_t File::read(void *buf, size_t count, off_t offset) {
   return file_handler_->read(buf, count, offset);
 }
 
-ssize_t FileObject::write(const void *buf, size_t count, off_t offset) {
+ssize_t File::write(const void *buf, size_t count, off_t offset) {
   return file_handler_->write(buf, count, offset);
 }
 
-Status FileObject::close() {
+Status File::close() {
   auto status = file_handler_->close();
   if (status.ok()) {
     file_handler_.reset();
@@ -53,11 +53,11 @@ Status FileObject::close() {
   return status;
 }
 
-FileHandler* FileObject::file_handler() const {
+FileHandler* File::file_handler() const {
   return file_handler_.get();
 }
 
-int FileObject::fd() const {
+int File::fd() const {
   return file_handler_->fd();
 }
 

@@ -8,7 +8,7 @@ noinst_LIBRARIES = libvsfs-common.a
 libvsfs_common_a_SOURCES = \
   complex_query.h complex_query.cpp \
   file_handler.h \
-  file_object.h file_object.cpp \
+  file.h file.cpp \
   key_value_store.h \
   leveldb_store.h leveldb_store.cpp \
   object_storage_manager.h object_storage_manager.cpp \

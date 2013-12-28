@@ -27,9 +27,9 @@ class MockStorageManager : public StorageManager {
  public:
   MOCK_METHOD0(init, Status());
   MOCK_METHOD0(destroy, Status());
-  MOCK_METHOD4(open, Status(const string&, ObjectId, int, FileObject**));
+  MOCK_METHOD4(open, Status(const string&, ObjectId, int, File**));
   MOCK_METHOD5(open, Status(const string&, ObjectId, int, mode_t,
-                            FileObject**));
+                            File**));
   MOCK_METHOD2(unlink, Status(const string&, ObjectId));
   MOCK_METHOD2(mkdir, Status(const string&, mode_t));
   MOCK_METHOD1(rmdir, Status(const string&));

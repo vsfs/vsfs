@@ -34,7 +34,7 @@ using vobla::Status;
 
 namespace vsfs {
 
-class FileObject;
+class File;
 
 /**
  * \class PosixStorageManager
@@ -69,10 +69,10 @@ class PosixStorageManager : public StorageManager {
    */
   Status destroy();
 
-  Status open(const string& path, ObjectId obj_id, int flags, FileObject** obj);
+  Status open(const string& path, ObjectId obj_id, int flags, File** file);
 
   Status open(const string& path, ObjectId obj_id, int flags, mode_t mode,
-              FileObject** obj);
+              File** file);
 
   Status unlink(const string& path, ObjectId obj_id);
 

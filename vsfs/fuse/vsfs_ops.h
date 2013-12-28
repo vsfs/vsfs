@@ -26,7 +26,7 @@
 #include <string>
 #include <thread>  // NOLINT
 #include "vobla/macros.h"
-#include "vsfs/common/file_object.h"
+#include "vsfs/common/file.h"
 #include "vsfs/common/storage_manager.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 
@@ -94,11 +94,11 @@ class VsfsFuse : boost::noncopyable {
     return client_.get();
   }
 
-  void add_obj(uint64_t fd, FileObject* file_obj);
+  void add_obj(uint64_t fd, File* file_obj);
 
   Status close_obj(uint64_t fd);
 
-  FileObject* get_obj(uint64_t fd);
+  File* get_obj(uint64_t fd);
 
  private:
   VsfsFuse(const string& basedir, const string& mount_point,
@@ -116,7 +116,7 @@ class VsfsFuse : boost::noncopyable {
 
   unique_ptr<client::VSFSRpcClient> client_;
 
-  std::map<uint64_t, unique_ptr<FileObject>> fh_to_obj_map_;
+  std::map<uint64_t, unique_ptr<File>> fh_to_obj_map_;
 
   // The mutex to protect fh_to_obj_mpa_
   mutex obj_map_mutex_;

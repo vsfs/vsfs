@@ -20,10 +20,10 @@
 #include "vobla/status.h"
 #include "vobla/string_util.h"
 #include "vsfs/api/cpp/vsfs.h"
-#include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/client/vsfs_client.h"
+#include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/common/file.h"
 #include "vsfs/common/storage_manager.h"
-#include "vsfs/common/file_object.h"
 
 using std::string;
 using vobla::Status;
@@ -53,7 +53,7 @@ Status Vsfs::connect() {
 }
 
 Status Vsfs::create(const string& path, int64_t mode, int64_t uid,
-                    int64_t gid, FileObject** file) {
+                    int64_t gid, File** file) {
   CHECK_NOTNULL(file);
   ObjectId id;
   VLOG(0) << stringprintf("Creating file '%s' (mode=%ld, uid=%ld gid=%ld))",

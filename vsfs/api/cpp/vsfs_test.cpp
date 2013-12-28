@@ -20,7 +20,7 @@
 #include "vsfs/api/cpp/vsfs.h"
 #include "vsfs/client/mock_vsfs_client.h"
 #include "vsfs/common/complex_query.h"
-#include "vsfs/common/file_object.h"
+#include "vsfs/common/file.h"
 #include "vsfs/common/mock_storage_manager.h"
 
 using ::testing::NotNull;
@@ -57,7 +57,7 @@ TEST_F(VsfsAPITest, TestConnect) {
                       Return(Status::OK)));
   EXPECT_CALL(*mock_sm_, open("/abc", _, _, _, NotNull()))
       .WillOnce(Return(Status::OK));
-  FileObject* file;
+  File* file;
   EXPECT_TRUE(vsfs_->create("/abc", 10, 10, 10, &file).ok());
 }
 
