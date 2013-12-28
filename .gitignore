@@ -23,6 +23,7 @@ Makefile.in
 *.gcda
 *_test
 *.log
+*.trs
 
 *.pb.h
 *.pb.cc
