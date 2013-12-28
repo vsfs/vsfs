@@ -109,6 +109,9 @@ class VSFSClient : boost::noncopyable {
   /// Opens a file and get the file handler.
   virtual Status open(const string& path, ObjectId* id) = 0;
 
+  /// Removes a file and returns its ObjectId.
+  virtual Status unlink(const string& path, ObjectId* id) = 0;
+
   virtual Status create_index(
       const string& root, const string& name, int index_type, int key_type,
       int64_t mode, int64_t uid, int64_t gid) = 0;

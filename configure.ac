@@ -99,6 +99,8 @@ AC_SUBST(LIBS, "$LIBS -lvobla")
 
 AC_CONFIG_FILES([Makefile
 				 contrib/vsfs.spec
+				 vsfs/api/Makefile
+				 vsfs/api/cpp/Makefile
 				 vsfs/client/Makefile
 				 vsfs/common/Makefile
 				 vsfs/fuse/Makefile
