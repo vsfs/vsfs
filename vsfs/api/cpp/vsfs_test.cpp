@@ -21,16 +21,21 @@
 #include "vsfs/common/complex_query.h"
 #include "vsfs/client/mock_vsfs_client.h"
 
-using std::unique_ptr;
-using ::testing::_;
 using ::testing::NotNull;
 using ::testing::Return;
 using ::testing::SetArgPointee;
+using ::testing::_;
+using std::unique_ptr;
 
 namespace vsfs {
 
 using client::MockVSFSClient;
 
+/**
+ * \brief Unit tests for Vsfs C++ API.
+ *
+ * \note It is unit tests, but not integration tests.
+ */
 class VsfsAPITest : public ::testing::Test {
  protected:
   void SetUp() {

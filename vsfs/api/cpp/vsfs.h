@@ -55,15 +55,26 @@ class Vsfs {
     STRING = TypeIDs::STRING
   };
 
+  /**
+   * \brief Constructs a Vsfs connection with host and port.
+   */
   Vsfs(const std::string& host, int port);
+
+  /**
+   * \brief Constructs a Vsfs connection with URI.
+   * \param uri the URI of the primary master (e.g., 'vsfs://node1:8829').
+   */
+  // explicit Vsfs(const std::string& uri);
 
   /// Used for dependancy injection.
   explicit Vsfs(client::VSFSClient* mock);
 
   virtual ~Vsfs();
 
+  /// Connect to Vsfs metadata servers.
   vobla::Status connect();
 
+  /// Disconnect from Vsfs metadata servers (e.g., master servers).
   vobla::Status disconnect();
 
   /// Creates a new file in the VSFS namespace.
@@ -73,6 +84,11 @@ class Vsfs {
   /// Deletes a new file.
   vobla::Status unlink(const std::string& path, ObjectId* id);
 
+  /**
+   * \brief Get stat(2) information for a file.
+   * \param path the absolute path of file or directory.
+   * \param stbuf the stat(2) structure to contain file informations.
+   */
   vobla::Status getattr(const std::string& path, struct stat* stbuf);
 
   /**
@@ -95,6 +111,11 @@ class Vsfs {
    */
   vobla::Status rmdir(const std::string& path);
 
+  /**
+   * \brief Reads a directory and fills `sub_files`.
+   * \param root the absolute path of the directory to be iterated.
+   * \param sub_files filled with names of sub-files and sub-directories.
+   */
   vobla::Status readdir(const std::string& root,  // NOLINT
                         std::vector<std::string>* sub_files);
 
