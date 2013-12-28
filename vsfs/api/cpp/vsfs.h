@@ -27,8 +27,8 @@
 
 namespace vsfs {
 
-namespace api {
-class VsfsImpl;
+namespace client {
+class VSFSClient;
 }
 
 /**
@@ -58,7 +58,7 @@ class Vsfs {
   Vsfs(const std::string& host, int port);
 
   /// Used for dependancy injection.
-  explicit Vsfs(api::VsfsImpl* vsfs_impl);
+  explicit Vsfs(client::VSFSClient* mock);
 
   virtual ~Vsfs();
 
@@ -97,7 +97,7 @@ class Vsfs {
                         std::vector<std::string>* sub_files);
 
  private:
-  std::unique_ptr<api::VsfsImpl> impl_;
+  std::unique_ptr<client::VSFSClient> client_;
 };
 
 }  // namespace vsfs

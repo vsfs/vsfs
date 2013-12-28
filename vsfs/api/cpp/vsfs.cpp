@@ -19,7 +19,8 @@
 #include "vobla/status.h"
 #include "vobla/string_util.h"
 #include "vsfs/api/cpp/vsfs.h"
-#include "vsfs/api/cpp/vsfs_impl.h"
+#include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/client/vsfs_client.h"
 
 using std::string;
 using vobla::Status;
@@ -29,19 +30,21 @@ using vobla::stringprintf;
 
 namespace vsfs {
 
-using api::VsfsImpl;
+using client::VSFSClient;
+using client::VSFSRpcClient;
 
-Vsfs::Vsfs(const string& host, int port) : impl_(new VsfsImpl(host, port)) {
+Vsfs::Vsfs(const string& host, int port) :
+    client_(new VSFSRpcClient(host, port)) {
 }
 
-Vsfs::Vsfs(VsfsImpl* vsfs_impl) : impl_(CHECK_NOTNULL(vsfs_impl)) {
+Vsfs::Vsfs(VSFSClient* mock_client) : client_(CHECK_NOTNULL(mock_client)) {
 }
 
 Vsfs::~Vsfs() {
 }
 
 Status Vsfs::connect() {
-  return impl_->connection()->init();
+  return client_->init();
 }
 
 Status Vsfs::create(const string& path, int64_t mode, int64_t uid,
@@ -49,27 +52,27 @@ Status Vsfs::create(const string& path, int64_t mode, int64_t uid,
   CHECK_NOTNULL(id);
   VLOG(0) << stringprintf("Creating file '%s' (mode=%ld, uid=%ld gid=%ld))",
                           path.c_str(), mode, uid, gid);
-  return impl_->connection()->create(path, mode, uid, gid, id);
+  return client_->create(path, mode, uid, gid, id);
 }
 
 Status Vsfs::unlink(const std::string& path, ObjectId* id) {
   CHECK_NOTNULL(id);
-  return impl_->connection()->unlink(path, id);
+  return client_->unlink(path, id);
 }
 
 Status Vsfs::getattr(const string& path, struct stat* stbuf) {
   CHECK_NOTNULL(stbuf);
   (void) path;
-  // return impl_->connection()->getattr(path, stbuf);
+  // return client_->getattr(path, stbuf);
   return Status::OK;
 }
 
 Status Vsfs::mkdir(const string& path, int64_t mode, int64_t uid, int64_t gid) {
-  return impl_->connection()->mkdir(path, mode, uid, gid);
+  return client_->mkdir(path, mode, uid, gid);
 }
 
 Status Vsfs::rmdir(const string& path) {
-  return impl_->connection()->rmdir(path);
+  return client_->rmdir(path);
 }
 
 }  // namespace vsfs

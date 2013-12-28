@@ -18,7 +18,6 @@
 #include <gmock/gmock.h>
 #include <memory>
 #include "vsfs/api/cpp/vsfs.h"
-#include "vsfs/api/cpp/vsfs_impl.h"
 #include "vsfs/common/complex_query.h"
 #include "vsfs/client/mock_vsfs_client.h"
 
@@ -30,14 +29,13 @@ using ::testing::SetArgPointee;
 
 namespace vsfs {
 
-using api::VsfsImpl;
 using client::MockVSFSClient;
 
 class VsfsAPITest : public ::testing::Test {
  protected:
   void SetUp() {
     mock_client_ = new MockVSFSClient;
-    vsfs_.reset(new Vsfs(new VsfsImpl(mock_client_)));
+    vsfs_.reset(new Vsfs(mock_client_));
   }
 
   MockVSFSClient *mock_client_;
