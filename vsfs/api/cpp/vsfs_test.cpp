@@ -18,8 +18,10 @@
 #include <gmock/gmock.h>
 #include <memory>
 #include "vsfs/api/cpp/vsfs.h"
-#include "vsfs/common/complex_query.h"
 #include "vsfs/client/mock_vsfs_client.h"
+#include "vsfs/common/complex_query.h"
+#include "vsfs/common/file_object.h"
+#include "vsfs/common/mock_storage_manager.h"
 
 using ::testing::NotNull;
 using ::testing::Return;
@@ -40,10 +42,12 @@ class VsfsAPITest : public ::testing::Test {
  protected:
   void SetUp() {
     mock_client_ = new MockVSFSClient;
-    vsfs_.reset(new Vsfs(mock_client_));
+    mock_sm_.reset(new MockStorageManager);
+    vsfs_.reset(new Vsfs(mock_client_, mock_sm_.get()));
   }
 
   MockVSFSClient *mock_client_;
+  unique_ptr<MockStorageManager> mock_sm_;
   unique_ptr<Vsfs> vsfs_;
 };
 
@@ -51,8 +55,10 @@ TEST_F(VsfsAPITest, TestConnect) {
   EXPECT_CALL(*mock_client_, create("/abc", 10, 10, 10, NotNull()))
       .WillOnce(DoAll(SetArgPointee<4>(10),
                       Return(Status::OK)));
-  Vsfs::ObjectId id;
-  EXPECT_TRUE(vsfs_->create("/abc", 10, 10, 10, &id).ok());
+  EXPECT_CALL(*mock_sm_, open("/abc", _, _, _, NotNull()))
+      .WillOnce(Return(Status::OK));
+  FileObject* file;
+  EXPECT_TRUE(vsfs_->create("/abc", 10, 10, 10, &file).ok());
 }
 
 }  // namespace vsfs

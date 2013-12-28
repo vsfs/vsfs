@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <fcntl.h>
 #include <glog/logging.h>
 #include <string>
 #include "vobla/status.h"
@@ -21,6 +22,8 @@
 #include "vsfs/api/cpp/vsfs.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/client/vsfs_client.h"
+#include "vsfs/common/storage_manager.h"
+#include "vsfs/common/file_object.h"
 
 using std::string;
 using vobla::Status;
@@ -33,11 +36,13 @@ namespace vsfs {
 using client::VSFSClient;
 using client::VSFSRpcClient;
 
-Vsfs::Vsfs(const string& host, int port) :
-    client_(new VSFSRpcClient(host, port)) {
+Vsfs::Vsfs(const string& host, int port, StorageManager* sm) :
+    client_(new VSFSRpcClient(host, port)),
+    storage_manager_(CHECK_NOTNULL(sm)) {
 }
 
-Vsfs::Vsfs(VSFSClient* mock_client) : client_(CHECK_NOTNULL(mock_client)) {
+Vsfs::Vsfs(VSFSClient* mock_client, StorageManager* sm)
+  : client_(CHECK_NOTNULL(mock_client)), storage_manager_(CHECK_NOTNULL(sm)) {
 }
 
 Vsfs::~Vsfs() {
@@ -48,16 +53,35 @@ Status Vsfs::connect() {
 }
 
 Status Vsfs::create(const string& path, int64_t mode, int64_t uid,
-                    int64_t gid, ObjectId* id) {
-  CHECK_NOTNULL(id);
+                    int64_t gid, FileObject** file) {
+  CHECK_NOTNULL(file);
+  ObjectId id;
   VLOG(0) << stringprintf("Creating file '%s' (mode=%ld, uid=%ld gid=%ld))",
                           path.c_str(), mode, uid, gid);
-  return client_->create(path, mode, uid, gid, id);
+  auto status = client_->create(path, mode, uid, gid, &id);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to create file: "
+               << stringprintf("(%s,%ld,%ld,%ld)",
+                               path.c_str(), mode, uid, gid)
+               << ", because: " << status.message();
+    return status;
+  }
+  status = storage_manager_->open(path, id, O_CREAT, mode, file);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to create file on raw storage: "
+               << path << ", because " << status.message();
+  }
+  return status;
 }
 
-Status Vsfs::unlink(const std::string& path, ObjectId* id) {
-  CHECK_NOTNULL(id);
-  return client_->unlink(path, id);
+Status Vsfs::unlink(const string& path) {
+  ObjectId id;
+  auto status = client_->unlink(path, &id);
+  if (!status.ok()) {
+    return status;
+  }
+  status = storage_manager_->unlink(path, id);
+  return status;
 }
 
 Status Vsfs::getattr(const string& path, struct stat* stbuf) {

@@ -27,6 +27,9 @@
 
 namespace vsfs {
 
+class FileObject;
+class StorageManager;
+
 namespace client {
 class VSFSClient;
 }
@@ -57,8 +60,11 @@ class Vsfs {
 
   /**
    * \brief Constructs a Vsfs connection with host and port.
+   * \param host the hostname of master server.
+   * \param port the listen port of master server.
+   * \param sm the storage manager instance of master server.
    */
-  Vsfs(const std::string& host, int port);
+  Vsfs(const std::string& host, int port, StorageManager* sm);
 
   /**
    * \brief Constructs a Vsfs connection with URI.
@@ -67,7 +73,7 @@ class Vsfs {
   // explicit Vsfs(const std::string& uri);
 
   /// Used for dependancy injection.
-  explicit Vsfs(client::VSFSClient* mock);
+  explicit Vsfs(client::VSFSClient* mock, StorageManager* sm);
 
   virtual ~Vsfs();
 
@@ -79,10 +85,10 @@ class Vsfs {
 
   /// Creates a new file in the VSFS namespace.
   vobla::Status create(const std::string& path, int64_t mode, int64_t uid,
-                       int64_t gid, ObjectId* id);
+                       int64_t gid, FileObject** fobj);
 
   /// Deletes a new file.
-  vobla::Status unlink(const std::string& path, ObjectId* id);
+  vobla::Status unlink(const std::string& path);
 
   /**
    * \brief Get stat(2) information for a file.
@@ -121,6 +127,7 @@ class Vsfs {
 
  private:
   std::unique_ptr<client::VSFSClient> client_;
+  StorageManager* storage_manager_;
 };
 
 }  // namespace vsfs

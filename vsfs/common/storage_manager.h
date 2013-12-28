@@ -40,65 +40,65 @@ class FileObject;
  * \brief Abstraction of underlying storage system.
  */
 class StorageManager : boost::noncopyable {
-  public:
-    virtual ~StorageManager() {}
+ public:
+  virtual ~StorageManager() {}
 
-    /// Initializes a particular storage manager.
-    virtual Status init() = 0;
+  /// Initializes a particular storage manager.
+  virtual Status init() = 0;
 
-    /// Destroys this storage manager.
-    virtual Status destroy() = 0;
+  /// Destroys this storage manager.
+  virtual Status destroy() = 0;
 
-    /**
-     * \brief Opens a file and creates a new FileObject.
-     * \param[in] path the related path in VSFS.
-     * \param[in] obj_id the object id of the given file.
-     * \param[in] flags the open flags.
-     * \param[out] obj it is filled with new created FileObject's pointer.
-     * \return Status::OK if success.
-     */
-    virtual Status open(const string& path, ObjectId obj_id, int flags,
-                        FileObject** obj) = 0;
+  /**
+   * \brief Opens a file and creates a new FileObject.
+   * \param[in] path the related path in VSFS.
+   * \param[in] obj_id the object id of the given file.
+   * \param[in] flags the open flags.
+   * \param[out] obj it is filled with new created FileObject's pointer.
+   * \return Status::OK if success.
+   */
+  virtual Status open(const string& path, ObjectId obj_id, int flags,
+                      FileObject** obj) = 0;
 
-    /**
-     * \brief Opens a file with mode and creates a new FileObject.
-     * \param[in] path the related path in VSFS.
-     * \param[in] obj_id the object id of the opening file.
-     * \param[in] flags the open flags.
-     * \param[int] mode the mode to open a file.
-     * \param[out] obj it is filled with new created FileObject's pointer.
-     * \return Status::OK if success.
-     */
-    virtual Status open(const string& path, ObjectId obj_id, int flags,
-                        mode_t mode, FileObject** obj) = 0;
+  /**
+   * \brief Opens a file with mode and creates a new FileObject.
+   * \param[in] path the related path in VSFS.
+   * \param[in] obj_id the object id of the opening file.
+   * \param[in] flags the open flags.
+   * \param[int] mode the mode to open a file.
+   * \param[out] obj it is filled with new created FileObject's pointer.
+   * \return Status::OK if success.
+   */
+  virtual Status open(const string& path, ObjectId obj_id, int flags,
+                      mode_t mode, FileObject** obj) = 0;
 
-    /// Removes the object/file from the storage.
-    virtual Status unlink(const string& path, ObjectId obj_id) = 0;
+  /// Removes the object/file from the storage.
+  virtual Status unlink(const string& path, ObjectId obj_id) = 0;
 
-    /// Creates a directory if the underlying storage supports the directlry
-    /// semantics.
-    virtual Status mkdir(const string& path, mode_t mode) = 0;
+  /// Creates a directory if the underlying storage supports the directlry
+  /// semantics.
+  virtual Status mkdir(const string& path, mode_t mode) = 0;
 
-    /// Removes a directory if the storage manager supports.
-    virtual Status rmdir(const string& path) = 0;
+  /// Removes a directory if the storage manager supports.
+  virtual Status rmdir(const string& path) = 0;
 
-    virtual Status readlink(const string& path, ObjectId obj_id,
-                            char* buf, size_t size, ssize_t* retlen) = 0;
+  virtual Status readlink(const string& path, ObjectId obj_id,
+                          char* buf, size_t size, ssize_t* retlen) = 0;
 
-    /// \TODO(eddyxu): It is a temporary to get inode information from file
-    // system. Will change to query the master server directly.
-    virtual Status getattr(const string& path, ObjectId obj_id,
-                           struct stat* stbuf) = 0;
+  /// \TODO(eddyxu): It is a temporary to get inode information from file
+  // system. Will change to query the master server directly.
+  virtual Status getattr(const string& path, ObjectId obj_id,
+                         struct stat* stbuf) = 0;
 
-    virtual Status statfs(struct statvfs* stbuf) = 0;
+  virtual Status statfs(struct statvfs* stbuf) = 0;
 
-    /// Create a symbolic link from fpath to link_path.
-    virtual Status symlink(const string& fpath, const string& link_path,
-                           ObjectId link_obj_id) = 0;
+  /// Create a symbolic link from fpath to link_path.
+  virtual Status symlink(const string& fpath, const string& link_path,
+                         ObjectId link_obj_id) = 0;
 
-  protected:
-    // Do not allow to intialize StorageManager directly.
-    StorageManager() = default;
+ protected:
+  // Do not allow to intialize StorageManager directly.
+  StorageManager() = default;
 };
 
 }  // namespace vsfs
