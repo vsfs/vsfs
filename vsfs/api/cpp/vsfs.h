@@ -17,6 +17,7 @@
 #ifndef VSFS_API_CPP_VSFS_H_
 #define VSFS_API_CPP_VSFS_H_
 
+#include <boost/utility.hpp>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -38,7 +39,7 @@ class VSFSClient;
  * \class Vsfs
  * \brief Vsfs's C++ API.
  */
-class Vsfs {
+class Vsfs : boost::noncopyable {
  public:
   // TODO(eddyxu): should move to a public head file
   typedef vsfs::File File;
@@ -57,6 +58,8 @@ class Vsfs {
     DOUBLE = TypeIDs::DOUBLE,
     STRING = TypeIDs::STRING
   };
+
+  Vsfs() = delete;
 
   /**
    * \brief Constructs a Vsfs connection with host and port.
