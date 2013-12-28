@@ -41,7 +41,6 @@ class VSFSClient;
 class Vsfs {
  public:
   // TODO(eddyxu): should move to a public head file
-  typedef vsfs::ObjectId ObjectId;
   typedef vsfs::File File;
 
   enum class KeyType {

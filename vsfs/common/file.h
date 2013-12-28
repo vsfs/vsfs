@@ -1,5 +1,5 @@
 /**
- * Copyright 2013 (c) Ziling Huang <hzlgis@gmail.com>
+ * Copyright 2014 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@ namespace vsfs {
 class FileHandler;
 
 /**
- * \class File file_object.h
  * \brief file operation wrapper for storage manager. It stores a file handler
  * of the file. Each File instance has a one to one relationship with its
  * file handler.

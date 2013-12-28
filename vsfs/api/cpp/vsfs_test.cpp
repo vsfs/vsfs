@@ -55,9 +55,9 @@ TEST_F(VsfsAPITest, TestConnect) {
   EXPECT_CALL(*mock_client_, create("/abc", 10, 10, 10, NotNull()))
       .WillOnce(DoAll(SetArgPointee<4>(10),
                       Return(Status::OK)));
-  EXPECT_CALL(*mock_sm_, open("/abc", _, _, _, NotNull()))
-      .WillOnce(Return(Status::OK));
   File* file;
+  EXPECT_CALL(*mock_sm_, open("/abc", _, _, _, &file))
+      .WillOnce(Return(Status::OK));
   EXPECT_TRUE(vsfs_->create("/abc", 10, 10, 10, &file).ok());
 }
 
