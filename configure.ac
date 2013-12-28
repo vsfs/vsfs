@@ -37,6 +37,16 @@ PKG_CHECK_MODULES([libthrift], [thrift-nb])
 PKG_CHECK_MODULES([fuse], [fuse >= 2.8.0], [],
 				  [AC_MSG_ERROR(fuse was not found.)])
 
+AC_ARG_ENABLE([python],
+			  AS_HELP_STRING([--enable-python], [enable python API]),
+			  AC_DEFINE([HAVE_PYTHON], [1], [Define if enable python API.]))
+AM_CONDITIONAL([BUILD_PYTHON], [test x"$enable_python" = "xyes"])
+
+AS_IF([test "x$enable_python" = "xyes"], [
+AX_PYTHON_DEVEL
+AX_BOOST_PYTHON([1.53])
+])
+
 
 # Checks for header files.
 AX_BOOST_BASE([1.53])
@@ -101,6 +111,7 @@ AC_CONFIG_FILES([Makefile
 				 contrib/vsfs.spec
 				 vsfs/api/Makefile
 				 vsfs/api/cpp/Makefile
+				 vsfs/api/py/Makefile
 				 vsfs/client/Makefile
 				 vsfs/common/Makefile
 				 vsfs/fuse/Makefile
