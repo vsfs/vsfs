@@ -90,6 +90,8 @@ class Vsfs {
    * \brief Deletes a directory.
    * \param path the absolute path of the directory to be deleted.
    * \return Status::OK if success.
+   *
+   * TODO(eddyxu): Add recursive remove directories.
    */
   vobla::Status rmdir(const std::string& path);
 
