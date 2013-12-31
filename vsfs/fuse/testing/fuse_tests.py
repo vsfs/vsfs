@@ -22,9 +22,7 @@ import io
 import os
 import shutil
 from stat import *
-import struct
 import subprocess
-import termios
 import tempfile
 import time
 import unittest
@@ -36,7 +34,8 @@ VSFSUTIL = os.path.join(CWD, os.pardir, os.pardir, 'client', 'vsfs')
 
 
 class FuseTestBase(unittest.TestCase):
-
+    """Functional tests of Fuse module.
+    """
     def setUp(self):
         self.script_dir = os.path.dirname(__file__)
         self.base_dir = tempfile.mkdtemp()

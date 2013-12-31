@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
   }
   if (fuse_main(args.argc, args.argv, &opers, NULL)) {
     printf("\n");
-  };
+  }
 
  exit_handler:
   fuse_opt_free_args(&args);

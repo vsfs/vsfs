@@ -125,12 +125,15 @@ string VsfsFuse::mnt_path(const string &vsfs_path) const {
   return (fs::path(mount_point_) / vsfs_path).string();
 }
 
-void VsfsFuse::add_obj(uint64_t fd, File* file_obj) {
+void VsfsFuse::add_file(uint64_t fd, File* file) {
+  if (!file) {
+    return;
+  }
   MutexGuard guard(obj_map_mutex_);
-  fh_to_obj_map_[fd].reset(file_obj);
+  fh_to_obj_map_[fd].reset(file);
 }
 
-Status VsfsFuse::close_obj(uint64_t fd) {
+Status VsfsFuse::close_file(uint64_t fd) {
   MutexGuard guard(obj_map_mutex_);
   auto it = fh_to_obj_map_.find(fd);
   CHECK(it != fh_to_obj_map_.end());
@@ -140,7 +143,7 @@ Status VsfsFuse::close_obj(uint64_t fd) {
   return status;
 }
 
-File* VsfsFuse::get_obj(uint64_t fd) {
+File* VsfsFuse::get_file(uint64_t fd) {
   MutexGuard guard(obj_map_mutex_);
   auto it = fh_to_obj_map_.find(fd);
   if (it == fh_to_obj_map_.end()) {
@@ -360,16 +363,16 @@ int vsfs_create(const char* path, mode_t mode, struct fuse_file_info *fi) {
     LOG(ERROR) << "Failed to create file: " << status.message();
     return status.error();
   }
-  File *file_obj;
+  File *file;
   status = VsfsFuse::instance()->storage_manager()
-      ->open(path, oid, fi->flags | O_CREAT, mode, &file_obj);
+      ->open(path, oid, fi->flags | O_CREAT, mode, &file);
   if (!status.ok()) {
     LOG(ERROR) << "StorageManager failed to create file: " << status.message();
     return status.error();
   }
-  int fd = file_obj->fd();
+  int fd = file->fd();
   fi->fh = fd;
-  VsfsFuse::instance()->add_obj(fd, file_obj);
+  VsfsFuse::instance()->add_file(fd, file);
   return 0;
 }
 
@@ -377,18 +380,18 @@ int vsfs_open(const char* path, struct fuse_file_info* fi) {
   ObjectId oid;
   auto status = vsfs->client()->open(path, &oid);
   if (!status.ok()) {
-    LOG(ERROR) << "StorageManager failed to open file: " << status.message();
+    LOG(ERROR) << "Failed to open file: " << status.message();
     return status.error();
   }
-  File *file_obj;
+  File *file;
   status = VsfsFuse::instance()->storage_manager()
-      ->open(path, oid, fi->flags, &file_obj);
+      ->open(path, oid, fi->flags, &file);
   if (!status.ok()) {
     LOG(ERROR) << "StorageManager failed to open file: " << status.message();
     return status.error();
   }
-  int fd = file_obj->fd();
-  VsfsFuse::instance()->add_obj(fd, file_obj);
+  int fd = file->fd();
+  VsfsFuse::instance()->add_file(fd, file);
   fi->fh = fd;
   return 0;
 }
@@ -406,7 +409,7 @@ int vsfs_unlink(const char* path) {
 }
 
 int vsfs_release(const char* path, struct fuse_file_info *fi) {
-  auto status = VsfsFuse::instance()->close_obj(fi->fh);
+  auto status = VsfsFuse::instance()->close_file(fi->fh);
   if (!status.ok()) {
     LOG(ERROR) << "Closing fd=" << fi->fh;
     LOG(ERROR) << "Failed to release file: " << path << ": "
@@ -447,7 +450,7 @@ int vsfs_readlink(const char* path, char* buf, size_t size) {
 
 int vsfs_read(const char*, char *buf, size_t size, off_t offset,
               struct fuse_file_info* fi) {
-  File *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
+  File *file_obj = VsfsFuse::instance()->get_file(fi->fh);
   if (!file_obj) {
     LOG(ERROR) << "File does not existed.";
     return -EBADF;
@@ -462,7 +465,7 @@ int vsfs_read(const char*, char *buf, size_t size, off_t offset,
 
 int vsfs_write(const char*, const char* buf, size_t size, off_t offset,
                struct fuse_file_info *fi) {
-  File *file_obj = VsfsFuse::instance()->get_obj(fi->fh);
+  File *file_obj = VsfsFuse::instance()->get_file(fi->fh);
   if (!file_obj) {
     LOG(ERROR) << "File object does not exist.";
     return -EBADF;
@@ -506,11 +509,11 @@ int vsfs_flock(const char* path, struct fuse_file_info *fi, int op) {
   return 0;
 }
 
-int vsfs_write_buf(const char* , struct fuse_bufvec *buf, off_t off,
-                   struct fuse_file_info *fi) {
+int vsfs_write_buf(const char*, struct fuse_bufvec* buf, off_t off,
+                   struct fuse_file_info* fi) {
   ssize_t nwrite = 0;
   ssize_t total_write = 0;
-  File *file = VsfsFuse::instance()->get_obj(fi->fh);
+  File *file = VsfsFuse::instance()->get_file(fi->fh);
   if (!file) {
     return -EINVAL;
   }

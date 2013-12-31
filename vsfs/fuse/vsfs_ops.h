@@ -34,6 +34,7 @@
 #define FUSE_29 1
 #endif
 
+using std::map;
 using std::mutex;
 using std::string;
 using std::thread;
@@ -59,9 +60,13 @@ class VsfsFuse : boost::noncopyable {
    * layer.
    * \note Must call it before all fuse operations.
    *
-   * \param basedir the basedir to mount the underlying FS.
+   * \param basedir the basedir to mount the underlying filesystem. Basedir is
+   * where the 'posix' and 'object' storage manager stores the raw data.
+   * \param mount_point the mount point in the system.
    * \param host the host name for master node.
    * \param port the port of the master node.
+   * \param storage_manager the name of the underlying storage manager. Current
+   * it can be either 'posix' or 'object'.
    *
    * The order of FUSE initialization:
    *
@@ -78,10 +83,15 @@ class VsfsFuse : boost::noncopyable {
   /// Destroy VsfsFuse object.
   static void destory();
 
+  /// Returns an intialized VsfsFuse instance.
   static VsfsFuse* instance();
 
+  /// Deconstructor.
   ~VsfsFuse();
 
+  /**
+   * \brief Returns the base directory.
+   */
   const string& basedir() const;
 
   string mnt_path(const string& vsfs_path) const;
@@ -94,13 +104,15 @@ class VsfsFuse : boost::noncopyable {
     return client_.get();
   }
 
-  void add_obj(uint64_t fd, File* file_obj);
+  void add_file(uint64_t fd, File* file);
 
-  Status close_obj(uint64_t fd);
+  Status close_file(uint64_t fd);
 
-  File* get_obj(uint64_t fd);
+  File* get_file(uint64_t fd);
 
  private:
+  VsfsFuse() = delete;
+
   VsfsFuse(const string& basedir, const string& mount_point,
            const string& host, int port, const string& sm);
 
@@ -116,7 +128,7 @@ class VsfsFuse : boost::noncopyable {
 
   unique_ptr<client::VSFSRpcClient> client_;
 
-  std::map<uint64_t, unique_ptr<File>> fh_to_obj_map_;
+  map<uint64_t, unique_ptr<File>> fh_to_obj_map_;
 
   // The mutex to protect fh_to_obj_mpa_
   mutex obj_map_mutex_;
@@ -161,7 +173,6 @@ int vsfs_getxattr(const char* path, const char* name, char* value, size_t vlen);
 int vsfs_write_buf(const char*, struct fuse_bufvec* buf, off_t off,
                    struct fuse_file_info*);
 int vsfs_flock(const char*, struct fuse_file_info*, int op);
-
 #endif
 
 }   // namespace fuse
