@@ -15,6 +15,7 @@
  */
 
 #include <boost/filesystem.hpp>
+#include <glog/logging.h>
 #include <string.h>
 #include <string>
 #include "vobla/hash.h"
