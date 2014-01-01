@@ -25,6 +25,7 @@ TestLevelDBStore::TestLevelDBStore(const map<string, string>& other)
 }
 
 Status TestLevelDBStore::get(const string& key, string* value) {
+  CHECK_NOTNULL(value);
   auto it = store_.find(key);
   if (it == store_.end()) {
     return Status(-ENOENT, "The key does not exist.");
@@ -33,7 +34,7 @@ Status TestLevelDBStore::get(const string& key, string* value) {
   return Status::OK;
 }
 
-Status TestLevelDBStore::put(const string& key, const string &value) {
+Status TestLevelDBStore::put(const string& key, const string& value) {
   store_[key] = value;  // It might overwrite the old value.
   return Status::OK;
 }

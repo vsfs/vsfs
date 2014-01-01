@@ -34,7 +34,7 @@ using vobla::Status;
 namespace vsfs {
 
 /**
- * \brief A testing LevelDB that keep all data in RAM. It should only be used
+ * \brief A testing LevelDB that keeps all data in RAM. It should only be used
  * for testing purpose.
  *
  * The difference between using TestLevelDBStore and using MockLevelDBStore is
@@ -60,10 +60,20 @@ class TestLevelDBStore : public LevelDBStore {
   /// Creates a testing LevelDB, always success.
   Status create() { return Status::OK; }
 
+  /**
+   * \brief Gets a value for the given key.
+   * \return Status::OK if the key exists. Otherwise returns Status(-ENOENT).
+   */
   Status get(const string& key, string* value);
 
-  Status put(const string& key, const string &value);
+  /**
+   * \brief Puts a (key, value) pair to the system.
+   */
+  Status put(const string& key, const string& value);
 
+  /**
+   * \brief Removes a key if it exists.
+   */
   Status remove(const string& key);
 
   iterator begin();
@@ -73,6 +83,7 @@ class TestLevelDBStore : public LevelDBStore {
   const map<string, string>& store() const;
 
  private:
+  /// The underlying key-value store is a in-ram map.
   map<string, string> store_;
 };
 

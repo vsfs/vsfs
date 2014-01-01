@@ -41,6 +41,8 @@ string PathUtil::index_path(const string& root, const string& name) {
 
 bool PathUtil::split_index_path(
     const string& path, string* root, string* name) {
+  CHECK_NOTNULL(root);
+  CHECK_NOTNULL(name);
   const string kVsfsDir("/.vsfs/");
   size_t pos = path.find("/.vsfs/");
   if (pos == string::npos) {
