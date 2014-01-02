@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <glog/logging.h>
 #include <map>
 #include <string>
 #include "vsfs/common/test_leveldb_store.h"
