@@ -102,7 +102,10 @@ TEST_F(LevelDBStoreTest, TestSearchByPrefix) {
   db.put("aaabbb", "aabbb");
   db.put("bcdeef", "bcdeef");
 
+  // The key does not existed.
   CHECK(db.search("c") == db.end());
+
+  // Loop on prefix keys.
   vector<string> values;
   for (auto it = db.search("a"); it.starts_with("a"); ++it) {
     values.push_back(it->second);
@@ -111,6 +114,7 @@ TEST_F(LevelDBStoreTest, TestSearchByPrefix) {
   EXPECT_THAT(values, ElementsAre("aaaaa", "aabbb", "abcdefg"));
 
   values.clear();
+  // Loop from the prefix till end.
   for (auto it = db.search("ab"); it != db.end(); ++it) {
     values.push_back(it->second);
   }
