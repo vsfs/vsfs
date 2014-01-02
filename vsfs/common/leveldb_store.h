@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2014 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -153,7 +153,6 @@ class LevelDBStore : public KeyValueStore {
 
   /// Returns an iterator rerfering to the past-the-end element in the DB.
   virtual iterator end();
-
 
  protected:
   LevelDBStore() = default;
