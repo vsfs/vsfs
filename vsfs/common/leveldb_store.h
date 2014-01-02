@@ -80,6 +80,9 @@ class LevelDBStore : public KeyValueStore {
     /// it != end()?
     bool equal(LevelDBStoreIterator const& other) const;
 
+    /// Returns true if the current position has 'prefix'
+    bool starts_with(const string& prefix) const;
+
    private:
     unique_ptr<leveldb::Iterator> iter_;
 
@@ -121,6 +124,25 @@ class LevelDBStore : public KeyValueStore {
   virtual Status remove(const string& key);
 
   /**
+   * \brief Search the leveldb store by prefix.
+   * \param prefix the prefix to search the elements.
+   * \return the iterator pointed to the first element that has the 'prefix'.
+   *
+   * It calls Seek() for leveldb's internal iterator.
+   *
+   * Example:
+   * \code{.cpp}
+   *   for (auto it = leveldb_store.search(prefix); it.starts_with(perfix);
+   *        ++it) {
+   *      string key = it->first;
+   *      string value = it->second;
+   *      process(key, value);
+   *   }
+   * \endcode
+   */
+  virtual iterator search(const string& prefix);
+
+  /**
    * \brief Returns an iterator referring to the first element in the DB.
    *
    * \note The iterator is for read-only purpose. It does not support change
@@ -131,6 +153,7 @@ class LevelDBStore : public KeyValueStore {
 
   /// Returns an iterator rerfering to the past-the-end element in the DB.
   virtual iterator end();
+
 
  protected:
   LevelDBStore() = default;

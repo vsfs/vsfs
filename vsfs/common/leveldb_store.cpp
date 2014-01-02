@@ -16,6 +16,7 @@
 
 #include <glog/logging.h>
 #include <map>
+#include <memory>
 #include <string>
 #include "vsfs/common/leveldb_store.h"
 
@@ -23,6 +24,7 @@ using leveldb::DB;
 using leveldb::Iterator;
 using std::map;
 using std::string;
+using std::unique_ptr;
 
 namespace vsfs {
 
@@ -32,7 +34,6 @@ LevelDBStore::LevelDBStoreIterator::LevelDBStoreIterator()
 
 LevelDBStore::LevelDBStoreIterator::LevelDBStoreIterator(
     Iterator* iter) : iter_(iter) {
-  iter_->SeekToFirst();
 }
 
 LevelDBStore::LevelDBStoreIterator::LevelDBStoreIterator(
@@ -81,6 +82,11 @@ bool LevelDBStore::LevelDBStoreIterator::equal(
   } else {
     return test_iter_ == other.test_iter_;
   }
+}
+
+bool LevelDBStore::LevelDBStoreIterator::starts_with(
+    const string& prefix) const {
+  return iter_ && iter_->Valid() && iter_->key().starts_with(prefix);
 }
 
 LevelDBStore::LevelDBStore(const string &path, int bufsize)
@@ -135,8 +141,16 @@ Status LevelDBStore::to_status(const leveldb::Status& l_status) const {
   return Status(-1, l_status.ToString());
 }
 
+LevelDBStore::iterator LevelDBStore::search(const string& prefix) {
+  unique_ptr<leveldb::Iterator> iter(db_->NewIterator(leveldb::ReadOptions()));
+  iter->Seek(prefix);
+  return LevelDBStoreIterator(iter.release());
+}
+
 LevelDBStore::iterator LevelDBStore::begin() {
-  return LevelDBStoreIterator(db_->NewIterator(leveldb::ReadOptions()));
+  unique_ptr<leveldb::Iterator> iter(db_->NewIterator(leveldb::ReadOptions()));
+  iter->SeekToFirst();
+  return LevelDBStoreIterator(iter.release());
 }
 
 LevelDBStore::iterator LevelDBStore::end() {
