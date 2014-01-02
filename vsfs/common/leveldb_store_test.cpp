@@ -15,14 +15,19 @@
  */
 
 #include <boost/filesystem.hpp>
-#include <gtest/gtest.h>
 #include <glog/logging.h>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <algorithm>
 #include <cstdlib>
 #include <string>
+#include <vector>
 #include "vsfs/common/leveldb_store.h"
 
+using ::testing::ElementsAre;
 using std::string;
 using std::to_string;
+using std::vector;
 namespace fs = boost::filesystem;
 
 namespace vsfs {
@@ -87,6 +92,29 @@ TEST_F(LevelDBStoreTest, OpenAnExistedDb) {
     EXPECT_EQ(to_string(i), key_and_value.first);
     i++;
   }
+}
+
+TEST_F(LevelDBStoreTest, TestSearchByPrefix) {
+  LevelDBStore db(testdir_ + "/search1");
+  db.create();
+  db.put("abcdefg", "abcdefg");
+  db.put("aaaaaa", "aaaaa");
+  db.put("aaabbb", "aabbb");
+  db.put("bcdeef", "bcdeef");
+
+  CHECK(db.search("c") == db.end());
+  vector<string> values;
+  for (auto it = db.search("a"); it.starts_with("a"); ++it) {
+    values.push_back(it->second);
+  }
+  std::sort(values.begin(), values.end());
+  EXPECT_THAT(values, ElementsAre("aaaaa", "aabbb", "abcdefg"));
+
+  values.clear();
+  for (auto it = db.search("ab"); it != db.end(); ++it) {
+    values.push_back(it->second);
+  }
+  EXPECT_THAT(values, ElementsAre("abcdefg", "bcdeef"));
 }
 
 }  // namespace vsfs
