@@ -32,20 +32,27 @@ File::File(File&& rhs) {
 }
 
 File::~File() {
+  close();
+}
+
+ssize_t File::read(void* buf, size_t count, off_t offset) {
   if (file_handler_) {
-    file_handler_->close();
+    return file_handler_->read(buf, count, offset);
   }
+  return -1;
 }
 
-ssize_t File::read(void *buf, size_t count, off_t offset) {
-  return file_handler_->read(buf, count, offset);
-}
-
-ssize_t File::write(const void *buf, size_t count, off_t offset) {
-  return file_handler_->write(buf, count, offset);
+ssize_t File::write(const void* buf, size_t count, off_t offset) {
+  if (file_handler_) {
+    return file_handler_->write(buf, count, offset);
+  }
+  return -1;
 }
 
 Status File::close() {
+  if (!file_handler_) {
+    return Status::OK;
+  }
   auto status = file_handler_->close();
   if (status.ok()) {
     file_handler_.reset();
@@ -58,7 +65,10 @@ FileHandler* File::file_handler() const {
 }
 
 int File::fd() const {
-  return file_handler_->fd();
+  if (file_handler_) {
+    return file_handler_->fd();
+  }
+  return -1;
 }
 
 }  // namespace vsfs
