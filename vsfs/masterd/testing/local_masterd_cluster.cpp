@@ -18,6 +18,7 @@
 #include <boost/filesystem.hpp>
 #include <glog/logging.h>
 #include <thrift/transport/TTransportException.h>
+#include <thrift/transport/TBufferTransports.h>
 #include <unistd.h>
 #include <chrono>
 #include <string>
@@ -28,6 +29,7 @@
 
 namespace fs = boost::filesystem;
 using apache::thrift::transport::TTransportException;
+using apache::thrift::transport::TFramedTransport;
 
 namespace vsfs {
 namespace masterd {
@@ -41,7 +43,7 @@ LocalMasterdCluster::~LocalMasterdCluster() {
 }
 
 void LocalMasterdCluster::start() {
-  typedef rpc::RpcClient<MasterServerClient> MasterClientType;
+  typedef rpc::RpcClient<MasterServerClient, TFramedTransport> MasterClientType;
   const int kPrimaryPort = 10100;
   fs::create_directories(basedir_ + "/0");
   cluster_.emplace_back(unique_ptr<MasterController>(
@@ -74,6 +76,22 @@ void LocalMasterdCluster::start() {
         thread(&MasterController::start, cluster_.back().get()));
   }
   while (true) {
+    int num_ready_rpc = 0;
+    for (int i = 1; i < num_masterds_; ++i) {
+      try {
+        MasterClientType client("localhost", kPrimaryPort + i);
+        client.open();
+        client.handler()->heartbeat();
+        client.close();
+        num_ready_rpc++;
+      } catch (TTransportException e) {
+        break;
+      }
+    }
+    if (num_ready_rpc < num_masterds_ - 1) {
+      std::this_thread::sleep_for(std::chrono::microseconds(100));
+      continue;
+    }
     RpcConsistentHashRing all_masters;
     cluster_[0]->get_all_masters(&all_masters);
     if (all_masters.size() == static_cast<size_t>(num_masterds_)) {

@@ -46,6 +46,8 @@ class MasterServer : public vsfs::MasterServerIf {
 
   ~MasterServer();
 
+  void heartbeat();
+
   void join_index_server(RpcNodeAddressList& results,  // NOLINT
                          const RpcNodeInfo& info);
 
@@ -90,7 +92,7 @@ class MasterServer : public vsfs::MasterServerIf {
 
   /// Locate index servers for a query.
   void locate_indices_for_search(
-      vector<string>& results, const string& root, const vector<string>& names);
+      vector<string>& results, const string& root, const vector<string>& names);  // NOLINT
 
   void locate_indices(vector<string>& results,  // NOLINT
                       const RpcIndexInfoRequest& request);

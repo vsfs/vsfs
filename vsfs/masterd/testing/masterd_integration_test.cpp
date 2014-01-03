@@ -16,7 +16,6 @@
 
 #include <glog/logging.h>
 #include <gtest/gtest.h>
-#include <chrono>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -41,6 +40,8 @@ class MasterServerIntegrationTest : public ::testing::Test {
 
   void TearDown() {
     LOG(INFO) << "TearDown cluster.";
+    test_cluster_->stop();
+    LOG(INFO) << "Completely shutted down.";
     /// Stops the cluster and wait all threads exit.
     test_cluster_.reset();
     tmpdir_.reset();

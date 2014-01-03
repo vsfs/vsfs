@@ -7,6 +7,7 @@ noinst_LIBRARIES = libvsfs-rpc.a
 BUILT_SOURCES = vsfs_constants.h testdata/test_constants.h
 
 libvsfs_rpc_a_SOURCES = \
+  BaseServer.h BaseServer.cpp \
   IndexServer.h IndexServer.cpp \
   MasterServer.h MasterServer.cpp \
   rpc_client.h \

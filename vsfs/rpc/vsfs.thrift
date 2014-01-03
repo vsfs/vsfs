@@ -159,10 +159,14 @@ struct RpcIndexMigrationData {
 
 typedef list<RpcIndexInfo> RpcIndexInfoList
 
+service BaseServer {
+  void heartbeat() throws (1:RpcInvalidOp ouch);
+}
+
 /**
  * \brief MasterServer, the centralized coordinartor for VSFS cluster.
  */
-service MasterServer {
+service MasterServer extends BaseServer {
   /// A secondary master join the primary master.
   void join_master_server(1:RpcNodeInfo info) throws (1:RpcInvalidOp ouch);
 

@@ -39,6 +39,10 @@ MasterServer::MasterServer(MasterController *ctrl) : controller_(ctrl) {
 MasterServer::~MasterServer() {
 }
 
+void MasterServer::heartbeat() {
+  // Do nothing for now.
+}
+
 void MasterServer::join_index_server(RpcNodeAddressList& results,  // NOLINT
                                      const RpcNodeInfo& info) {
   ThriftUtils::check_status(controller_->join_index_server(info, &results));
@@ -123,7 +127,7 @@ void MasterServer::remove_index(const string& root, const string& name) {
 }
 
 void MasterServer::locate_indices_for_search(
-    vector<string>& results, const string& root, const vector<string>& names) {
+    vector<string>& results, const string& root, const vector<string>& names) {  // NOLINT
   ThriftUtils::check_status(controller_->locate_indices(root, names, &results));
 }
 

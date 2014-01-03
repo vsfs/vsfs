@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "vobla/string_util.h"
 #include "vsfs/common/leveldb_store.h"
 #include "vsfs/common/path_util.h"
 #include "vsfs/common/server_map.h"
@@ -51,8 +52,8 @@ using apache::thrift::server::TNonblockingServer;
 using apache::thrift::transport::TFramedTransport;
 using apache::thrift::transport::TTransportFactory;
 using std::string;
+using vobla::stringprintf;
 using vsfs::index::IndexInfo;
-
 
 namespace vsfs {
 namespace masterd {
@@ -150,6 +151,7 @@ void MasterController::background_task() {
               << " successfully join the primary master (" << primary_host_
               << ":" << primary_port_ << ").";
   }
+  runtime_status_ = RuntimeStatus::RUNNING;
 
   /*
   const int kSleepSeconds = 30;
@@ -175,29 +177,35 @@ void MasterController::start() {
   server_.reset(new TNonblockingServer(processor, protocol_factory,
                                        port_, thread_manager));
 
-  if (is_primary_node_) {
-    LOG(INFO) << "Primary master server is starting...";
-  } else {
-    LOG(INFO) << "Master server is starting...";
-  }
+  string server_name = stringprintf(
+      "%s:%d (%s)", host_.c_str(), port_,
+      is_primary_node_ ? "primary" : "secondary");
+  LOG(INFO) << stringprintf("%s master server is starting...",
+                            server_name.c_str());
+  runtime_status_ = RuntimeStatus::PREPARE;
   background_thread_ = thread(&MasterController::background_task, this);
   server_->serve();
+  LOG(INFO) << server_name << " is stopping thread manager.";
   thread_manager->stop();
-  if (is_primary_node_) {
-    LOG(INFO) << "Primary master server quits...";
-  } else {
-    LOG(INFO) << "Master server quits...";
-  }
+  LOG(INFO) << stringprintf("%s master server quits...", server_name.c_str());
 }
 
 void MasterController::stop() {
+  string server_name = stringprintf(
+      "%s:%d (%s)", host_.c_str(), port_,
+      is_primary_node_ ? "primary" : "secondary");
+  if (runtime_status_ == RuntimeStatus::STOPPED) {
+    LOG(INFO) << "Master " << server_name << " has already stopped.";
+    return;
+  }
   runtime_status_ = RuntimeStatus::STOPPED;
   if (background_thread_.joinable()) {
+    LOG(INFO) << "Notify background thread for " << server_name;
     background_cv_.notify_all();
     background_thread_.join();
   }
   if (server_.get()) {
-    LOG(INFO) << "Shutting master server down...";
+    LOG(INFO) << "Shutting " << server_name << " down...";
     server_->stop();
   }
 }
