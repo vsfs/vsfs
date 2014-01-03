@@ -44,14 +44,18 @@ namespace vsfs {
  * \brief A Key-Value persistent storage based on LevelDB.
  *
  * You can access the data through the typical K-V DB operations:
- *  - put()
- *  - get()
- *  - remove()
+ *  - put(key, value)
+ *  - get(key, &value)
+ *  - remove(key)
+ *  - search(prefix)
  */
 class LevelDBStore : public KeyValueStore {
   typedef std::pair<string, string> KeyValuePair;
 
  public:
+  /**
+   * \brief Iterator of LevelDBStore.
+   */
   class LevelDBStoreIterator : public boost::iterator_facade<
     LevelDBStoreIterator, KeyValuePair, boost::bidirectional_traversal_tag> {
    public:
@@ -79,6 +83,12 @@ class LevelDBStore : public KeyValueStore {
 
     /// it != end()?
     bool equal(LevelDBStoreIterator const& other) const;
+
+    /// Returns the key.
+    string key() const;
+
+    /// Returns the value.
+    string value() const;
 
     /// Returns true if the current position has 'prefix'
     bool starts_with(const string& prefix) const;

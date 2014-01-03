@@ -75,6 +75,20 @@ LevelDBStore::LevelDBStoreIterator::dereference() const {
   return const_cast<value_type&>(key_and_value_);
 }
 
+string LevelDBStore::LevelDBStoreIterator::key() const {
+  if (iter_->Valid()) {
+    return iter_->key().ToString();
+  }
+  return "";
+}
+
+string LevelDBStore::LevelDBStoreIterator::value() const {
+  if (iter_->Valid()) {
+    return iter_->value().ToString();
+  }
+  return "";
+}
+
 bool LevelDBStore::LevelDBStoreIterator::equal(
     LevelDBStoreIterator const& other) const {
   if (iter_) {
