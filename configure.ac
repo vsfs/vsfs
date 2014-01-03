@@ -53,6 +53,7 @@ AX_BOOST_BASE([1.53])
 AX_BOOST_FILESYSTEM([1.53])
 AX_BOOST_SYSTEM([1.53])
 AC_HEADER_STDBOOL
+AC_CHECK_HEADERS([attr/xattr.h], [], [AC_MSG_ERROR([attr/xattr.h was not found.])])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_TYPE_INT16_T
