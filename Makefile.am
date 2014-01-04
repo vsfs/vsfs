@@ -22,6 +22,9 @@ release:
 	cp vsfs-*.gz ~/rpmbuild/SOURCES
 	rpmbuild -ba contrib/vsfs.spec
 
+api:
+	doxygen
+
 test: check integration-test
 
 integration-test:
