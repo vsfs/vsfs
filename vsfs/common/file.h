@@ -54,15 +54,18 @@ class File : private boost::noncopyable {
    * \param buf the output buffer for read operation.
    * \param count the number of bytes to read.
    * \param offset the offset from the file begining to read.
-   * \return the actural bytes read.
+   * \return the actural bytes read. Returns -1 for error or the file handler
+   * is not available.
    */
-  ssize_t read(void *buf, size_t count, off_t offset);
+  ssize_t read(void* buf, size_t count, off_t offset);
 
   /**
    * \brief Writes the buffer from the offset of file.
    * \see pread()
+   * \return the actual bytes written. Returns -1 for error or when
+   * the file handler is not available.
    */
-  ssize_t write(const void *buf, size_t count, off_t offset);
+  ssize_t write(const void* buf, size_t count, off_t offset);
 
   /// Closes the file it holds.
   vobla::Status close();
@@ -70,7 +73,10 @@ class File : private boost::noncopyable {
   /// Returns the pointer of the underlying file handler.
   FileHandler* file_handler() const;
 
-  /// Returns the file descriptor.
+  /**
+   * \brief Returns the file descriptor.
+   * \return -1 if the file handler is NULL.
+   */
   int fd() const;
 
  private:
