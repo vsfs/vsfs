@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2014 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,11 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/**
- * \file commands.cpp
- * \brief implemtation of distributed commands.
  */
 
 #include <boost/filesystem.hpp>
@@ -37,13 +32,13 @@
 #include "vobla/status.h"
 #include "vobla/timer.h"
 #include "vobla/traits.h"
-#include "vsfs/client/commands.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/common/complex_query.h"
 #include "vsfs/common/posix_path.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/rpc/rpc_client.h"
 #include "vsfs/rpc/thrift_utils.h"
+#include "vsfs/ui/cli/commands.h"
 
 using boost::lexical_cast;
 using std::list;

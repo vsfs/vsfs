@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef VSFS_CLIENT_COMMANDS_H_
-#define VSFS_CLIENT_COMMANDS_H_
+#ifndef VSFS_UI_CLI_COMMANDS_H_
+#define VSFS_UI_CLI_COMMANDS_H_
 
 #include <boost/utility.hpp>
 #include <string>
@@ -93,4 +93,4 @@ class HelpCommand : public Command {
 }  // namespace client
 }  // namespace vsfs
 
-#endif  // VSFS_CLIENT_COMMANDS_H_
+#endif  // VSFS_UI_CLI_COMMANDS_H_
