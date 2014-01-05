@@ -18,11 +18,8 @@
 #define VSFS_COMMON_POSIX_FILE_HANDLER_H_
 
 #include <sys/types.h>
-#include <string>
 #include "vobla/status.h"
 #include "vsfs/common/file_handler.h"
-
-using std::string;
 
 namespace vsfs {
 
@@ -34,20 +31,22 @@ class StorageManager;
  */
 class PosixFileHandler : public FileHandler {
  public:
-  PosixFileHandler(StorageManager *psm, int fd);
+  PosixFileHandler() = delete;
+
+  PosixFileHandler(StorageManager* psm, int fd);
 
   virtual ~PosixFileHandler();
 
   Status close();
 
-  ssize_t read(void *buf, size_t nbytes, off_t offset);
+  ssize_t read(void* buf, size_t nbytes, off_t offset);
 
-  ssize_t write(const void *buf, size_t nbytes, off_t offset);
+  ssize_t write(const void* buf, size_t nbytes, off_t offset);
 
   int fd() const { return fd_; }
 
  private:
-  StorageManager *storage_manager_;
+  StorageManager* storage_manager_;
 
   int fd_;
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2014 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,11 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <string>
 #include "vsfs/common/posix_file_handler.h"
-
-using std::string;
 
 namespace vsfs {
 
-PosixFileHandler::PosixFileHandler(StorageManager *sm, int fd)
+PosixFileHandler::PosixFileHandler(StorageManager* sm, int fd)
     : storage_manager_(sm), fd_(fd) {
   CHECK_NOTNULL(sm);
 //  CHECK_GT(fd_, 0);
@@ -46,11 +43,11 @@ Status PosixFileHandler::close() {
   return Status::OK;
 }
 
-ssize_t PosixFileHandler::read(void *buf, size_t nbytes, off_t offset) {
+ssize_t PosixFileHandler::read(void* buf, size_t nbytes, off_t offset) {
   return ::pread(fd_, buf, nbytes, offset);
 }
 
-ssize_t PosixFileHandler::write(const void *buf, size_t nbytes, off_t offset) {
+ssize_t PosixFileHandler::write(const void* buf, size_t nbytes, off_t offset) {
   return ::pwrite(fd_, buf, nbytes, offset);
 }
 
