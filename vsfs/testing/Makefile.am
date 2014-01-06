@@ -1,7 +1,10 @@
 # vim: ts=8:st=8:noexpandtab
 
+CLEANFILES = *.gcda *.gcno *.gcov
+
 LDADD = \
   libvsfs-testing.a \
+  ../ui/cli/libvsfs-ui-cli.a \
   ../masterd/libvsfs-masterd-test.a \
   ../masterd/libvsfs-masterd.a \
   ../indexd/libvsfs-indexd.a \

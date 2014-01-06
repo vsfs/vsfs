@@ -122,6 +122,8 @@ AC_CONFIG_FILES([Makefile
 				 vsfs/query/Makefile
 				 vsfs/rpc/Makefile
 				 vsfs/testing/Makefile
+				 vsfs/ui/Makefile
+				 vsfs/ui/cli/Makefile
 		         vsfs/Makefile
 				 ])
 AC_OUTPUT

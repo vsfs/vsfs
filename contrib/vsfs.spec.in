@@ -14,7 +14,7 @@ Versatile searchable file system.
 %setup -q
 cd lib
 if [ ! -f gmock.zip ]; then
-	wget -O gmock.zip https://googlemock.googlecode.com/files/gmock-1.6.0.zip
+	wget -O gmock.zip https://googlemock.googlecode.com/files/gmock-1.7.0.zip
 	unzip gmock.zip
 	cd gmock-*
 	./configure && make

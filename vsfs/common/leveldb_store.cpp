@@ -62,15 +62,14 @@ void LevelDBStore::LevelDBStoreIterator::decrement() {
 
 LevelDBStore::LevelDBStoreIterator::reference
 LevelDBStore::LevelDBStoreIterator::dereference() const {
+  value_type* kv = const_cast<value_type*>(&key_and_value_);
   if (iter_) {
     CHECK(iter_->Valid());
-    // TODO(eddyxu): these const_cast(s) are very ugly..
-    const_cast<value_type*>(&key_and_value_)->first = iter_->key().ToString();
-    const_cast<value_type*>(&key_and_value_)->second =
-        iter_->value().ToString();
+    kv->first = key();
+    kv->second = value();
   } else {
-    const_cast<value_type*>(&key_and_value_)->first = test_iter_->first;
-    const_cast<value_type*>(&key_and_value_)->second = test_iter_->second;
+    kv->first = test_iter_->first;
+    kv->second = test_iter_->second;
   }
   return const_cast<value_type&>(key_and_value_);
 }

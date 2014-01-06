@@ -30,9 +30,9 @@
 #include <string>
 #include <vector>
 #include "vobla/file.h"
-#include "vsfs/client/commands.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/testing/local_vsfs_cluster.h"
+#include "vsfs/ui/cli/commands.h"
 
 using std::stack;
 using std::string;
