@@ -52,6 +52,20 @@ EXTRA_DIST += \
 log_types.h: log.thrift
 	thrift --gen cpp -out . $<
 
+analyze_srcs = $(filter %.cpp, $(libvsfs_common_a_SOURCES))
+analyze_plists = $(analyze_srcs:%.cpp=%.plist)
+
+MOSTLYCLEANFILES = $(analyze_plists)
+
+$(analyze_plists): %.plist: %.cpp
+	@echo "  Static analyzing" $@
+	@clang -I${top_srcdir} -I${top_srcdir}/lib/vobla ${CXXFLAGS} \
+		${LDFLAGS} --analyze $< -o $@
+	@oclint -fatal-assembler-warnings ${@:.plist=.cpp} -- \
+		-I${top_srcdir} -I${top_srcdir}/lib/vobla ${CXXFLAGS}
+
+static-check: $(analyze_plists)
+
 TESTS = \
 	complex_query_test \
 	leveldb_store_test \
@@ -85,3 +99,5 @@ EXTRA_DIST += \
   log_manager_test.cpp \
   posix_path_test.cpp \
   server_map_test.cpp
+
+.PHONY: static-check
