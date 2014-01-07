@@ -4,6 +4,8 @@
 #
 # Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
 
+set -e
+
 cp contrib/pre-commit .git/hooks
 
 case `uname` in
