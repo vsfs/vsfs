@@ -106,7 +106,7 @@ TEST_F(CommandTest, TestCreateIndex) {
   EXPECT_TRUE(cmd != nullptr);
 
   string port = to_string(cluster_->port(0));
-  vector<string> params = { "index", "--create", "-p", port.c_str(),
+  vector<string> params = { "index", "create", "-p", port.c_str(),
     "-n", "test", "-t", "btree", "-k", "uint32", "/foo/bar" };
   auto argv = conv_to_argv(params);
   EXPECT_EQ(0, cmd->parse_args(argv.size(), &argv[0]));

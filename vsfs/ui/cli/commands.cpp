@@ -100,14 +100,18 @@ class IndexCommand : public Command {
   };
 
   enum Operation {
-    /// Updates on an existing index.
-    INDEX = 1,
-    /// Creates a named index.
-    CREATE_INDEX,
-    /// Deletes a named index.
-    DELETE_INDEX,
-    /// Queries the information of the named index.
-    INFO
+    /// Unknown operation
+    UNKNOWN,
+    /// Creates an index.
+    CREATE,
+    /// Destroy an index.
+    DESTROY,
+    /// Inserts or update records.
+    INSERT,
+    /// Remove records.
+    REMOVE,
+    /// Gets the stat of index
+    STAT,
   };
 
   /// Prints out examples of usage.
@@ -338,7 +342,7 @@ Status SearchCommand::run() {
 
 // ----------- IndexCommand ------------
 IndexCommand::IndexCommand()
-  : use_stdin_(false), operation_(INDEX), index_op_(ADD),
+  : use_stdin_(false), operation_(Operation::UNKNOWN), index_op_(ADD),
     batch_size_(kDefaultBatchSize) {
 }
 
@@ -346,8 +350,6 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
   static struct option longopts[] = {
     { "help", no_argument, NULL, 'h' },
     { "examples", no_argument, NULL, 1 },
-    { "create", no_argument, NULL, 'c' },
-    { "delete", no_argument, NULL, 'd' },
     { "info", no_argument, NULL, 2 },
     { "stdin", no_argument, NULL, 's' },
     { "name", required_argument, NULL, 'n' },
@@ -363,9 +365,7 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
   };
   static const char* shortopts = "ha:cdsn:t:k:v:H:p:b:";
 
-  bool do_create = false;
-  bool do_info = false;
-  bool do_delete = false;
+  string subcmd = "";
   string profile_targets;
   int ch;
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
@@ -378,15 +378,6 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
         break;
       case 'n':
         index_name_ = optarg;
-        break;
-      case 'c':
-        do_create = true;
-        break;
-      case 'd':
-        do_delete = true;
-        break;
-      case 2:
-        do_info = true;
         break;
       case 't':
         index_type_ = IndexInfo::string_to_index_type(optarg);
@@ -418,33 +409,34 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
 
   argc -= optind;
   argv += optind;
+  if (argc == 0) {
+    ERROR_MSG_RETURN(-1, "Missing command.\n");
+  }
+  subcmd = argv[0];
 
   // Sanity checks.
   if (index_name_.empty()) {
     ERROR_MSG_RETURN(-1, "You must provide index name.\n");
   }
-  if ((do_create && do_delete) || (do_create && do_info) ||
-      (do_delete && do_info)) {
-    ERROR_MSG_RETURN(-1, "You should provide none, or only one of --create, "
-                     "--delete or --info.\n");
-  }
-  if (do_create) {
-    operation_ = CREATE_INDEX;
+  if (subcmd == "create") {
+    operation_ = Operation::CREATE;
     if (index_type_ == -1) {
-      fprintf(stderr, "Wrong index type.\n");
-      return -1;
-    } else if (key_type_ == -1) {
+      ERROR_MSG_RETURN(-1, "Wrong index type.\n");
+    }
+    if (key_type_ == -1) {
       ERROR_MSG_RETURN(-1, "Wrong key type.\n");
     }
-    if (argc < 1) {
+    if (argc < 2) {
       ERROR_MSG_RETURN(-1, "Miss index path.\n");
     }
-    index_root_ = argv[0];
+    index_root_ = argv[1];
     return 0;
-  } else if (do_delete) {
-    operation_ = DELETE_INDEX;
-  } else if (do_info) {
-    operation_ = INFO;
+  } else if (subcmd == "destroy") {
+    operation_ = Operation::DESTROY;
+  } else if (subcmd == "stat") {
+    operation_ = Operation::STAT;
+  } else {
+    ERROR_MSG_RETURN(-1, "Unknown command.");
   }
 
   if (argc == 0) {
@@ -465,34 +457,36 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
 }
 
 void IndexCommand::print_help() const {
-  fprintf(stderr, "Usage: vsfs index [options] [[FILE KEY], ...]\n");
-  fprintf(stderr, "Options:\n"
+  fprintf(stderr, "Usage: vsfs index {create|insert|remove|destroy|stat} "
+                  "[options] [[FILE KEY], ...]\n");
+  fprintf(stderr, "General Options:\n"
           "  -h, --help\t\t\tShow this help.\n"
           "  --debug\t\t\tRun in debug mode.\n"
           "  -v, --verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
           "  --examples\t\t\tShow some examples of the usage.\n"
           "  -H, --host\t\t\tSet the master address.\n"
           "  -p, --port\t\t\tSet the master port.\n"
-          "  -c, --create\t\t\tCreate an index.\n"
-          "  -d, --delete\t\t\tDelete an index.\n"
-          "  --info\t\t\tShow the information of the named index.\n"
-          "  -s, --stdin\t\t\tRead indexing metadata from stdin.\n"
-          "  -n, --name NAME\t\tSet the name of index to feed.\n"
+          "  -n, --name NAME\t\tSpecify the name of index.\n"
+          "\nCreate index options:\n"
           "  -t, --type TYPE\t\tSet the index type (btree, hash).\n"
-          "\t\t\t\tOnly be used when --create is set.\n"
           "  -k, --key TYPE\t\tSet the key type ({u}int{8,16,32,64}, "
           "float, double, string).\n"
-          "\t\t\t\tOnly be used when --create is set.\n"
+          "\nInsert index records:\n"
+          "  -s, --stdin\t\t\tRead indexing metadata from stdin.\n"
           "  -b, --batch NUM\t\tSet the batch size to send records.\n"
-          "  --profile [masterd,indexd]\tSet to profile operation.\n"
+          // "  --profile [masterd,indexd]\tSet to profile operation.\n"
+          "\n\nFurther help:\n"
+          "  man vsfs\n"
           "");
 }
 
 Status IndexCommand::run() {
-  if (operation_ == CREATE_INDEX) {
+  if (operation_ == Operation::CREATE) {
     return create_index();
-  } else if (operation_ == INDEX) {
+  } else if (operation_ == Operation::DESTROY) {
+  } else if (operation_ == Operation::INSERT) {
     return update_index();
+  } else if (operation_ == Operation::REMOVE) {
   }
   return Status::OK;
 }
@@ -501,19 +495,19 @@ void IndexCommand::show_examples() const {
   fprintf(stderr, "Usage: vsfs index [options] [FILE...]\n");
   fprintf(stderr, "\nSome examples of VSFS index usage:\n"
           " * Creates an index:\n"
-          "   $ vsfs index --create --name energy --index-type btree "
+          "   $ vsfs index create --name energy --index-type btree "
           "--key-type float /home/john\n"
           "\n"
           " * Updates 'symbol' index for a single file:\n\n"
-          "   $ vsfs index -n symbol /foo/bar/main.cpp awesome_func\n"
+          "   $ vsfs index insert -n symbol /foo/bar/main.cpp awesome_func\n"
           "");
 }
 
 Status IndexCommand::create_index() {
   // string canonical_root = fs::absolute(index_root_).string();
   string canonical_root = index_root_;
-  LOG(INFO) << "Creating index...";
-  LOG(INFO) << "Index: " << canonical_root << ":" << index_name_
+  VLOG(0) << "Creating index...";
+  VLOG(0) << "Index: " << canonical_root << ":" << index_name_
             << " type: " << index_type_ << " "
             << " key: " << key_type_;
   VSFSRpcClient client(host_, port_);

@@ -11,6 +11,16 @@ vsfs(1) -- Command line tools for VSFS
 
 `vsfs` is the command line utility to manipulate VSFS file system.
 
+`vsfs index create` --name _NAME_ [--key KEY] [--type TYPE] _DIR_
+
+`vsfs index destroy` --name _NAME_ _DIR_
+
+`vsfs index insert` --name _NAME_ [-s|--stdin] [-b|--batch NUM] [FILE KEY]...
+
+`vsfs index remove` --name _NAME_ [-s|--stdin] [-b|--batch NUM] [FILE KEY]...
+
+`vsfs index stat` --name _NAME_ _DIR_
+
 ## OPTIONS
 
 ### General options:
@@ -32,10 +42,8 @@ independantly when create this index.
 
 Create a file index on directory _DIR_:
 
-  * `vsfs index` _--create_ --name <NAME> [--key KEY] [--type btree|hash] _DIR_:
+  * `vsfs index create` --name <NAME> [--key KEY] [--type btree|hash] _DIR_:
 
-    * `-c, --create`:
-      Create file index on the given _path_.
     * `-n` _NAME_, `--name=`_NAME_:
       Specify the name of the index.
     * `-k, -key` _KEY_:
@@ -46,10 +54,8 @@ Create a file index on directory _DIR_:
 
 Delete a file index on directory _DIR_ with _NAME_:
 
-  * `vsfs index` _--delete_ --name _NAME_ _DIR_:
+  * `vsfs index delete` --name _NAME_ _DIR_:
 
-    * `-d, -delete`:
-	  Delete file index with the given _NAME_ and _DIR_.
     * `-n, --name` _NAME_:
 	  The name of file index to be deleted.
 
