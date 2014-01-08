@@ -11,12 +11,54 @@ vsfs(1) -- Command line tools for VSFS
 
 `vsfs` is the command line utility to manipulate VSFS file system.
 
+## OPTIONS
+
+### General options:
+
+ * `-h, --help`:
+  Display this help message.
+
+ * `-H, --host` _HOST_:
+  Specify the host of VSFS master node.
+
+ * `-p, --port` _PORT_:
+  Specify the port number of VSFS master node (default: 9987).
+
+### File index operations and options
+
+A file index in VSFS is identified by its location (i.e. _DIR_) and name (i.g.,
+_NAME_), while it is possible to specify each index performance characteristics
+independantly when create this index.
+
+Create a file index on directory _DIR_:
+
+  * `vsfs index` _--create_ --name <NAME> [--key KEY] [--type btree|hash] _DIR_:
+
+    * `-c, --create`:
+      Create file index on the given _path_.
+    * `-n` _NAME_, `--name=`_NAME_:
+      Specify the name of the index.
+    * `-k, -key` _KEY_:
+	  Choose the data type of the key, currently it supports _int8, int16,
+	  int32, int64, float, double, string_.
+    * `-t, --type` _TYPE_:
+	  Choose the structure of index (_btree_ and _hash_). Optional, default value is _btree_.
+
+Delete a file index on directory _DIR_ with _NAME_:
+
+  * `vsfs index` _--delete_ --name _NAME_ _DIR_:
+
+    * `-d, -delete`:
+	  Delete file index with the given _NAME_ and _DIR_.
+    * `-n, --name` _NAME_:
+	  The name of file index to be deleted.
+
+Insert records into a file index.
+
 ## EXAMPLES
 
   * To create a file index on path _path_. :
    <code>`vsfs index` --create --name NAME _path_</code>
-
-## SUB-COMMANDS
 
 ## SEE ALSO
 

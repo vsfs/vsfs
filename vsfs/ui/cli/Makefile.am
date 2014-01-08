@@ -1,6 +1,6 @@
 # vim: ts=8:st=8:noexpandtab
 
-CLEANFILES = *.gcda *.gcno *.gcov
+CLEANFILES = *.gcda *.gcno *.gcov *.1
 
 lib_LIBRARIES = libvsfs-ui-cli.a
 bin_PROGRAMS = vsfs
@@ -19,6 +19,8 @@ libvsfs_ui_cli_a_SOURCES = \
 vsfs_SOURCES = vsfs.cpp
 
 vsfs.1: vsfs.1.ronn
+	RONN_ORGANIZATION='getvsfs.com' \
+        RONN_MANUAL='VSFS Manual' \
 	ronn $<
 
 man_MANS = vsfs.1
