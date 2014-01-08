@@ -19,7 +19,7 @@ libvsfs_ui_cli_a_SOURCES = \
 vsfs_SOURCES = vsfs.cpp
 
 vsfs.1: vsfs.1.ronn
-	RONN_ORGANIZATION='getvsfs.com' \
+	RONN_ORGANIZATION='VSFS ${VERSION}' \
         RONN_MANUAL='VSFS Manual' \
 	ronn $<
 

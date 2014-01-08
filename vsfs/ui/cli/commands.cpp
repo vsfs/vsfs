@@ -28,8 +28,8 @@
 #include <thread>
 #include <unordered_map>
 #include <vector>
-#include "vobla/stl_util.h"
 #include "vobla/status.h"
+#include "vobla/string_util.h"
 #include "vobla/timer.h"
 #include "vobla/traits.h"
 #include "vsfs/client/vsfs_rpc_client.h"
@@ -48,8 +48,9 @@ using std::unique_ptr;
 using std::vector;
 using vobla::Status;
 using vobla::Timer;
-using vsfs::index::IndexInfo;
+using vobla::stringprintf;
 using vsfs::client::VSFSRpcClient;
+using vsfs::index::IndexInfo;
 
 namespace fs = boost::filesystem;
 
@@ -112,6 +113,8 @@ class IndexCommand : public Command {
     REMOVE,
     /// Gets the stat of index
     STAT,
+    /// List the indices
+    LIST,
   };
 
   Status create_index();
@@ -119,6 +122,12 @@ class IndexCommand : public Command {
   Status remove_index();
 
   Status update_index();
+
+  Status stat_index();
+
+  Status remove_records();
+
+  Status list_index();
 
   string index_root_;
 
@@ -426,13 +435,30 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
     index_root_ = argv[1];
     index_name_ = argv[2];
     return 0;
+  } else if (subcmd == "insert") {
+    operation_ = Operation::INSERT;
+    if (argc < 2) {
+      ERROR_MSG_RETURN(-1, "Missing index name.\n");
+    }
+    index_name_ = argv[1];
+  } else if (subcmd == "remove") {
+    operation_ = Operation::INSERT;
+    if (argc < 2) {
+      ERROR_MSG_RETURN(-1, "Missing index name.\n");
+    }
+    index_name_ = argv[1];
   } else if (subcmd == "stat") {
     operation_ = Operation::STAT;
+    return 0;
+  } else if (subcmd == "list") {
+    operation_ = Operation::LIST;
+    return 0;
   } else {
-    ERROR_MSG_RETURN(-1, "Unknown command.");
+    fprintf(stderr, "Uknown command: %s.\n", subcmd.c_str());
+    return -1;
   }
 
-  if (argc == 0) {
+  if (argc == 2) {
     use_stdin_ = true;
   } else if (argc > 0) {
     if (argc % 2 != 0) {
@@ -445,7 +471,6 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
       count += 2;
     }
   }
-
   return 0;
 }
 

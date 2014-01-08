@@ -3,7 +3,7 @@ vsfs(1) -- Command line tools for VSFS
 
 ## SYNOPSIS
 
-`vsfs` _command_ [subcommand] [options] [ARGS] ...
+`vsfs` _command_ [ARGS] ...
 
 ## DESCRIPTION
 
@@ -20,6 +20,8 @@ vsfs(1) -- Command line tools for VSFS
 `vsfs index stat` _DIR_ _NAME_
 
 `vsfs index list` [-r|--recursive] _DIR_
+
+`vsfs search` _QUERY_
 
 ## OPTIONS
 
