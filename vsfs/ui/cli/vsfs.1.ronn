@@ -3,23 +3,23 @@ vsfs(1) -- Command line tools for VSFS
 
 ## SYNOPSIS
 
-`vsfs index` _[options] [ARGS...]_<br>
-`vsfs search` _[options] [ARGS...]_<br>
-`vsfs` help
+`vsfs` _command_ [subcommand] [options] [ARGS] ...
 
 ## DESCRIPTION
 
 `vsfs` is the command line utility to manipulate VSFS file system.
 
-`vsfs index create` --name _NAME_ [--key KEY] [--type TYPE] _DIR_
+`vsfs index create` [--key KEY] [--type TYPE] _DIR_ _NAME_
 
-`vsfs index destroy` --name _NAME_ _DIR_
+`vsfs index destroy` _DIR_ _NAME_
 
-`vsfs index insert` --name _NAME_ [-s|--stdin] [-b|--batch NUM] [FILE KEY]...
+`vsfs index insert` _NAME_ [-s|--stdin] [-b|--batch NUM] [FILE KEY]...
 
-`vsfs index remove` --name _NAME_ [-s|--stdin] [-b|--batch NUM] [FILE KEY]...
+`vsfs index remove` _NAME_ [-s|--stdin] [-b|--batch NUM] [FILE KEY]...
 
-`vsfs index stat` --name _NAME_ _DIR_
+`vsfs index stat` _DIR_ _NAME_
+
+`vsfs index list` [-r|--recursive] _DIR_
 
 ## OPTIONS
 
@@ -42,29 +42,34 @@ independantly when create this index.
 
 Create a file index on directory _DIR_:
 
-  * `vsfs index create` --name <NAME> [--key KEY] [--type btree|hash] _DIR_:
+  * `vsfs index create` [--key _KEY_] [--type _TYPE_] _DIR_ _NAME_:
 
-    * `-n` _NAME_, `--name=`_NAME_:
-      Specify the name of the index.
     * `-k, -key` _KEY_:
 	  Choose the data type of the key, currently it supports _int8, int16,
 	  int32, int64, float, double, string_.
     * `-t, --type` _TYPE_:
-	  Choose the structure of index (_btree_ and _hash_). Optional, default value is _btree_.
+	  Choose the structure of index (_btree_ and _hash_). Optional, default
+	  value is _btree_.
 
 Delete a file index on directory _DIR_ with _NAME_:
 
-  * `vsfs index delete` --name _NAME_ _DIR_:
+  * `vsfs index delete` _DIR_ _NAME_:
 
-    * `-n, --name` _NAME_:
-	  The name of file index to be deleted.
-
-Insert records into a file index.
+Insert records into a file index:
 
 ## EXAMPLES
 
   * To create a file index on path _path_. :
-   <code>`vsfs index` --create --name NAME _path_</code>
+   <code>`vsfs index create` _path_ _NAME_</code>
+
+## ENVIRONMENT
+
+- `VSFS_HOST`:
+  The hostname of VSFS primary master.
+
+## FILES
+
+`$HOME/.config/vsfs.json`
 
 ## SEE ALSO
 

@@ -114,9 +114,6 @@ class IndexCommand : public Command {
     STAT,
   };
 
-  /// Prints out examples of usage.
-  void show_examples() const;
-
   Status create_index();
 
   Status remove_index();
@@ -349,10 +346,7 @@ IndexCommand::IndexCommand()
 int IndexCommand::parse_args(int argc, char* const argv[]) {
   static struct option longopts[] = {
     { "help", no_argument, NULL, 'h' },
-    { "examples", no_argument, NULL, 1 },
-    { "info", no_argument, NULL, 2 },
     { "stdin", no_argument, NULL, 's' },
-    { "name", required_argument, NULL, 'n' },
     { "type", required_argument, NULL, 't' },
     { "key", required_argument, NULL, 'k' },
     { "debug", no_argument, NULL, 3 },
@@ -370,14 +364,8 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
   int ch;
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
     switch (ch) {
-      case 1:  // Shows examples
-        show_examples();
-        return -2;
       case 's':
         use_stdin_ = true;
-        break;
-      case 'n':
-        index_name_ = optarg;
         break;
       case 't':
         index_type_ = IndexInfo::string_to_index_type(optarg);
@@ -414,10 +402,6 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
   }
   subcmd = argv[0];
 
-  // Sanity checks.
-  if (index_name_.empty()) {
-    ERROR_MSG_RETURN(-1, "You must provide index name.\n");
-  }
   if (subcmd == "create") {
     operation_ = Operation::CREATE;
     if (index_type_ == -1) {
@@ -426,13 +410,20 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
     if (key_type_ == -1) {
       ERROR_MSG_RETURN(-1, "Wrong key type.\n");
     }
-    if (argc < 2) {
-      ERROR_MSG_RETURN(-1, "Miss index path.\n");
+    if (argc < 3) {
+      ERROR_MSG_RETURN(-1, "Miss index directory or name.\n");
     }
     index_root_ = argv[1];
+    index_name_ = argv[2];
     return 0;
   } else if (subcmd == "destroy") {
     operation_ = Operation::DESTROY;
+    if (argc < 3) {
+      ERROR_MSG_RETURN(-1, "Miss index directory or name.\n");
+    }
+    index_root_ = argv[1];
+    index_name_ = argv[2];
+    return 0;
   } else if (subcmd == "stat") {
     operation_ = Operation::STAT;
   } else {
@@ -457,16 +448,14 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
 }
 
 void IndexCommand::print_help() const {
-  fprintf(stderr, "Usage: vsfs index {create|insert|remove|destroy|stat} "
-                  "[options] [[FILE KEY], ...]\n");
+  fprintf(stderr, "Usage: vsfs index {create|destroy|insert|remove|stat|list} "
+                  "[options] ARG...\n");
   fprintf(stderr, "General Options:\n"
           "  -h, --help\t\t\tShow this help.\n"
           "  --debug\t\t\tRun in debug mode.\n"
           "  -v, --verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
-          "  --examples\t\t\tShow some examples of the usage.\n"
           "  -H, --host\t\t\tSet the master address.\n"
           "  -p, --port\t\t\tSet the master port.\n"
-          "  -n, --name NAME\t\tSpecify the name of index.\n"
           "\nCreate index options:\n"
           "  -t, --type TYPE\t\tSet the index type (btree, hash).\n"
           "  -k, --key TYPE\t\tSet the key type ({u}int{8,16,32,64}, "
@@ -489,18 +478,6 @@ Status IndexCommand::run() {
   } else if (operation_ == Operation::REMOVE) {
   }
   return Status::OK;
-}
-
-void IndexCommand::show_examples() const {
-  fprintf(stderr, "Usage: vsfs index [options] [FILE...]\n");
-  fprintf(stderr, "\nSome examples of VSFS index usage:\n"
-          " * Creates an index:\n"
-          "   $ vsfs index create --name energy --index-type btree "
-          "--key-type float /home/john\n"
-          "\n"
-          " * Updates 'symbol' index for a single file:\n\n"
-          "   $ vsfs index insert -n symbol /foo/bar/main.cpp awesome_func\n"
-          "");
 }
 
 Status IndexCommand::create_index() {
