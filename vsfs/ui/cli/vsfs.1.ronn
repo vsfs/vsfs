@@ -1,0 +1,23 @@
+vsfs(1) -- Command line tools for VSFS
+=======================================
+
+## SYNOPSIS
+
+`vsfs index` _[options] [ARGS...]_<br>
+`vsfs search` _[options] [ARGS...]_<br>
+`vsfs` help
+
+## DESCRIPTION
+
+`vsfs` is the command line utility to manipulate VSFS file system.
+
+## EXAMPLES
+
+  * To create a file index on path _path_. :
+   <code>`vsfs index` --create --name NAME _path_</code>
+
+## SUB-COMMANDS
+
+## SEE ALSO
+
+vsfs(8)

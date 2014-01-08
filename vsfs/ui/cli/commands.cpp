@@ -49,6 +49,8 @@ using std::vector;
 using vobla::Status;
 using vobla::Timer;
 using vsfs::index::IndexInfo;
+using vsfs::client::VSFSRpcClient;
+
 namespace fs = boost::filesystem;
 
 #define ERROR_MSG_RETURN(Ret, Msg) do { \
@@ -57,7 +59,8 @@ namespace fs = boost::filesystem;
     while (false);  // NOLINT
 
 namespace vsfs {
-namespace client {
+namespace ui {
+namespace cli {
 
 const char *Command::program = NULL;
 const char *kDefaultMasterHost = "localhost";
@@ -678,5 +681,6 @@ Status InfoCommand::run() {
   return Status::OK;
 }
 
-}  // namespace client
+}  // namespace cli
+}  // namespace ui
 }  // namespace vsfs

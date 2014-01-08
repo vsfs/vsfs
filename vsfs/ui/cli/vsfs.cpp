@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include <cstdio>
-#include <cstdlib>
 #include <memory>
 #include <string>
 #include "vobla/status.h"
@@ -24,8 +22,8 @@
 using std::string;
 using std::unique_ptr;
 using vobla::Status;
-using vsfs::client::Command;
-using vsfs::client::HelpCommand;
+using vsfs::ui::cli::Command;
+using vsfs::ui::cli::HelpCommand;
 
 int main(int argc, char* const argv[]) {
   Command::program = argv[0];

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2014 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,10 +41,12 @@ using std::unique_ptr;
 using std::vector;
 using vobla::TemporaryDirectory;
 using vsfs::LocalVsfsCluster;
+using vsfs::client::VSFSRpcClient;
 namespace fs = boost::filesystem;
 
 namespace vsfs {
-namespace client {
+namespace ui {
+namespace cli {
 
 class CommandTest : public ::testing::Test {
  protected:
@@ -113,5 +115,6 @@ TEST_F(CommandTest, TestCreateIndex) {
   EXPECT_TRUE(client_->getattr("/foo/bar/.vsfs/test", &stbuf).ok());
 }
 
-}  // namespace client
+}  // namespace cli
+}  // namespace ui
 }  // namespace vsfs

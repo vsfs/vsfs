@@ -17,3 +17,8 @@ libvsfs_ui_cli_a_SOURCES = \
   commands.h commands.cpp
 
 vsfs_SOURCES = vsfs.cpp
+
+vsfs.1: vsfs.1.ronn
+	ronn $<
+
+man_MANS = vsfs.1

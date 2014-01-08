@@ -30,7 +30,8 @@ class Status;
 }
 
 namespace vsfs {
-namespace client {
+namespace ui {
+namespace cli {
 
 /**
  * \class Command
@@ -90,7 +91,8 @@ class HelpCommand : public Command {
   string sub_command_;
 };
 
-}  // namespace client
+}  // namespace cli
+}  // namespace ui
 }  // namespace vsfs
 
 #endif  // VSFS_UI_CLI_COMMANDS_H_
