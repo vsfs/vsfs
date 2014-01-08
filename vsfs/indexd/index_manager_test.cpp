@@ -23,6 +23,7 @@
 #include <vector>
 #include "vobla/file.h"
 #include "vobla/traits.h"
+#include "vsfs/common/path_util.h"
 #include "vsfs/index/index_info.h"
 #include "vsfs/index/range_index.h"
 #include "vsfs/indexd/index_manager.h"
@@ -75,6 +76,11 @@ class IndexManagerTest : public ::testing::Test {
     return manager->update(&updates);
   }
 
+  string index_path(const string& root, const string& name) {
+    fs::path path(tmpdir_->path());
+    return (path / PathUtil::index_path(root, name)).string();
+  }
+
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
 
   string testdir_;
@@ -93,6 +99,12 @@ TEST_F(IndexManagerTest, TestCreateRangeIndex) {
                                                        "test-index");
   ASSERT_TRUE(index != NULL);
   EXPECT_EQ(TypeIDs::UINT64, index->key_type());
+
+  /*
+  string path = index_path("/home/test", "test-index");
+  LOG(INFO) << path;
+  EXPECT_TRUE(fs::exists(index_path("/home/test", "test-index")));
+  */
 }
 
 TEST_F(IndexManagerTest, TestCreateFailures) {
@@ -117,6 +129,21 @@ TEST_F(IndexManagerTest, TestCreateFailures) {
   // The name is being taken.
   EXPECT_FALSE(manager.create(0, "/home/test", "test-index",
                               IndexInfo::BTREE, TypeIDs::FLOAT).ok());
+}
+
+TEST_F(IndexManagerTest, TestDestroyRangeIndex) {
+  IndexManager manager(kRamTestDir);
+  EXPECT_TRUE(manager.create(0, "/home/test", "index", IndexInfo::BTREE,
+                             TypeIDs::INT32).ok());
+  auto index = manager.get_range_index("/home/test", "index");
+  EXPECT_TRUE(index != NULL);
+
+  EXPECT_TRUE(manager.destroy(0, "/home/test", "index").ok());
+  index = manager.get_range_index("/home/test", "index");
+  EXPECT_TRUE(index == NULL);
+
+  // TODO(eddyxu): use storage manager to check raw files.
+  // TODO(eddyxu): check physical files have been removed.
 }
 
 TEST_F(IndexManagerTest, TestUpdateBasics) {

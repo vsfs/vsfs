@@ -130,7 +130,7 @@ TEST_F(CommandTest, TestDestroyIndex) {
   struct stat stbuf;
   EXPECT_TRUE(client_->getattr("/foo/.vsfs/test", &stbuf).ok());
 
-  params = {"index", "destroy", "-v", "5", "-p", port.c_str(), "/foo", "test"};
+  params = {"index", "destroy", "-p", port.c_str(), "/foo", "test"};
   argv = conv_to_argv(params);
   EXPECT_EQ(0, cmd->parse_args(argv.size(), &argv[0]));
   EXPECT_TRUE(cmd->run().ok());
