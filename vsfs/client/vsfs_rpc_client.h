@@ -141,6 +141,11 @@ class VSFSRpcClient : public VSFSClient {
                       int index_type, int key_type,
                       int64_t mode, int64_t uid, int64_t gid);
 
+  /**
+   * \brief Completely remove an index.
+   * \param root the root directory of the index.
+   * \param name the name of the index.
+   */
   Status remove_index(const string& root, const string& name);
 
   Status search(const ComplexQuery& query,

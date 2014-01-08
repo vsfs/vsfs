@@ -119,7 +119,7 @@ class IndexCommand : public Command {
 
   Status create_index();
 
-  Status remove_index();
+  Status destroy_index();
 
   Status update_index();
 
@@ -500,6 +500,7 @@ Status IndexCommand::run() {
   if (operation_ == Operation::CREATE) {
     return create_index();
   } else if (operation_ == Operation::DESTROY) {
+    return destroy_index();
   } else if (operation_ == Operation::INSERT) {
     return update_index();
   } else if (operation_ == Operation::REMOVE) {
@@ -524,6 +525,18 @@ Status IndexCommand::create_index() {
   return client.create_index(canonical_root, index_name_,
                              index_type_, key_type_,
                              0755, getuid(), getgid());
+}
+
+Status IndexCommand::destroy_index() {
+  VLOG(0) << "Destroying index: " << index_root_ << "," << index_name_ << "..";
+  VSFSRpcClient client(host_, port_);
+  auto status = client.init();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to init connection to master node: "
+               << status.message();
+    return status;
+  }
+  return client.remove_index(index_root_, index_name_);
 }
 
 Status IndexCommand::update_index() {
