@@ -115,6 +115,29 @@ TEST_F(CommandTest, TestCreateIndex) {
   EXPECT_TRUE(client_->getattr("/foo/bar/.vsfs/test", &stbuf).ok());
 }
 
+TEST_F(CommandTest, TestDestroyIndex) {
+  start(2, 2);
+  create_directories("/foo");
+  unique_ptr<Command> cmd(Command::create_command("index"));
+  EXPECT_TRUE(cmd != nullptr);
+
+  string port = to_string(cluster_->port(0));
+  vector<string> params = { "index", "create", "-p", port.c_str(),
+    "-t", "btree", "-k", "uint32", "/foo", "test" };
+  auto argv = conv_to_argv(params);
+  EXPECT_EQ(0, cmd->parse_args(argv.size(), &argv[0]));
+  EXPECT_TRUE(cmd->run().ok());
+  struct stat stbuf;
+  EXPECT_TRUE(client_->getattr("/foo/.vsfs/test", &stbuf).ok());
+
+  params = {"index", "destroy", "-v", "5", "-p", port.c_str(), "/foo", "test"};
+  argv = conv_to_argv(params);
+  EXPECT_EQ(0, cmd->parse_args(argv.size(), &argv[0]));
+  EXPECT_TRUE(cmd->run().ok());
+  auto status = client_->getattr("/foo/.vsfs/test", &stbuf);
+  EXPECT_EQ(-EEXIST, status.ok());
+}
+
 }  // namespace cli
 }  // namespace ui
 }  // namespace vsfs

@@ -355,6 +355,9 @@ IndexCommand::IndexCommand()
 }
 
 int IndexCommand::parse_args(int argc, char* const argv[]) {
+  // Reset optind for reentrant. It can be useful for unit tests that need
+  // call this parse_args() function multiple times.
+  optind = 1;
   static struct option longopts[] = {
     { "help", no_argument, NULL, 'h' },
     { "stdin", no_argument, NULL, 's' },
@@ -405,14 +408,14 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
         return -1;
     }
   }
-
   argc -= optind;
   argv += optind;
+
   if (argc == 0) {
     ERROR_MSG_RETURN(-1, "Missing command.\n");
   }
-  subcmd = argv[0];
 
+  subcmd = argv[0];
   if (subcmd == "create") {
     operation_ = Operation::CREATE;
     if (index_type_ == -1) {
@@ -454,7 +457,7 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
     operation_ = Operation::LIST;
     return 0;
   } else {
-    fprintf(stderr, "Uknown command: %s.\n", subcmd.c_str());
+    fprintf(stderr, "Unknown command: %s.\n", subcmd.c_str());
     return -1;
   }
 

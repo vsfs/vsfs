@@ -94,6 +94,13 @@ class IndexController : public IndexControllerInterface {
                               int index_type, int key_type);
 
   /**
+   * \brief Remove an index from RAM and persistant storage.
+   * \param root the root path of index.
+   * \param name the name of the index.
+   */
+  virtual Status destroy_index(const string& root, const string& name);
+
+  /**
    * \brief Updates records.
    *
    * TODO(lxu): It might not be wise to use RpcIndexUpdate here. However, if

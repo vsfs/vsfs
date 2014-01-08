@@ -373,6 +373,7 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
   CHECK_NOTNULL(files);
   auto hash = PathUtil::path_to_hash(dirpath);
   NodeInfo node;
+  VLOG(0) << "Readdir for " << dirpath;
   CHECK(master_map_.get(hash, &node).ok());
   try {
     auto client = master_client_factory_->open(node.address);
@@ -569,7 +570,7 @@ Status VSFSRpcClient::remove_index(const string& root, const string& name) {
   request.name = name;
 
   vector<string> partitions;
-  string full_index_path = PathUtil::index_path(name, root);
+  string full_index_path = PathUtil::index_path(root, name);
   auto status = this->readdir(full_index_path, &partitions);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to get all partitions: " << status.message();

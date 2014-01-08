@@ -240,7 +240,7 @@ Status IndexManager::create(
   (void) txn_id;
 
   if (root_path.empty() || name.empty()) {
-    return Status(-1, "Invalid parameters.");
+    return Status(-EINVAL, "Invalid parameters.");
   }
   // const string index_key = get_index_key(root_path, name);
   // TODO(ziling): use root_path + name as key?
@@ -271,6 +271,36 @@ Status IndexManager::create(
   } else {
     return Status(-EINVAL, "Unknown index type.");
   }
+  return Status::OK;
+}
+
+Status IndexManager::destroy(
+    TxnIdType txn_id, const string& root, const string& name) {
+  // Ignores transaction ID for now.
+  (void) txn_id;
+
+  if (root.empty() || name.empty()) {
+    return Status(-EINVAL, "Invalid parameters.");
+  }
+  const string index_key = root;
+  string base_path;
+  {
+    MutexGuard lock(lock_);
+    auto info = find_or_null(index_info_map_, index_key);
+    if (!info) {
+      return Status(-ENOENT, "Index does not existed.");
+    }
+    if (info->index_type() == IndexInfo::BTREE) {
+      range_index_map_.erase(index_key);
+    } else if (info->index_type() == IndexInfo::HASH) {
+    } else {
+      index_info_map_.erase(index_key);
+      return Status(-EINVAL, "Unknown index type.");
+    }
+    index_info_map_.erase(index_key);
+    base_path = get_index_file_base_path(root);
+  }
+  fs::remove_all(base_path);
   return Status::OK;
 }
 

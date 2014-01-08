@@ -130,13 +130,17 @@ class IndexManager {
    * \see "vobla/traits.h" for the definitions of possible key type values.
    */
   virtual Status create(TxnIdType txn_id, const string &index_path,
-                        const string &name, int index_type, int key_type);
+                        const string& name, int index_type, int key_type);
 
-  /*
-  virtual Status remove(TxnIdType txn_id,
-                        const string &index_path,
-                        const string &name);
-                        */
+  /**
+   * \brief Destroy an in-ram index.
+   * \param txn_id the transaction ID.
+   * \param index_path the root path for the index.
+   * \param name the name of the index.
+   */
+  virtual Status destroy(TxnIdType txn_id,
+                        const string& index_path,
+                        const string& name);
 
   /**
    * \brief Updates in-ram index.

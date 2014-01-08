@@ -207,6 +207,10 @@ Status IndexController::create_index(
   return manager_->create(0, root_path, name, index_type, key_type);
 }
 
+Status IndexController::destroy_index(const string& root, const string& name) {
+  return manager_->destroy(0, root, name);
+}
+
 Status IndexController::update(const RpcIndexUpdate &updates) {
   // TODO(eddyxu): send logs to replica servers.
   return manager_->update(&const_cast<RpcIndexUpdate&>(updates));
