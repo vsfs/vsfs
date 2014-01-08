@@ -236,6 +236,8 @@ void HelpCommand::print_help() const {
           "  search\t\trun complex query.\n"
           "  index\t\t\tindex files.\n"
           "  info\t\t\tquery the index information.\n"
+          "\nFurther help:\n"
+          "  man vsfs\n"
           "");
 }
 

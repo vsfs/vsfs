@@ -67,6 +67,9 @@ Insert records into a file index:
 - `VSFS_HOST`:
   The hostname of VSFS primary master.
 
+- `VSFS_PORT':
+  The TCP port number of VSFS primary master.
+
 ## FILES
 
 `$HOME/.config/vsfs.json`
