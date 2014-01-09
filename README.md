@@ -19,3 +19,4 @@ The Official VSFS repo!
  - libssl-dev
  - libattr1-dev
  - gmock 1.7.0 for testing.
+ - [ronn](https://github.com/rtomayko/ronn) for generating manpages

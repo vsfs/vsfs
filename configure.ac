@@ -23,6 +23,10 @@ AC_MSG_NOTICE([RPM_RELEASE='$RPM_RELEASE'])
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
+AC_CHECK_PROG([RONN], [ronn], yes)
+if test x"$RONN" != x"yes"; then
+	AC_MSG_ERROR([Please install ronn ruby before compiling.])
+fi
 AC_LANG([C++])
 
 # Checks for libraries.
