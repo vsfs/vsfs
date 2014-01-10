@@ -612,8 +612,6 @@ void IndexListCommand::print_help() const {
   fprintf(stderr, "Usage: vsfs index list [options] PATH\n");
   fprintf(stderr, "Options:\n"
           "  -h, --help\t\t\tShow this help.\n"
-          "  --debug\t\t\tRun in debug mode.\n"
-          "  -v, --verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
           "  -H, --host\t\t\tSet the master address.\n"
           "  -p, --port\t\t\tSet the master port.\n"
           "  -r, --recursive\t\tRecusively list out all indices."
@@ -627,7 +625,6 @@ int IndexListCommand::parse_args(int argc, char* const argv[]) {
     { "help", no_argument, NULL, 'h' },
     { "port", required_argument, NULL, 'p' },
     { "host", required_argument, NULL, 'H' },
-    { "verbose", optional_argument, NULL, 'v' },
     { "recursive", no_argument, NULL, 'r' },
     { NULL, 0, NULL, 0 }
   };
@@ -640,9 +637,6 @@ int IndexListCommand::parse_args(int argc, char* const argv[]) {
         break;
       case 'H':
         host_ = optarg;
-        break;
-      case 'v':
-        set_verbose_level(optarg);
         break;
       case 'r':
         recursive_ = true;
