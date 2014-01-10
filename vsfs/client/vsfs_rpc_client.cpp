@@ -101,7 +101,7 @@ VSFSRpcClient::~VSFSRpcClient() {
 }
 
 Status VSFSRpcClient::sync_master_server_map() {
-  VLOG(0) << "Caches master server Consistent Hashing Ring.";
+  VLOG(1) << "Caches master server Consistent Hashing Ring.";
   RpcConsistentHashRing ring;
   try {
     master_client_->handler()->get_all_masters(ring);
@@ -119,7 +119,7 @@ Status VSFSRpcClient::sync_master_server_map() {
 }
 
 Status VSFSRpcClient::sync_index_server_map() {
-  VLOG(0) << "Caches index server Consistent Hashing Ring.";
+  VLOG(1) << "Caches index server Consistent Hashing Ring.";
   RpcConsistentHashRing ring;
   try {
     master_client_->handler()->get_all_index_servers(ring);
@@ -137,7 +137,7 @@ Status VSFSRpcClient::sync_index_server_map() {
 }
 
 Status VSFSRpcClient::init() {
-  VLOG(0) << "Initialize a VSFSRpcClient.";
+  VLOG(1) << "Initialize a VSFSRpcClient.";
   auto status = connect(host_, port_);
   if (!status.ok()) {
     LOG(ERROR) << "Failed to connect to primary master("
@@ -202,7 +202,7 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
   NodeInfo file_node;
   auto status = master_map_.get(hash, &file_node);
   if (!status.ok()) {
-    VLOG(0) << "Failed to find a master server to create file: " << path;
+    LOG(ERROR) << "Failed to find a master server to create file: " << path;
     return status;
   }
   mode |= S_IFREG;
@@ -229,8 +229,8 @@ Status VSFSRpcClient::create(const string &path, int64_t mode, int64_t uid,
     }
   }
   if (!status.ok()) {
-    VLOG(0) << "Failed to create file: "
-            << path << " because: " << status.message();
+    LOG(ERROR) << "Failed to create file: "
+               << path << " because: " << status.message();
     return status;
   }
   status = add_subfile(path);
@@ -373,7 +373,7 @@ Status VSFSRpcClient::readdir(const string& dirpath, vector<string>* files) {  /
   CHECK_NOTNULL(files);
   auto hash = PathUtil::path_to_hash(dirpath);
   NodeInfo node;
-  VLOG(0) << "Readdir for " << dirpath;
+  VLOG(1) << "Readdir for " << dirpath;
   CHECK(master_map_.get(hash, &node).ok());
   try {
     auto client = master_client_factory_->open(node.address);
