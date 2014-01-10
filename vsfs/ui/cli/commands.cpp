@@ -425,6 +425,74 @@ Status IndexCommand::run() {
   return Status::OK;
 }
 
+bool IndexCommand::parse_record(
+    const string& buf, string* path, string* key) const {
+  CHECK_NOTNULL(path);
+  CHECK_NOTNULL(key);
+  if (buf.empty()) {
+    return false;
+  }
+  // TODO(eddyxu): extract to vobla
+  int quotion = 0;
+  bool in_segment = false;
+  vector<string> segments;
+  size_t i = 0;
+  while (i < buf.size()) {
+  }
+  size_t begin = 0;
+  // Skips all white spaces
+  for (size_t i = 0; i < buf.size(); ++i) {
+    int c = buf[i];
+    if (quotion == 0) {
+      if (isblank(c)) {
+        continue;
+      }
+      if (c == '\'' || c == '"') {
+        quotion = c;
+      } else {
+        quotion = ' '
+      }
+    }
+
+    if (!in_segment) {
+      if (isblank(c)) {
+        continue;
+      }
+      in_segment = true;
+      if (c == '\'' || c == '\"') {
+        in_quotion = true;
+        begin = i + 1;
+      } else {
+        begin = i;
+      }
+    } else {
+      if (c == '\\') {  // Skip escape chars
+        i++;
+        continue;
+      }
+      if (in_quotion && (c == '\'' || c == '\"')) {
+        segments.push_back(buf.substr(begin, i - begin));
+        in_segment = false;
+        in_quotion = false;
+      } else if (isblank(c)) {
+        segments.push_back(buf.substr(begin, i - begin));
+        in_segment = false;
+        in_quotion = false;
+      }
+    }
+  }
+  if (in_segment) {
+    segments.push_back(buf.substr(begin));
+  }
+  if (segments.size() != 2) {
+    LOG(ERROR) << "Do not have enough segments." << segments.size();
+    return false;
+  }
+  *path = segments[0];
+  *key = segments[1];
+  return true;
+}
+
 Status IndexCommand::create_index() {
   // string canonical_root = fs::absolute(index_root_).string();
   string canonical_root = index_root_;

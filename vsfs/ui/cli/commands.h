@@ -112,6 +112,15 @@ class IndexCommand : public Command {
 
   Status run();
 
+  /**
+   * \brief Parses an index record from stdin.
+   * \param[in] line a line contains "/file/path key"
+   * \param[out] path filled with file path.
+   * \param[out] key filled with file key in the index.
+   * \return true if the line is correctly parsed.
+   */
+  bool parse_record(const string& line, string* path, string* key) const;
+
  private:
   /**
    * \brief A hash mapping from the file name to a vector of indexing keys.
