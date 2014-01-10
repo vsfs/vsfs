@@ -103,7 +103,7 @@ class HelpCommand : public Command {
  */
 class IndexCommand : public Command {
  public:
-  IndexCommand();
+  IndexCommand() = default;
 
   int parse_args(int argc, char* const argv[]);
 
@@ -122,76 +122,74 @@ class IndexCommand : public Command {
   bool parse_record(const string& line, string* path, string* key) const;
 
  private:
-  /**
-   * \brief A hash mapping from the file name to a vector of indexing keys.
-   *
-   * E.g. <file name, [key0, key1, key2, ...]>
-   */
-  typedef unordered_map<string, vector<string>> IndexDataMap;
+  unique_ptr<Command> sub_command_;
+};
 
-  enum IndexOp {
-    /// Adds to an index entry
-    ADD = 1,
-    /// Updates an index entry.
-    UPDATE,
-    /// Deletes from an index entry.
-    DELETE
-  };
+class IndexCreateCommand : public Command {
+ public:
+  IndexCreateCommand();
 
-  enum Operation {
-    /// Unknown operation
-    UNKNOWN,
-    /// Creates an index.
-    CREATE,
-    /// Destroy an index.
-    DESTROY,
-    /// Inserts or update records.
-    INSERT,
-    /// Remove records.
-    REMOVE,
-    /// Gets the stat of index
-    STAT,
-    /// List the indices
-    LIST,
-  };
+  int parse_args(int argc, char* const argv[]);
 
-  Status create_index();
+  void print_help() const;
 
-  Status destroy_index();
+  Status run();
 
-  Status update_index();
+ private:
+  /// Index root path.
+  string root_;
 
-  Status stat_index();
-
-  Status remove_records();
-
-  Status list_index();
-
-  string index_root_;
-
-  /// The name of named index.
-  string index_name_;
-
-  /// Set to true to use stdin to feed.
-  bool use_stdin_;
-
-  /// Operations.
-  int operation_;
-
-  /// Operations on index.
-  int index_op_;
+  /// Index name.
+  string name_;
 
   /// The data structure type of index. (e.g., btree or hash).
   int index_type_;
 
   /// The type of the key of index. (e.g., int32, float or string).
   int key_type_;
+};
+
+class IndexDestroyCommand : public Command {
+ public:
+  IndexDestroyCommand() = default;
+
+  int parse_args(int argc, char* const argv[]);
+
+  void print_help() const;
+
+  Status run();
+
+ private:
+  /// Index root path.
+  string root_;
+
+  /// Index name.
+  string name_;
+};
+
+class IndexInsertCommand : public Command {
+ public:
+  IndexInsertCommand() = default;
+
+  int parse_args(int argc, char* const argv[]);
+
+  void print_help() const;
+
+  Status run();
+
+ private:
+  typedef unordered_map<string, vector<string>> IndexDataMap;
+
+  /// Index name.
+  string name_;
+
+  /// Set to true to use stdin to feed.
+  bool use_stdin_;
 
   uint64_t batch_size_;
 
   IndexDataMap index_data_;
 };
-
 
 }  // namespace cli
 }  // namespace ui

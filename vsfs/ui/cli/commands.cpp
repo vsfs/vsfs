@@ -263,167 +263,53 @@ Status SearchCommand::run() {
   return Status::OK;
 }
 
-// ----------- IndexCommand ------------
-IndexCommand::IndexCommand()
-  : use_stdin_(false), operation_(Operation::UNKNOWN), index_op_(ADD),
-    batch_size_(kDefaultBatchSize) {
-}
-
 int IndexCommand::parse_args(int argc, char* const argv[]) {
-  // Reset optind for reentrant. It can be useful for unit tests that need
-  // call this parse_args() function multiple times.
-  optind = 1;
-  static struct option longopts[] = {
-    { "help", no_argument, NULL, 'h' },
-    { "stdin", no_argument, NULL, 's' },
-    { "type", required_argument, NULL, 't' },
-    { "key", required_argument, NULL, 'k' },
-    { "debug", no_argument, NULL, 3 },
-    { "verbose", optional_argument, NULL, 'v' },
-    { "host", required_argument, NULL, 'H' },
-    { "port", required_argument, NULL, 'p' },
-    { "profile", optional_argument, NULL, 4 },
-    { "batch", required_argument, NULL, 'b' },
-    { NULL, 0, NULL, 0 }
-  };
-  static const char* shortopts = "ha:cdsn:t:k:v:H:p:b:";
-
+  sub_command_.reset();
   string subcmd = "";
-  string profile_targets;
-  int ch;
-  while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
-    switch (ch) {
-      case 's':
-        use_stdin_ = true;
-        break;
-      case 't':
-        index_type_ = IndexInfo::string_to_index_type(optarg);
-        break;
-      case 'k':
-        key_type_ = parse_type_string_to_int(optarg);
-        LOG(INFO) << "Parse key type: " << optarg << " to: " << key_type_;
-        break;
-      case 3:
-        debug_ = true;
-        break;
-      case 'v':
-        set_verbose_level(optarg);
-        break;
-      case 'H':
-        host_ = optarg;
-        break;
-      case 'p':
-        port_ = lexical_cast<int>(optarg);
-        break;
-      case 'b':
-        batch_size_ = lexical_cast<uint64_t>(optarg);
-        break;
-      case 'h':
-      default:
-        return -1;
-    }
+  if (argc == 1) {
+    return -1;
   }
-  argc -= optind;
-  argv += optind;
-
-  if (argc == 0) {
-    ERROR_MSG_RETURN(-1, "Missing command.\n");
+  if (argc > 1) {
+    subcmd = argv[1];
   }
-
-  subcmd = argv[0];
-  if (subcmd == "create") {
-    operation_ = Operation::CREATE;
-    if (index_type_ == -1) {
-      ERROR_MSG_RETURN(-1, "Wrong index type.\n");
-    }
-    if (key_type_ == -1) {
-      ERROR_MSG_RETURN(-1, "Wrong key type.\n");
-    }
-    if (argc < 3) {
-      ERROR_MSG_RETURN(-1, "Miss index directory or name.\n");
-    }
-    index_root_ = argv[1];
-    index_name_ = argv[2];
-    return 0;
-  } else if (subcmd == "destroy") {
-    operation_ = Operation::DESTROY;
-    if (argc < 3) {
-      ERROR_MSG_RETURN(-1, "Miss index directory or name.\n");
-    }
-    index_root_ = argv[1];
-    index_name_ = argv[2];
-    return 0;
-  } else if (subcmd == "insert") {
-    operation_ = Operation::INSERT;
-    if (argc < 2) {
-      ERROR_MSG_RETURN(-1, "Missing index name.\n");
-    }
-    index_name_ = argv[1];
-  } else if (subcmd == "remove") {
-    operation_ = Operation::INSERT;
-    if (argc < 2) {
-      ERROR_MSG_RETURN(-1, "Missing index name.\n");
-    }
-    index_name_ = argv[1];
-  } else if (subcmd == "stat") {
-    operation_ = Operation::STAT;
-    return 0;
-  } else if (subcmd == "list") {
-    operation_ = Operation::LIST;
-    return 0;
-  } else {
-    fprintf(stderr, "Unknown command: %s.\n", subcmd.c_str());
+  if (subcmd == "-h" || subcmd == "--help") {
     return -1;
   }
 
-  if (argc == 2) {
-    use_stdin_ = true;
-  } else if (argc > 0) {
-    if (argc % 2 != 0) {
-      ERROR_MSG_RETURN(-1, "The files and keys are not match.\n");
-    }
-
-    int count = 0;
-    while (count < argc) {
-      index_data_[argv[count]].push_back(argv[count+1]);
-      count += 2;
-    }
+  if (subcmd == "create") {
+    sub_command_.reset(new IndexCreateCommand);
+  } else if (subcmd == "destroy") {
+    sub_command_.reset(new IndexDestroyCommand);
+  } else if (subcmd == "insert") {
+    sub_command_.reset(new IndexInsertCommand);
+  } else if (subcmd == "remove") {
+  } else if (subcmd == "stat") {
+  } else if (subcmd == "list") {
   }
-  return 0;
+  if (!sub_command_) {
+    fprintf(stderr, "Unknown command: %s.\n", subcmd.c_str());
+    return -1;
+  }
+  return sub_command_->parse_args(argc - 1, argv + 1);
 }
 
 void IndexCommand::print_help() const {
+  if (sub_command_) {
+    sub_command_->print_help();
+    return;
+  }
   fprintf(stderr, "Usage: vsfs index {create|destroy|insert|remove|stat|list} "
-                  "[options] ARG...\n");
-  fprintf(stderr, "General Options:\n"
-          "  -h, --help\t\t\tShow this help.\n"
-          "  --debug\t\t\tRun in debug mode.\n"
-          "  -v, --verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
-          "  -H, --host\t\t\tSet the master address.\n"
-          "  -p, --port\t\t\tSet the master port.\n"
-          "\nCreate index options:\n"
-          "  -t, --type TYPE\t\tSet the index type (btree, hash).\n"
-          "  -k, --key TYPE\t\tSet the key type ({u}int{8,16,32,64}, "
-          "float, double, string).\n"
-          "\nInsert index records:\n"
-          "  -s, --stdin\t\t\tRead indexing metadata from stdin.\n"
-          "  -b, --batch NUM\t\tSet the batch size to send records.\n"
-          // "  --profile [masterd,indexd]\tSet to profile operation.\n"
-          "\n\nFurther help:\n"
-          "  man vsfs\n"
-          "");
+                  "[options] ARG...\n"
+                  "\nFurther help:\n"
+                  "  man vsfs\n"
+                  "");
 }
 
 Status IndexCommand::run() {
-  if (operation_ == Operation::CREATE) {
-    return create_index();
-  } else if (operation_ == Operation::DESTROY) {
-    return destroy_index();
-  } else if (operation_ == Operation::INSERT) {
-    return update_index();
-  } else if (operation_ == Operation::REMOVE) {
+  if (sub_command_) {
+    return sub_command_->run();
   }
-  return Status::OK;
+  return Status(-EINVAL, "Invalid command");
 }
 
 bool IndexCommand::parse_record(
@@ -440,109 +326,6 @@ bool IndexCommand::parse_record(
   *path = params[0];
   *key = params[1];
   return true;
-}
-
-Status IndexCommand::create_index() {
-  // string canonical_root = fs::absolute(index_root_).string();
-  string canonical_root = index_root_;
-  VLOG(0) << "Creating index...";
-  VLOG(0) << "Index: " << canonical_root << ":" << index_name_
-            << " type: " << index_type_ << " "
-            << " key: " << key_type_;
-  VSFSRpcClient client(host_, port_);
-  Status status = client.init();
-  if (!status.ok()) {
-    LOG(ERROR) << "Failed to init connection to master node: "
-               << status.message();
-    return status;
-  }
-  return client.create_index(canonical_root, index_name_,
-                             index_type_, key_type_,
-                             0755, getuid(), getgid());
-}
-
-Status IndexCommand::destroy_index() {
-  VLOG(0) << "Destroying index: " << index_root_ << "," << index_name_ << "..";
-  VSFSRpcClient client(host_, port_);
-  auto status = client.init();
-  if (!status.ok()) {
-    LOG(ERROR) << "Failed to init connection to master node: "
-               << status.message();
-    return status;
-  }
-  return client.remove_index(index_root_, index_name_);
-}
-
-Status IndexCommand::update_index() {
-  VSFSRpcClient client(host_, port_);
-  Status status = client.init();
-  if (!status.ok()) {
-    LOG(ERROR) << "Failed to init connection to master node: "
-        << status.message();
-    return status;
-  }
-
-  // TODO(lxu): only support insert record to prove of concept.
-  vector<VSFSRpcClient::IndexUpdateRequest> updates;
-  if (use_stdin_) {
-    // Reads record through stdin
-    string buf;
-    while (!std::cin.eof()) {
-      std::getline(std::cin, buf);
-      if (buf.empty()) {
-        continue;
-      }
-      // TODO(lxu): handles more complated strings, such as string with
-      // quotations.
-      size_t sep_pos = buf.find_first_of(" \t");
-      size_t value_pos = buf.find_first_not_of(" \t", sep_pos);
-      if (sep_pos == string::npos || value_pos == string::npos) {
-        LOG(ERROR) << "An error has occorred when read: " << buf;
-        return Status(-EINVAL, "Wrong index record format.");
-      }
-      string file_path = buf.substr(0, sep_pos);
-      string key = buf.substr(value_pos);
-      updates.emplace_back();
-      auto& request = updates.back();
-      request.op = VSFSRpcClient::IndexUpdateRequest::INSERT;
-      request.file_path = fs::absolute(file_path).string();
-      request.index_name = index_name_;
-      request.key = key;
-
-      if (updates.size() >= static_cast<size_t>(batch_size_)) {
-        status = client.update(updates);
-        if (!status.ok()) {
-          LOG(ERROR) << "Failed to update index: " << status.message();
-          return status;
-        }
-        updates.clear();
-      }
-    }
-  } else {
-    // Pass records through command line parameters.
-    for (const auto& update : index_data_) {
-      for (const auto& key : update.second) {
-        updates.emplace_back();
-        auto& request = updates.back();
-        request.op = VSFSRpcClient::IndexUpdateRequest::INSERT;
-        request.file_path = fs::absolute(update.first).string();
-        request.index_name = index_name_;
-        request.key = key;
-      }
-    }
-    status = client.update(updates);
-    updates.clear();
-    if (!status.ok()) {
-      LOG(ERROR) << "Failed to update index: " << status.message();
-    }
-  }
-  if (!updates.empty()) {
-    status = client.update(updates);
-    if (!status.ok()) {
-      LOG(ERROR) << "Failed to update index: " << status.message();
-    }
-  }
-  return status;
 }
 
 // ------- InfoCommand
@@ -624,6 +407,312 @@ Status InfoCommand::run() {
     }
   }
   return Status::OK;
+}
+
+IndexCreateCommand::IndexCreateCommand() : index_type_(0), key_type_(0) {
+}
+
+int IndexCreateCommand::parse_args(int argc, char* const argv[]) {
+  optind = 1;
+  static struct option longopts[] = {
+    { "help", no_argument, NULL, 'h' },
+    { "type", required_argument, NULL, 't' },
+    { "key", required_argument, NULL, 'k' },
+    { "debug", no_argument, NULL, 'd' },
+    { "verbose", optional_argument, NULL, 'v' },
+    { "host", required_argument, NULL, 'H' },
+    { "port", required_argument, NULL, 'p' },
+    { NULL, 0, NULL, 0 }
+  };
+  static const char* shortopts = "ht:k:dv:H:p:";
+  int ch;
+  while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
+    switch (ch) {
+      case 't':
+        index_type_ = IndexInfo::string_to_index_type(optarg);
+        break;
+      case 'k':
+        key_type_ = parse_type_string_to_int(optarg);
+        break;
+      case 'd':
+        debug_ = true;
+        break;
+      case 'v':
+        set_verbose_level(optarg);
+        break;
+      case 'H':
+        host_ = optarg;
+        break;
+      case 'p':
+        port_ = lexical_cast<int>(optarg);
+        break;
+      case 'h':
+      default:
+        return -1;
+    }
+  }
+  argc -= optind;
+  argv += optind;
+
+  if (argc == 0) {
+    return -1;
+  }
+  if (index_type_ == -1) {
+    ERROR_MSG_RETURN(-1, "Wrong index type.\n");
+  }
+  if (key_type_ == -1) {
+    ERROR_MSG_RETURN(-1, "Wrong key type.\n");
+  }
+  if (argc < 2) {
+    ERROR_MSG_RETURN(-1, "Miss index directory or name.\n");
+  }
+  root_ = argv[0];
+  name_ = argv[1];
+  return 0;
+}
+
+void IndexCreateCommand::print_help() const {
+  fprintf(stderr, "Usage: vsfs index create [options] DIR NAME\n");
+  fprintf(stderr, "Options:\n"
+          "  -h, --help\t\t\tShow this help.\n"
+          "  --debug\t\t\tRun in debug mode.\n"
+          "  -v, --verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
+          "  -H, --host\t\t\tSet the master address.\n"
+          "  -p, --port\t\t\tSet the master port.\n"
+          "  -t, --type TYPE\t\tSet the index type (btree, hash).\n"
+          "  -k, --key TYPE\t\tSet the key type ({u}int{8,16,32,64}, "
+          "float, double, string).\n"
+          "\n\nFurther help:\n"
+          "  man vsfs\n"
+          "");
+}
+
+Status IndexCreateCommand::run() {
+  // string canonical_root = fs::absolute(index_root_).string();
+  string canonical_root = root_;
+  VLOG(0) << "Creating index...";
+  VLOG(0) << "Index: " << canonical_root << ":" << name_
+      << " type: " << index_type_ << " "
+      << " key: " << key_type_;
+  VSFSRpcClient client(host_, port_);
+  Status status = client.init();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to init connection to master node: "
+        << status.message();
+    return status;
+  }
+  return client.create_index(canonical_root, name_,
+                             index_type_, key_type_,
+                             0755, getuid(), getgid());
+}
+
+
+void IndexDestroyCommand::print_help() const {
+  fprintf(stderr, "Usage: vsfs index destroy [options] DIR NAME\n");
+  fprintf(stderr, "Options:\n"
+          "  -h, --help\t\t\tShow this help.\n"
+          "  --debug\t\t\tRun in debug mode.\n"
+          "  -v, --verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
+          "  -H, --host\t\t\tSet the master address.\n"
+          "  -p, --port\t\t\tSet the master port.\n"
+          "\n\nFurther help:\n"
+          "  man vsfs\n"
+          "");
+}
+
+int IndexDestroyCommand::parse_args(int argc, char* const argv[]) {
+  optind = 1;
+  static struct option longopts[] = {
+    { "help", no_argument, NULL, 'h' },
+    { "debug", no_argument, NULL, 'd' },
+    { "verbose", optional_argument, NULL, 'v' },
+    { "host", required_argument, NULL, 'H' },
+    { "port", required_argument, NULL, 'p' },
+    { NULL, 0, NULL, 0 }
+  };
+  static const char* shortopts = "ht:k:dv:H:p:";
+  int ch;
+  while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
+    switch (ch) {
+      case 'd':
+        debug_ = true;
+        break;
+      case 'v':
+        set_verbose_level(optarg);
+        break;
+      case 'H':
+        host_ = optarg;
+        break;
+      case 'p':
+        port_ = lexical_cast<int>(optarg);
+        break;
+      case 'h':
+      default:
+        return -1;
+    }
+  }
+  argc -= optind;
+  argv += optind;
+
+  if (argc == 0) {
+    return -1;
+  }
+  if (argc < 2) {
+    ERROR_MSG_RETURN(-1, "Miss index directory or name.\n");
+  }
+  root_ = argv[0];
+  name_ = argv[1];
+  return 0;
+}
+
+Status IndexDestroyCommand::run() {
+  VLOG(0) << "Destroying index: " << root_ << "," << name_ << "..";
+  VSFSRpcClient client(host_, port_);
+  auto status = client.init();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to init connection to master node: "
+        << status.message();
+    return status;
+  }
+  return client.remove_index(root_, name_);
+}
+
+void IndexInsertCommand::print_help() const {
+  fprintf(stderr, "Usage: vsfs index insert [options] NAME [FILE KEY]...\n");
+  fprintf(stderr, "General Options:\n"
+          "  -h, --help\t\t\tShow this help.\n"
+          "  --debug\t\t\tRun in debug mode.\n"
+          "  -v, --verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
+          "  -H, --host\t\t\tSet the master address.\n"
+          "  -p, --port\t\t\tSet the master port.\n"
+          "  -s, --stdin\t\t\tRead indexing metadata from stdin.\n"
+          "  -b, --batch NUM\t\tSet the batch size to send records.\n"
+          // "  --profile [masterd,indexd]\tSet to profile operation.\n"
+          "\n\nFurther help:\n"
+          "  man vsfs\n"
+          "");
+}
+
+int IndexInsertCommand::parse_args(int argc, char* const argv[]) {
+  static struct option longopts[] = {
+    { "help", no_argument, NULL, 'h' },
+    { "stdin", no_argument, NULL, 's' },
+    { "debug", no_argument, NULL, 'd' },
+    { "verbose", optional_argument, NULL, 'v' },
+    { "host", required_argument, NULL, 'H' },
+    { "port", required_argument, NULL, 'p' },
+    // { "profile", optional_argument, NULL, 4 },
+    { "batch", required_argument, NULL, 'b' },
+    { NULL, 0, NULL, 0 },
+  };
+  static const char* shortopts = "hsdv:H:p:b:";
+
+  string profile_targets;
+  int ch;
+  while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
+    switch (ch) {
+      case 's':
+        use_stdin_ = true;
+        break;
+      case 'd':
+        debug_ = true;
+        break;
+      case 'v':
+        set_verbose_level(optarg);
+        break;
+      case 'H':
+        host_ = optarg;
+        break;
+      case 'p':
+        port_ = lexical_cast<int>(optarg);
+        break;
+      case 'b':
+        batch_size_ = lexical_cast<uint64_t>(optarg);
+        break;
+      case 'h':
+      default:
+        return -1;
+    }
+  }
+  argc -= optind;
+  argv += optind;
+
+  if (argc == 0) {
+    return -1;
+  }
+  return 0;
+}
+
+Status IndexInsertCommand::run() {
+  VSFSRpcClient client(host_, port_);
+  Status status = client.init();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to init connection to master node: "
+        << status.message();
+    return status;
+  }
+
+  // TODO(lxu): only support insert record to prove of concept.
+  vector<VSFSRpcClient::IndexUpdateRequest> updates;
+  if (use_stdin_) {
+    // Reads record through stdin
+    string buf;
+    while (!std::cin.eof()) {
+      std::getline(std::cin, buf);
+      if (buf.empty()) {
+        continue;
+      }
+      // TODO(lxu): handles more complated strings, such as string with
+      // quotations.
+      size_t sep_pos = buf.find_first_of(" \t");
+      size_t value_pos = buf.find_first_not_of(" \t", sep_pos);
+      if (sep_pos == string::npos || value_pos == string::npos) {
+        LOG(ERROR) << "An error has occorred when read: " << buf;
+        return Status(-EINVAL, "Wrong index record format.");
+      }
+      string file_path = buf.substr(0, sep_pos);
+      string key = buf.substr(value_pos);
+      updates.emplace_back();
+      auto& request = updates.back();
+      request.op = VSFSRpcClient::IndexUpdateRequest::INSERT;
+      request.file_path = fs::absolute(file_path).string();
+      request.index_name = name_;
+      request.key = key;
+
+      if (updates.size() >= static_cast<size_t>(batch_size_)) {
+        status = client.update(updates);
+        if (!status.ok()) {
+          LOG(ERROR) << "Failed to update index: " << status.message();
+          return status;
+        }
+        updates.clear();
+      }
+    }
+  } else {
+    // Pass records through command line parameters.
+    for (const auto& update : index_data_) {
+      for (const auto& key : update.second) {
+        updates.emplace_back();
+        auto& request = updates.back();
+        request.op = VSFSRpcClient::IndexUpdateRequest::INSERT;
+        request.file_path = fs::absolute(update.first).string();
+        request.index_name = name_;
+        request.key = key;
+      }
+    }
+    status = client.update(updates);
+    updates.clear();
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to update index: " << status.message();
+    }
+  }
+  if (!updates.empty()) {
+    status = client.update(updates);
+    if (!status.ok()) {
+      LOG(ERROR) << "Failed to update index: " << status.message();
+    }
+  }
+  return status;
 }
 
 }  // namespace cli
