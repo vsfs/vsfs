@@ -167,19 +167,25 @@ class IndexDestroyCommand : public Command {
 };
 
 /**
- * \brief "vsfs index insert" command.
+ * \brief "vsfs index insert/remove" command.
  *
- * Insert records into an existing file index.
+ * It manages both "insert" and "remove" sub-commands.
  */
-class IndexInsertCommand : public Command {
+class IndexUpdateCommand : public Command {
  public:
-  IndexInsertCommand() = default;
+  enum IndexOp {
+    UPDATE, REMOVE
+  };
+
+  explicit IndexUpdateCommand(IndexOp op);
 
   int parse_args(int argc, char* const argv[]);
 
   void print_help() const;
 
   Status run();
+
+  IndexOp op() const;
 
   /**
    * \brief Parses an index record from stdin.
@@ -192,6 +198,8 @@ class IndexInsertCommand : public Command {
 
  private:
   typedef unordered_map<string, vector<string>> IndexDataMap;
+
+  IndexOp op_;
 
   /// Index name.
   string name_;

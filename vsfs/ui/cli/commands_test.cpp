@@ -22,8 +22,8 @@ namespace vsfs {
 namespace ui {
 namespace cli {
 
-TEST(IndexInsertCommandTest, TestParseRecordFromStdin) {
-  IndexInsertCommand cmd;
+TEST(IndexUpdateCommandTest, TestParseRecordFromStdin) {
+  IndexUpdateCommand cmd(IndexUpdateCommand::IndexOp::UPDATE);
   string path, key;
   EXPECT_TRUE(cmd.parse_record("/foo/bar/zoo key", &path, &key));
   EXPECT_EQ("/foo/bar/zoo", path);

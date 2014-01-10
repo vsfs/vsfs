@@ -281,8 +281,9 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
   } else if (subcmd == "destroy") {
     sub_command_.reset(new IndexDestroyCommand);
   } else if (subcmd == "insert") {
-    sub_command_.reset(new IndexInsertCommand);
+    sub_command_.reset(new IndexUpdateCommand(IndexUpdateCommand::UPDATE));
   } else if (subcmd == "remove") {
+    sub_command_.reset(new IndexUpdateCommand(IndexUpdateCommand::REMOVE));
   } else if (subcmd == "stat") {
   } else if (subcmd == "list") {
   }
@@ -561,8 +562,12 @@ Status IndexDestroyCommand::run() {
   return client.remove_index(root_, name_);
 }
 
-void IndexInsertCommand::print_help() const {
-  fprintf(stderr, "Usage: vsfs index insert [options] NAME [FILE KEY]...\n");
+IndexUpdateCommand::IndexUpdateCommand(IndexOp op) : op_(op) {
+}
+
+void IndexUpdateCommand::print_help() const {
+  fprintf(stderr, "Usage: vsfs index %s [options] NAME [FILE KEY]...\n",
+          op_ == IndexOp::UPDATE ? "insert" : "remove");
   fprintf(stderr, "General Options:\n"
           "  -h, --help\t\t\tShow this help.\n"
           "  --debug\t\t\tRun in debug mode.\n"
@@ -577,7 +582,7 @@ void IndexInsertCommand::print_help() const {
           "");
 }
 
-int IndexInsertCommand::parse_args(int argc, char* const argv[]) {
+int IndexUpdateCommand::parse_args(int argc, char* const argv[]) {
   static struct option longopts[] = {
     { "help", no_argument, NULL, 'h' },
     { "stdin", no_argument, NULL, 's' },
@@ -627,7 +632,7 @@ int IndexInsertCommand::parse_args(int argc, char* const argv[]) {
   return 0;
 }
 
-bool IndexInsertCommand::parse_record(
+bool IndexUpdateCommand::parse_record(
     const string& buf, string* path, string* key) const {
   CHECK_NOTNULL(path);
   CHECK_NOTNULL(key);
@@ -643,7 +648,7 @@ bool IndexInsertCommand::parse_record(
   return true;
 }
 
-Status IndexInsertCommand::run() {
+Status IndexUpdateCommand::run() {
   VSFSRpcClient client(host_, port_);
   Status status = client.init();
   if (!status.ok()) {
@@ -652,7 +657,8 @@ Status IndexInsertCommand::run() {
     return status;
   }
 
-  // TODO(lxu): only support insert record to prove of concept.
+  int op = op_ == UPDATE ? VSFSRpcClient::IndexUpdateRequest::INSERT
+                         : VSFSRpcClient::IndexUpdateRequest::REMOVE;
   vector<VSFSRpcClient::IndexUpdateRequest> updates;
   if (use_stdin_) {
     // Reads record through stdin
@@ -662,19 +668,14 @@ Status IndexInsertCommand::run() {
       if (buf.empty()) {
         continue;
       }
-      // TODO(lxu): handles more complated strings, such as string with
-      // quotations.
-      size_t sep_pos = buf.find_first_of(" \t");
-      size_t value_pos = buf.find_first_not_of(" \t", sep_pos);
-      if (sep_pos == string::npos || value_pos == string::npos) {
+      string file_path, key;
+      if (!parse_record(buf, &file_path, &key)) {
         LOG(ERROR) << "An error has occorred when read: " << buf;
         return Status(-EINVAL, "Wrong index record format.");
       }
-      string file_path = buf.substr(0, sep_pos);
-      string key = buf.substr(value_pos);
       updates.emplace_back();
       auto& request = updates.back();
-      request.op = VSFSRpcClient::IndexUpdateRequest::INSERT;
+      request.op = op;
       request.file_path = fs::absolute(file_path).string();
       request.index_name = name_;
       request.key = key;
@@ -694,7 +695,7 @@ Status IndexInsertCommand::run() {
       for (const auto& key : update.second) {
         updates.emplace_back();
         auto& request = updates.back();
-        request.op = VSFSRpcClient::IndexUpdateRequest::INSERT;
+        request.op = op;
         request.file_path = fs::absolute(update.first).string();
         request.index_name = name_;
         request.key = key;
