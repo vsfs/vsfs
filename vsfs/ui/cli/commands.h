@@ -112,19 +112,13 @@ class IndexCommand : public Command {
 
   Status run();
 
-  /**
-   * \brief Parses an index record from stdin.
-   * \param[in] line a line contains "/file/path key"
-   * \param[out] path filled with file path.
-   * \param[out] key filled with file key in the index.
-   * \return true if the line is correctly parsed.
-   */
-  bool parse_record(const string& line, string* path, string* key) const;
-
  private:
   unique_ptr<Command> sub_command_;
 };
 
+/**
+ * \brief "vsfs index create..." command.
+ */
 class IndexCreateCommand : public Command {
  public:
   IndexCreateCommand();
@@ -149,6 +143,11 @@ class IndexCreateCommand : public Command {
   int key_type_;
 };
 
+/**
+ * \brief "vsfs index destory" command.
+ *
+ * Completely deletes a file index.
+ */
 class IndexDestroyCommand : public Command {
  public:
   IndexDestroyCommand() = default;
@@ -167,6 +166,11 @@ class IndexDestroyCommand : public Command {
   string name_;
 };
 
+/**
+ * \brief "vsfs index insert" command.
+ *
+ * Insert records into an existing file index.
+ */
 class IndexInsertCommand : public Command {
  public:
   IndexInsertCommand() = default;
@@ -176,6 +180,15 @@ class IndexInsertCommand : public Command {
   void print_help() const;
 
   Status run();
+
+  /**
+   * \brief Parses an index record from stdin.
+   * \param[in] line a line contains "/file/path key"
+   * \param[out] path filled with file path.
+   * \param[out] key filled with file key in the index.
+   * \return true if the line is correctly parsed.
+   */
+  bool parse_record(const string& line, string* path, string* key) const;
 
  private:
   typedef unordered_map<string, vector<string>> IndexDataMap;

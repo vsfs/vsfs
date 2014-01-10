@@ -312,22 +312,6 @@ Status IndexCommand::run() {
   return Status(-EINVAL, "Invalid command");
 }
 
-bool IndexCommand::parse_record(
-    const string& buf, string* path, string* key) const {
-  CHECK_NOTNULL(path);
-  CHECK_NOTNULL(key);
-  if (buf.empty()) {
-    return false;
-  }
-  vector<string> params = tokenize(buf);
-  if (params.size() != 2) {
-    return false;
-  }
-  *path = params[0];
-  *key = params[1];
-  return true;
-}
-
 // ------- InfoCommand
 InfoCommand::InfoCommand() : recursive_(false) {
 }
@@ -641,6 +625,22 @@ int IndexInsertCommand::parse_args(int argc, char* const argv[]) {
     return -1;
   }
   return 0;
+}
+
+bool IndexInsertCommand::parse_record(
+    const string& buf, string* path, string* key) const {
+  CHECK_NOTNULL(path);
+  CHECK_NOTNULL(key);
+  if (buf.empty()) {
+    return false;
+  }
+  vector<string> params = tokenize(buf);
+  if (params.size() != 2) {
+    return false;
+  }
+  *path = params[0];
+  *key = params[1];
+  return true;
 }
 
 Status IndexInsertCommand::run() {
