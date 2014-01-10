@@ -81,26 +81,6 @@ class SearchCommand : public Command {
   double nodes_time_;
 };
 
-/**
- * \class InfoCommand
- * \brief Query the information of various aspects of VSFS.
- */
-class InfoCommand : public Command {
- public:
-  InfoCommand();
-
-  int parse_args(int argc, char* const argv[]);
-
-  void print_help() const;
-
-  Status run();
-
- private:
-  bool recursive_;
-
-  vector<string> dirs_;
-};
-
 Command* Command::create_command(const string &subcmd) {
   if (subcmd == "help" || subcmd == "-h" || subcmd == "--help") {
     return new HelpCommand;
@@ -108,8 +88,6 @@ Command* Command::create_command(const string &subcmd) {
     return new SearchCommand;
   } else if (subcmd == "index") {
     return new IndexCommand;
-  } else if (subcmd == "info") {
-    return new InfoCommand;
   }
   fprintf(stderr, "Error: Unknown command: %s\n", subcmd.c_str());
   HelpCommand::usage();
@@ -150,7 +128,6 @@ void HelpCommand::print_help() const {
           "  help\t\t\tprint detail help on each command.\n"
           "  search\t\trun complex query.\n"
           "  index\t\t\tindex files.\n"
-          "  info\t\t\tquery the index information.\n"
           "\nFurther help:\n"
           "  man vsfs\n"
           "");
@@ -277,6 +254,7 @@ int IndexCommand::parse_args(int argc, char* const argv[]) {
     sub_command_.reset(new IndexUpdateCommand(IndexUpdateCommand::REMOVE));
   } else if (subcmd == "stat") {
   } else if (subcmd == "list") {
+    sub_command_.reset(new IndexListCommand);
   }
   if (!sub_command_) {
     fprintf(stderr, "Unknown command: %s.\n", subcmd.c_str());
@@ -302,87 +280,6 @@ Status IndexCommand::run() {
     return sub_command_->run();
   }
   return Status(-EINVAL, "Invalid command");
-}
-
-// ------- InfoCommand
-InfoCommand::InfoCommand() : recursive_(false) {
-}
-
-void InfoCommand::print_help() const {
-  fprintf(stderr, "Usage: vsfs info [options] PATH...\n"
-          "Options:\n"
-          "  -h, --help\t\t\tdisplay this help information.\n"
-          "  -r, --recursive\t\tshow all indices recursively.\n"
-          "  -d, --detail\t\t\tshow detail status of the index.\n"
-          "  -H, --host\t\t\tsets the master address.\n"
-          "  -p, --port\t\t\tsets the master port number.\n"
-          "\n");
-}
-
-int InfoCommand::parse_args(int argc, char* const argv[]) {
-  int ch;
-  static struct option longopts[] = {
-    { "help", no_argument, NULL, 'h' },
-    { "port", required_argument, NULL, 'p' },
-    { "host", required_argument, NULL, 'H' },
-    { "recursive", no_argument, NULL, 'r' },
-    { NULL, 0, NULL, 0 }
-  };
-  static const char* shortopts = "hp:H:r:";
-  while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
-    switch (ch) {
-      case 'H':
-        host_ = optarg;
-        break;
-      case 'p':
-        port_ = lexical_cast<int>(optarg);
-        break;
-      case 'r':
-        recursive_ = true;
-        break;
-      case 'h':
-      default:
-        return -1;
-    }
-  }
-  argc -= optind;
-  argv += optind;
-
-  if (argc == 0) {
-    return -1;
-  }
-  for (int i = 0; i < argc; ++i) {
-    dirs_.push_back(argv[i]);
-  }
-  return 0;
-}
-
-Status InfoCommand::run() {
-  Status status;
-  vector<IndexInfo> index_infos;
-
-  VSFSRpcClient client(host_, port_);
-  status = client.init();
-  if (!status.ok()) {
-    LOG(ERROR) << "Failed to init connection to master node: "
-               << status.message();
-    return status;
-  }
-
-  // Only query the first directory for now.
-  for (const auto& path : dirs_) {
-    index_infos.clear();
-    printf("Indices on: %s\n", path.c_str());
-    status = client.info(path, &index_infos);
-    if (!status.ok()) {
-      printf("Error to query the index info for %s: %s.\n",
-             path.c_str(), status.message().c_str());
-    }
-    for (const auto& info : index_infos) {
-      printf("  - %s\n", info.index_name().c_str());
-    }
-  }
-  return Status::OK;
 }
 
 IndexCreateCommand::IndexCreateCommand() : index_type_(0), key_type_(0) {
@@ -705,6 +602,90 @@ Status IndexUpdateCommand::run() {
     }
   }
   return status;
+}
+
+// --- Index list command
+IndexListCommand::IndexListCommand() : recursive_(false) {
+}
+
+void IndexListCommand::print_help() const {
+  fprintf(stderr, "Usage: vsfs index list [options] PATH\n");
+  fprintf(stderr, "Options:\n"
+          "  -h, --help\t\t\tShow this help.\n"
+          "  --debug\t\t\tRun in debug mode.\n"
+          "  -v, --verbose[=LEVEL]\t\tRun in verbose mode and level.\n"
+          "  -H, --host\t\t\tSet the master address.\n"
+          "  -p, --port\t\t\tSet the master port.\n"
+          "  -r, --recursive\t\tRecusively list out all indices."
+          "\n\nFurther help:\n"
+          "  man vsfs\n"
+          "");
+}
+
+int IndexListCommand::parse_args(int argc, char* const argv[]) {
+  static struct option longopts[] = {
+    { "help", no_argument, NULL, 'h' },
+    { "port", required_argument, NULL, 'p' },
+    { "host", required_argument, NULL, 'H' },
+    { "verbose", optional_argument, NULL, 'v' },
+    { "recursive", no_argument, NULL, 'r' },
+    { NULL, 0, NULL, 0 }
+  };
+  static const char* shortopts = "hp:H:v:r";
+  int ch;
+  while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
+    switch (ch) {
+      case 'p':
+        port_ = lexical_cast<int>(optarg);
+        break;
+      case 'H':
+        host_ = optarg;
+        break;
+      case 'v':
+        set_verbose_level(optarg);
+        break;
+      case 'r':
+        recursive_ = true;
+        break;
+      case 'h':
+      default:
+        return -1;
+    }
+  }
+  argc -= optind;
+  argv += optind;
+
+  if (argc == 0) {
+    return -1;
+  }
+  path_ = argv[0];
+  return 0;
+}
+
+Status IndexListCommand::run() {
+  vector<IndexInfo> index_infos;
+
+  VSFSRpcClient client(host_, port_);
+  auto status = client.init();
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to init connection to master node: "
+               << status.message();
+    return status;
+  }
+
+  // Only query the first directory for now.
+  index_infos.clear();
+  printf("Indices on: %s\n", path_.c_str());
+  status = client.info(path_, &index_infos);
+  if (!status.ok()) {
+    printf("Error to query the index info for %s: %s.\n",
+           path_.c_str(), status.message().c_str());
+    return status;
+  }
+  for (const auto& info : index_infos) {
+    printf("  - %s\n", info.index_name().c_str());
+  }
+  return Status::OK;
 }
 
 }  // namespace cli

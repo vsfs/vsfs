@@ -98,6 +98,9 @@ class HelpCommand : public Command {
 /**
  * \class IndexCommand
  * \brief Provides an indexing interface to command line.
+ *
+ * The actual operations are processed by its sub-command, e.g.,
+ * IndexCreateCommand, IndexUpdateCommand and such.
  */
 class IndexCommand : public Command {
  public:
@@ -116,6 +119,8 @@ class IndexCommand : public Command {
 
 /**
  * \brief "vsfs index create..." command.
+ *
+ * Creates file index.
  */
 class IndexCreateCommand : public Command {
  public:
@@ -183,6 +188,9 @@ class IndexUpdateCommand : public Command {
 
   Status run();
 
+  /**
+   * \brief Returns the op code of this command.
+   */
   IndexOp op() const;
 
   /**
@@ -208,6 +216,22 @@ class IndexUpdateCommand : public Command {
   uint64_t batch_size_;
 
   IndexDataMap index_data_;
+};
+
+class IndexListCommand : public Command {
+ public:
+  IndexListCommand();
+
+  int parse_args(int argc, char* const argv[]);
+
+  void print_help() const;
+
+  Status run();
+
+ private:
+  string path_;
+
+  bool recursive_;
 };
 
 }  // namespace cli
