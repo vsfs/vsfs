@@ -49,6 +49,7 @@ using std::vector;
 using vobla::Status;
 using vobla::Timer;
 using vobla::stringprintf;
+using vobla::tokenize;
 using vsfs::client::VSFSRpcClient;
 using vsfs::index::IndexInfo;
 
@@ -432,64 +433,12 @@ bool IndexCommand::parse_record(
   if (buf.empty()) {
     return false;
   }
-  // TODO(eddyxu): extract to vobla
-  int quotion = 0;
-  bool in_segment = false;
-  vector<string> segments;
-  size_t i = 0;
-  while (i < buf.size()) {
-  }
-  size_t begin = 0;
-  // Skips all white spaces
-  for (size_t i = 0; i < buf.size(); ++i) {
-    int c = buf[i];
-    if (quotion == 0) {
-      if (isblank(c)) {
-        continue;
-      }
-      if (c == '\'' || c == '"') {
-        quotion = c;
-      } else {
-        quotion = ' '
-      }
-    }
-
-    if (!in_segment) {
-      if (isblank(c)) {
-        continue;
-      }
-      in_segment = true;
-      if (c == '\'' || c == '\"') {
-        in_quotion = true;
-        begin = i + 1;
-      } else {
-        begin = i;
-      }
-    } else {
-      if (c == '\\') {  // Skip escape chars
-        i++;
-        continue;
-      }
-      if (in_quotion && (c == '\'' || c == '\"')) {
-        segments.push_back(buf.substr(begin, i - begin));
-        in_segment = false;
-        in_quotion = false;
-      } else if (isblank(c)) {
-        segments.push_back(buf.substr(begin, i - begin));
-        in_segment = false;
-        in_quotion = false;
-      }
-    }
-  }
-  if (in_segment) {
-    segments.push_back(buf.substr(begin));
-  }
-  if (segments.size() != 2) {
-    LOG(ERROR) << "Do not have enough segments." << segments.size();
+  vector<string> params = tokenize(buf);
+  if (params.size() != 2) {
     return false;
   }
-  *path = segments[0];
-  *key = segments[1];
+  *path = params[0];
+  *key = params[1];
   return true;
 }
 
