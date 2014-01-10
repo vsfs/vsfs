@@ -30,7 +30,6 @@ using std::vector;
 
 namespace vobla {
 class Status;
-class Timer;
 }
 
 namespace vsfs {
@@ -76,7 +75,6 @@ class Command : boost::noncopyable {
   string host_;
   int port_;
   bool debug_;
-  unique_ptr<vobla::Timer> timer_;
 };
 
 /**

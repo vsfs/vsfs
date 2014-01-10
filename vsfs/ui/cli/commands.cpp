@@ -20,17 +20,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <cstdio>
-#include <functional>
 #include <iostream>  // NOLINT
-#include <list>
 #include <memory>
 #include <string>
-#include <thread>
-#include <unordered_map>
 #include <vector>
 #include "vobla/status.h"
 #include "vobla/string_util.h"
-#include "vobla/timer.h"
 #include "vobla/traits.h"
 #include "vsfs/client/vsfs_rpc_client.h"
 #include "vsfs/common/complex_query.h"
@@ -41,13 +36,10 @@
 #include "vsfs/ui/cli/commands.h"
 
 using boost::lexical_cast;
-using std::list;
 using std::string;
-using std::thread;
 using std::unique_ptr;
 using std::vector;
 using vobla::Status;
-using vobla::Timer;
 using vobla::stringprintf;
 using vobla::tokenize;
 using vsfs::client::VSFSRpcClient;
@@ -126,7 +118,6 @@ Command* Command::create_command(const string &subcmd) {
 
 Command::Command() : host_(kDefaultMasterHost), port_(kDefaultMasterPort),
     debug_(false) {
-  timer_.reset(new Timer);
 }
 
 Command::~Command() {
