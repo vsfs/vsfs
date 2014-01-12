@@ -51,7 +51,8 @@ Create a file index on directory _DIR_:
 	  int32, int64, float, double, string_.
     * `-t, --type` _TYPE_:
 	  Choose the structure of index (_btree_ and _hash_). Optional, default
-	  value is _btree_.
+	  value is _btree_. _Btree_ index is favorable for range query, and _hash_
+	  index is favorable for point query.
 
 Delete a file index on directory _DIR_ with _NAME_:
 
@@ -59,10 +60,35 @@ Delete a file index on directory _DIR_ with _NAME_:
 
 Insert records into a file index:
 
+There are two ways to insert/update records into VSFS: 1) specify the file path
+and its corrensponding keys from parameters and 2) feed the index records from
+the pipeline. If there are spaces in file path or keys, you should put them
+in quotation marks.
+
+  * `vsfs index insert` [_options_] _NAME_ _FILE_ _KEY_ [_FILE_ _KEY_]...:
+	Directly specify files and its key in command line parameters.
+
+  * `vsfs index insert` [_options_] --stdin _NAME_:
+	Use pipeline to feed file index. vsfs accepts file index records (e.g., a
+	(_path, key_) pair) from stdin. Each line in stdin is considered as
+	one record with format "/file/path key".
+
+  * Options:
+	* `-b, --batch` _NUM_:
+	  Sets the batch size of sending index records.
+
+
 ## EXAMPLES
 
-  * To create a file index on path _path_. :
-   <code>`vsfs index create` _path_ _NAME_</code>
+	# Index two files with float keys.
+	vsfs index insert energy /foo/bar/file0 100 /foo/bar/file1 201.2
+
+	# Index two files with string keys. Each file has space(s) in its file path.
+	vsfs index insert "string index" "/foo/bar/drug 100" "mark 100" "/foo/another bar/drug-101" "invalid value"
+
+	# Feeds index through pipeline.
+	gen_index.py | vsfs index insert --stdin energy
+	cat /path/preprocessed-symbols.txt | vsfs index insert --stdin symbols
 
 ## ENVIRONMENT
 
