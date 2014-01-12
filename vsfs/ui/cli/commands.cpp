@@ -68,7 +68,7 @@ const uint64_t kDefaultBatchSize = 10000;
  */
 class SearchCommand : public Command {
  public:
-  int parse_args(int argc, char* const argv[]);
+  int parse_args(int argc, char* argv[]);
 
   /// Print detailed help for "search" command.
   void print_help() const;
@@ -125,7 +125,7 @@ void Command::set_verbose_level(const char* level) {
   FLAGS_v = verbose_level;
 }
 
-int HelpCommand::parse_args(int argc, char* const argv[]) {
+int HelpCommand::parse_args(int argc, char* argv[]) {
   if (argc > 1) {
     sub_command_ = argv[1];
     return 0;
@@ -166,7 +166,7 @@ void HelpCommand::usage() {
 }
 
 // --- SearchCommand -----
-int SearchCommand::parse_args(int argc, char* const argv[]) {
+int SearchCommand::parse_args(int argc, char* argv[]) {
   int ch;
   static struct option longopts[] = {
     { "help", no_argument, NULL, 'h' },
@@ -244,7 +244,7 @@ Status SearchCommand::run() {
   return Status::OK;
 }
 
-int IndexCommand::parse_args(int argc, char* const argv[]) {
+int IndexCommand::parse_args(int argc, char* argv[]) {
   sub_command_.reset();
   string subcmd = "";
   if (argc == 1) {
@@ -298,7 +298,7 @@ Status IndexCommand::run() {
 IndexCreateCommand::IndexCreateCommand() : index_type_(0), key_type_(0) {
 }
 
-int IndexCreateCommand::parse_args(int argc, char* const argv[]) {
+int IndexCreateCommand::parse_args(int argc, char* argv[]) {
   optind = 1;
   static struct option longopts[] = {
     { "help", no_argument, NULL, 'h' },
@@ -406,7 +406,7 @@ void IndexDestroyCommand::print_help() const {
           "");
 }
 
-int IndexDestroyCommand::parse_args(int argc, char* const argv[]) {
+int IndexDestroyCommand::parse_args(int argc, char* argv[]) {
   optind = 1;
   static struct option longopts[] = {
     { "help", no_argument, NULL, 'h' },
@@ -483,7 +483,9 @@ void IndexUpdateCommand::print_help() const {
           "");
 }
 
-int IndexUpdateCommand::parse_args(int argc, char* const argv[]) {
+int IndexUpdateCommand::parse_args(int argc, char* argv[]) {
+  // Reset optind to 1 to allow getopt_long() being called multiple times.
+  optind = 1;
   static struct option longopts[] = {
     { "help", no_argument, NULL, 'h' },
     { "stdin", no_argument, NULL, 's' },
@@ -497,7 +499,6 @@ int IndexUpdateCommand::parse_args(int argc, char* const argv[]) {
   };
   static const char* shortopts = "hsdv:H:p:b:";
 
-  string profile_targets;
   int ch;
   while ((ch = getopt_long(argc, argv, shortopts, longopts, NULL)) != -1) {
     switch (ch) {
@@ -641,7 +642,7 @@ void IndexListCommand::print_help() const {
           "");
 }
 
-int IndexListCommand::parse_args(int argc, char* const argv[]) {
+int IndexListCommand::parse_args(int argc, char* argv[]) {
   static struct option longopts[] = {
     { "help", no_argument, NULL, 'h' },
     { "port", required_argument, NULL, 'p' },

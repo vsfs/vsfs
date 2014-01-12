@@ -18,6 +18,7 @@
 #define VSFS_UI_CLI_COMMANDS_H_
 
 #include <boost/utility.hpp>
+#include <gtest/gtest_prod.h>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -61,7 +62,7 @@ class Command : boost::noncopyable {
    * Returning other negtive value means the errors have been handled
    * internally.
    */
-  virtual int parse_args(int argc, char* const argv[]) = 0;
+  virtual int parse_args(int argc, char* argv[]) = 0;
 
   /// Runs this command.
   virtual vobla::Status run() = 0;
@@ -83,7 +84,7 @@ class Command : boost::noncopyable {
  */
 class HelpCommand : public Command {
  public:
-  int parse_args(int argc, char* const argv[]);
+  int parse_args(int argc, char* argv[]);
 
   void print_help() const;
 
@@ -106,7 +107,7 @@ class IndexCommand : public Command {
  public:
   IndexCommand() = default;
 
-  int parse_args(int argc, char* const argv[]);
+  int parse_args(int argc, char* argv[]);
 
   /// Prints the detailed help for "index" command.
   void print_help() const;
@@ -126,7 +127,7 @@ class IndexCreateCommand : public Command {
  public:
   IndexCreateCommand();
 
-  int parse_args(int argc, char* const argv[]);
+  int parse_args(int argc, char* argv[]);
 
   void print_help() const;
 
@@ -155,7 +156,7 @@ class IndexDestroyCommand : public Command {
  public:
   IndexDestroyCommand() = default;
 
-  int parse_args(int argc, char* const argv[]);
+  int parse_args(int argc, char* argv[]);
 
   void print_help() const;
 
@@ -182,16 +183,11 @@ class IndexUpdateCommand : public Command {
 
   explicit IndexUpdateCommand(IndexOp op);
 
-  int parse_args(int argc, char* const argv[]);
+  int parse_args(int argc, char* argv[]);
 
   void print_help() const;
 
   Status run();
-
-  /**
-   * \brief Returns the op code of this command.
-   */
-  IndexOp op() const;
 
   /**
    * \brief Parses an index record from stdin.
@@ -203,6 +199,8 @@ class IndexUpdateCommand : public Command {
   bool parse_record(const string& line, string* path, string* key) const;
 
  private:
+  FRIEND_TEST(IndexUpdateCommandTest, TestParseArgs);
+
   /// Map<path, vector<key>>
   typedef unordered_map<string, vector<string>> IndexDataMap;
 
@@ -223,7 +221,7 @@ class IndexListCommand : public Command {
  public:
   IndexListCommand();
 
-  int parse_args(int argc, char* const argv[]);
+  int parse_args(int argc, char* argv[]);
 
   void print_help() const;
 

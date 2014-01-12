@@ -25,7 +25,7 @@ using vobla::Status;
 using vsfs::ui::cli::Command;
 using vsfs::ui::cli::HelpCommand;
 
-int main(int argc, char* const argv[]) {
+int main(int argc, char* argv[]) {
   Command::program = argv[0];
 
   if (argc == 1) {
