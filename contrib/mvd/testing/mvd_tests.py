@@ -14,15 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+basedir = os.path.dirname(__file__)
+topdir = os.path.join(basedir, '..', '..', '..')
 import sys
-sys.path.append('../../../vsfs/fuse/testing')
+sys.path.append(os.path.join(topdir, 'vsfs/fuse/testing'))
 from fuse_tests import FuseTestBase
-from subprocess import call, check_call, check_output
+from subprocess import call, check_call
 import os
 import time
 import unittest
 
-VSFS = '../../../vsfs/ui/cli/vsfs'
+VSFS = os.path.join(topdir, 'vsfs/ui/cli/vsfs')
+MVD_PARSER = os.path.join(basedir, '../parser.py')
 
 class MVDFuseTest(FuseTestBase):
     def setUp(self):
@@ -35,15 +39,15 @@ class MVDFuseTest(FuseTestBase):
     def test_import(self):
         testdir = os.path.join(self.mount_dir, 'test')
         self.assertEqual(0, call('mkdir -p %s' % testdir, shell=True))
+        self.assertEqual(0, call(
+            '{} index create -t btree -k float /test energy'.format(VSFS),
+            shell=True))
         self.assertEqual(
-            0, call('%s index create -t btree -k float /test energy' % VSFS,
-                    shell=True))
+            0, call('{} index list /test'.format(VSFS), shell=True))
         self.assertEqual(
-            0, call('%s index list /test' % VSFS, shell=True))
+            0, call('cp {}/*.mol2 {}'.format(basedir, testdir), shell=True))
         self.assertEqual(
-            0, call('cp *.mol2 %s' % testdir, shell=True))
-        self.assertEqual(
-            0, call('../parser.py --vsfs {} {}/*'.format(VSFS, testdir),
+            0, call('{} --vsfs {} {}/*'.format(MVD_PARSER, VSFS, testdir),
                     shell=True))
         self.assertEqual(
             0, call('{} search "/test/?energy>-120"'.format(VSFS), shell=True))

@@ -30,4 +30,10 @@ test: check integration-test
 integration-test:
 	$(MAKE) -C vsfs $@
 
+SYSTEM_TESTS = \
+	       contrib/mvd/testing/mvd_tests.py
+
+system-test:
+	for t in ${SYSTEM_TESTS}; do ./$$t; done
+
 .PHONY: check coverage release test integration-test
