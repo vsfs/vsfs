@@ -165,10 +165,8 @@ Status VSFSRpcClient::init() {
 Status VSFSRpcClient::connect(const string &host, int port) {
   host_ = host;
   port_ = port;
-  master_client_ = master_client_factory_->open(host, port);
-  VLOG(1) << "Connecting to " << host_ << ":" << port;
   try {
-    master_client_->open();
+    master_client_ = master_client_factory_->open(host, port);
     VLOG(1) << "Successfully connected to masterd: " << host << ":" << port;
     return Status::OK;
   } catch (TTransportException e) {  // NOLINT

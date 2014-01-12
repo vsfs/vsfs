@@ -35,6 +35,7 @@
 #include "vsfs/rpc/thrift_utils.h"
 #include "vsfs/ui/cli/commands.h"
 
+using boost::bad_lexical_cast;
 using boost::lexical_cast;
 using std::string;
 using std::unique_ptr;
@@ -96,6 +97,18 @@ Command* Command::create_command(const string &subcmd) {
 
 Command::Command() : host_(kDefaultMasterHost), port_(kDefaultMasterPort),
     debug_(false) {
+  char* env = getenv("VSFS_HOST");
+  if (env) {
+    host_ = env;
+  }
+  env = getenv("VSFS_PORT");
+  if (env) {
+    try {
+      port_ = lexical_cast<int>(env);
+    } catch (bad_lexical_cast e) {
+      LOG(ERROR) << "Bad port number: " << env;
+    }
+  }
 }
 
 Command::~Command() {
