@@ -18,8 +18,11 @@
 """
 
 from __future__ import print_function
+from collections import defaultdict
+from subprocess import Popen, PIPE
 import argparse
 import os
+
 
 def extract_features(mol_file):
     features = {}
@@ -50,7 +53,6 @@ def find_vsfs_prefix(path):
                         return ''
                     return path
             break
-
     return prefix
 
 
@@ -66,10 +68,32 @@ def main():
         print("Files are not in VSFS?")
         return -1
 
+    file_features = {}
     for mol_file in args.file:
         abslute_path = os.path.abspath(mol_file)
         features = extract_features(abslute_path)
-        print(features, '/' + os.path.relpath(abslute_path, prefix))
+        in_vsfs_path = '/' + os.path.relpath(abslute_path, prefix)
+        file_features[in_vsfs_path] = features
+
+    # Reorder data to feed VSFS index.
+    index_data = defaultdict(list)
+    for path, v in file_features.iteritems():
+        for feature, value in v.iteritems():
+            index_data[feature].append((path, value))
+    #print(index_data)
+
+    for name, files in index_data.iteritems():
+        cmd = 'vsfs index insert --stdin {}'.format(name)
+        print(cmd)
+        pipe = Popen(cmd, shell=True, stdin=PIPE)
+        for path, value in files:
+            record = '"{}" "{}"\n'.format(path, value)
+            print(record)
+            pipe.stdin.write(record)
+        pipe.stdin.close()
+        if pipe.wait() != 0:
+            print('Error occurred')
+
 
 if __name__ == '__main__':
     main()
