@@ -269,7 +269,7 @@ Status ComplexQuery::parse(const string &buf) {
       segment = buf.substr(last + 1, pos - last - 1);
       pos++;
     }
-    VLOG(0) << "ComplexQuery::parse: " << segment;
+    VLOG(1) << "ComplexQuery::parse: " << segment;
     status = parse_segment(segment);
     if (!status.ok()) {
       return status;
