@@ -77,18 +77,17 @@ in quotation marks.
 	* `-b, --batch` _NUM_:
 	  Sets the batch size of sending index records.
 
-
 ## EXAMPLES
 
 	# Index two files with float keys.
-	vsfs index insert energy /foo/bar/file0 100 /foo/bar/file1 201.2
+	$ vsfs index insert energy /foo/bar/file0 100 /foo/bar/file1 201.2
 
 	# Index two files with string keys. Each file has space(s) in its file path.
-	vsfs index insert "string index" "/foo/bar/drug 100" "mark 100" "/foo/another bar/drug-101" "invalid value"
+	$ vsfs index insert "string index" "/foo/bar/drug 100" "mark 100" "/foo/another bar/drug-101" "invalid value"
 
 	# Feeds index through pipeline.
-	gen_index.py | vsfs index insert --stdin energy
-	cat /path/preprocessed-symbols.txt | vsfs index insert --stdin symbols
+	$ gen_index.py | vsfs index insert --stdin energy
+	$ cat /path/preprocessed-symbols.txt | vsfs index insert --stdin symbols
 
 ## ENVIRONMENT
 
