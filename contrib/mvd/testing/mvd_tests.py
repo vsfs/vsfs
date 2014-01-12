@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.7
 #
 # Copyright 2014 (c) Lei Xu <eddyxu@gmail.com>
 #
