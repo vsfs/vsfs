@@ -60,6 +60,7 @@ def main():
     """Main function of ....
     """
     parser = argparse.ArgumentParser()
+    parser.add_argument('--vsfs', help=argparse.SUPPRESS, default='vsfs')
     parser.add_argument('file', nargs='+', help='MOL2 files')
     args = parser.parse_args()
 
@@ -83,7 +84,7 @@ def main():
     #print(index_data)
 
     for name, files in index_data.iteritems():
-        cmd = 'vsfs index insert --stdin {}'.format(name)
+        cmd = '{} index insert --stdin {}'.format(args.vsfs, name)
         print(cmd)
         pipe = Popen(cmd, shell=True, stdin=PIPE)
         for path, value in files:

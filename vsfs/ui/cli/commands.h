@@ -203,6 +203,7 @@ class IndexUpdateCommand : public Command {
   bool parse_record(const string& line, string* path, string* key) const;
 
  private:
+  /// Map<path, vector<key>>
   typedef unordered_map<string, vector<string>> IndexDataMap;
 
   IndexOp op_;

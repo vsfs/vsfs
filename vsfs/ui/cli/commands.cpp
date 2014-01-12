@@ -530,6 +530,14 @@ int IndexUpdateCommand::parse_args(int argc, char* const argv[]) {
   if (argc == 0) {
     return -1;
   }
+  name_ = argv[0];
+  if (argc > 1 && argc % 2 == 0) {
+    LOG(ERROR) << "Missing FILE, KEY pairs.";
+    return -1;
+  }
+  for (int i = 1; i < argc; i += 2) {
+    index_data_[argv[i]].push_back(argv[i + 1]);
+  }
   return 0;
 }
 

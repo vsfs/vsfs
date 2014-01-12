@@ -17,7 +17,7 @@
 import sys
 sys.path.append('../../../vsfs/fuse/testing')
 from fuse_tests import FuseTestBase
-from subprocess import call, check_call
+from subprocess import call, check_call, check_output
 import os
 import time
 import unittest
@@ -43,7 +43,10 @@ class MVDFuseTest(FuseTestBase):
         self.assertEqual(
             0, call('cp *.mol2 %s' % testdir, shell=True))
         self.assertEqual(
-            0, call('../parser.py %s/*' % testdir, shell=True))
+            0, call('../parser.py --vsfs {} {}/*'.format(VSFS, testdir),
+                    shell=True))
+        self.assertEqual(
+            0, call('{} search "/test/?energy>-120"'.format(VSFS), shell=True))
 
 
 if __name__ == '__main__':
