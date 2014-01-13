@@ -72,7 +72,7 @@ in quotation marks.
   * **vsfs index insert** [`options`] `NAME` `FILE` `KEY` [`FILE` `KEY`]...
      Directly specify files and its key in command line parameters.
 
-  * **vsfs index insert** [`options`] --stdin `NAME`
+  * **vsfs index insert** [`options`] \-\-stdin `NAME`
 	Use pipeline to feed file index. vsfs accepts file index records (e.g., a
 	(`path, key`) pair) from stdin. Each line in stdin is considered as
 	one record with format "/file/path key".
@@ -80,6 +80,7 @@ in quotation marks.
 Options:
 
 -b, --batch=NUM           Sets the batch size of sending index records.
+-s, --stdin               Use stdin to feed index records.
 
 ENVIRONMENT
 ===========
