@@ -20,7 +20,8 @@ SYMOPSIS
 DESCRIPTION
 ===========
 
-**vsfs** is the command line utility to manipulate VSFS file system.
+**vsfs** is the command line utility to manipulate VSFS file system and index
+store.
 
 **vsfs index create** [--key KEY] [--type TYPE] `DIR NAME`
 
@@ -31,10 +32,13 @@ DESCRIPTION
 **vsfs index remove** [-s|--stdin] [-b|--batch NUM] `NAME` [FILE KEY]...
 
 **vsfs index stat** `DIR` `NAME`
+  (unimplemeted)
 
 **vsfs index list** [-r|--recursive] `DIR`
 
 **vsfs search** `QUERY`
+
+**vsfs help**
 
 OPTIONS
 ============
@@ -50,24 +54,24 @@ A file index in VSFS is identified by its location (i.e. `DIR`) and name (i.g.,
 `NAME`), while it is possible to specify each index performance characteristics
 independantly when create this index.
 
-Create a file index on directory `DIR`:
 
 **vsfs index create** [--key KEY] [--type TYPE] `DIR` `NAME`
+  Create a file index on directory `DIR` with `NAME`. The `NAME` must be unique
+  within one directory. However, there is no *theorical* limit on the number of
+  indices with different names on the same directory.
 
--k, --key=<KEY>            Choose the data type of the key, currently it supports `int8, int16, int32, int64, float, double, string`.
+
+-k, --key=<KEY>         Choose the data type of the key, currently it supports `int8, int16, int32, int64, float, double, string`.
 
 -t, --type=<TYPE>       Choose the structure of index (`btree` and `hash`).  Optional, default value is `btree`. `Btree` index is favorable for range query, and `hash` index is favorable for point query.
 
-Delete a file index on directory `DIR` with `NAME`:
 
 **vsfs index delete** `DIR` `NAME`:
+  Delete the file index with `NAME` on directory `DIR`.
 
 Insert records into a file index:
 
-There are two ways to insert/update records into VSFS: 1) specify the file path
-and its corrensponding keys from parameters and 2) feed the index records from
-the pipeline. If there are spaces in file path or keys, you should put them
-in quotation marks.
+There are two ways to insert/update records into VSFS:
 
   * **vsfs index insert** [`options`] `NAME` `FILE` `KEY` [`FILE` `KEY`]...
      Directly specify files and its key in command line parameters.
@@ -76,6 +80,8 @@ in quotation marks.
 	Use pipeline to feed file index. vsfs accepts file index records (e.g., a
 	(`path, key`) pair) from stdin. Each line in stdin is considered as
 	one record with format "/file/path key".
+
+If there are spaces in file path or key, you should put them in quotation marks.
 
 Options:
 
@@ -94,7 +100,7 @@ ENVIRONMENT
 FILES
 =====
 
-*$HOME/.config/vsfs.json*
+*$HOME/.config/vsfs.json*    (unimplemeted)
 
 SEE ALSO
 ========
