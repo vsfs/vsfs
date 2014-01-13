@@ -12,7 +12,7 @@ Contents:
    :maxdepth: 2
 
    intro
-   install
+   setup
 
 
 Indices and tables
