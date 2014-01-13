@@ -46,7 +46,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Vsfs'
-copyright = u'2014, getvsfs.org'
+copyright = u'2012-present, getvsfs.com'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -204,7 +204,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
   ('index', 'Vsfs.tex', u'Vsfs Documentation',
-   u'getvsfs.org', 'manual'),
+   u'getvsfs.com', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -248,7 +248,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'Vsfs', u'Vsfs Documentation',
-   u'getvsfs.org', 'Vsfs', 'One line description of project.',
+   u'getvsfs.com', 'Vsfs', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -269,9 +269,9 @@ texinfo_documents = [
 
 # Bibliographic Dublin Core info.
 epub_title = u'Vsfs'
-epub_author = u'getvsfs.org'
-epub_publisher = u'getvsfs.org'
-epub_copyright = u'2014, getvsfs.org'
+epub_author = u'getvsfs.com'
+epub_publisher = u'getvsfs.com'
+epub_copyright = u'2014, getvsfs.com'
 
 # The basename for the epub file. It defaults to the project name.
 #epub_basename = u'Vsfs'
