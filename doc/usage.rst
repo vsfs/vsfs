@@ -19,8 +19,14 @@ records from given indices.
     # or ...
     $ cat /path/preprocessed-symbols.txt | vsfs index insert --stdin symbols
 
+    # Use vsfs(1) to search files
+    $ vsfs search "/foo/bar/?energy>114.5"
+
+    # Embeded file queries in directory.
+    $ ls "/foo/bar/?energy>114.5"
+
     # Run program on the search result directory:
-    $ mvd "/foo/bar/?energy>114.5"
+    $ /path/to/your/program "/foo/bar/?energy>114.5"
 
 
 For more details, please refer to man :doc:`vsfs(1) <man/vsfs.1>`.

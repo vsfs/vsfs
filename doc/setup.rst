@@ -1,7 +1,15 @@
 Setup VSFS Cluster
 ==================
 
+.. caution::
+
+    - VSFS is under heavily development. The content of this document is
+      subjected to change in future.
+    - VSFS is not ready to be deployed in production system.
+
 Vsfs consists with 3 major components: ``masterd``, ``indexd``, ``mount.vsfs``.
+These components can run on Linux. The offical supported distributions are
+`CentOS`, `Debian` and `Ubuntu`.
 
 Masterd
 --------
@@ -29,7 +37,7 @@ Indexd cluster is the file index store cluster of VSFS.
     -datadir /path/to/index/store -daemon
 
 
-.. note::
+.. caution::
     * Masterd and Indexd clusters are two Consistent Hashing Rings. Thus the
       metadata and file indices are well balanced and *stastically* distributed
       on each server. However, the data migration process between servers has
