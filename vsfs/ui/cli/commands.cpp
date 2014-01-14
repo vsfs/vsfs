@@ -95,8 +95,7 @@ Command* Command::create_command(const string &subcmd) {
   return nullptr;
 }
 
-Command::Command() : host_(kDefaultMasterHost), port_(kDefaultMasterPort),
-    debug_(false) {
+Command::Command() : host_(kDefaultMasterHost), port_(kDefaultMasterPort) {
   char* env = getenv("VSFS_HOST");
   if (env) {
     host_ = env;
@@ -463,7 +462,8 @@ Status IndexDestroyCommand::run() {
   return client.remove_index(root_, name_);
 }
 
-IndexUpdateCommand::IndexUpdateCommand(IndexOp op) : op_(op) {
+IndexUpdateCommand::IndexUpdateCommand(IndexOp op) : op_(op),
+    batch_size_(kDefaultBatchSize) {
 }
 
 void IndexUpdateCommand::print_help() const {
@@ -627,7 +627,7 @@ Status IndexUpdateCommand::run() {
 }
 
 // --- Index list command
-IndexListCommand::IndexListCommand() : recursive_(false) {
+IndexListCommand::IndexListCommand() {
 }
 
 void IndexListCommand::print_help() const {

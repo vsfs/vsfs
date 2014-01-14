@@ -75,7 +75,7 @@ class Command : boost::noncopyable {
 
   string host_;
   int port_;
-  bool debug_;
+  bool debug_ = false;
 };
 
 /**
@@ -204,13 +204,13 @@ class IndexUpdateCommand : public Command {
   /// Map<path, vector<key>>
   typedef unordered_map<string, vector<string>> IndexDataMap;
 
-  IndexOp op_;
+  IndexOp op_ = IndexOp::UPDATE;
 
   /// Index name.
   string name_;
 
   /// Set to true to use stdin to feed.
-  bool use_stdin_;
+  bool use_stdin_ = false;
 
   uint64_t batch_size_;
 
@@ -230,7 +230,7 @@ class IndexListCommand : public Command {
  private:
   string path_;
 
-  bool recursive_;
+  bool recursive_ = false;
 };
 
 }  // namespace cli
