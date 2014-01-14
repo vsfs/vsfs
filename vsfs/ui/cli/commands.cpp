@@ -731,8 +731,6 @@ Status print_index_info(VSFSRpcClient* client, const string& path,
 }   // namespace
 
 Status IndexListCommand::run() {
-  vector<IndexInfo> index_infos;
-
   VSFSRpcClient client(host_, port_);
   auto status = client.init();
   if (!status.ok()) {
@@ -741,19 +739,7 @@ Status IndexListCommand::run() {
     return status;
   }
 
-  // Only query the first directory for now.
-  index_infos.clear();
-  printf("Indices on: %s\n", path_.c_str());
-  status = client.info(path_, &index_infos);
-  if (!status.ok()) {
-    printf("Error to query the index info for %s: %s.\n",
-           path_.c_str(), status.message().c_str());
-    return status;
-  }
-  for (const auto& info : index_infos) {
-    printf("  - %s\n", info.index_name().c_str());
-  }
-  return Status::OK;
+  return print_index_info(&client, path_, recursive_);
 }
 
 }  // namespace cli
