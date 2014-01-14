@@ -177,7 +177,7 @@ Status IndexNamespace::find(const string &file_name, const string &name,
   return Status(-ENOENT, "The index does not exist.");
 }
 
-vector<string> IndexNamespace::collect(const string &root, const string &name) {
+vector<string> IndexNamespace::collect(const string& root, const string& name) {
   vector<string> indices;
   MutexGuard guard(lock_);
   auto iter = nodes_.lower_bound(root);
@@ -196,8 +196,8 @@ vector<string> IndexNamespace::collect(const string &root, const string &name) {
 
 vector<string> IndexNamespace::get_indices(const string& root, bool recursive) {
   vector<string> results;
-  MutexGuard guard(lock_);
   if (recursive) {
+    MutexGuard guard(lock_);
     for (auto it = nodes_.lower_bound(root); it != nodes_.end(); ++it) {
       const string& path = it->first;
       if (!boost::algorithm::starts_with(path, root)) {
@@ -216,7 +216,7 @@ vector<string> IndexNamespace::get_indices(const string& root, bool recursive) {
   return results;
 }
 
-vector<string> IndexNamespace::get_index_names(const string &path) {
+vector<string> IndexNamespace::get_index_names(const string& path) {
   vector<string> names;
   MutexGuard guard(lock_);
   const auto node_pointer = find_or_null(nodes_, path);

@@ -157,6 +157,16 @@ class VSFSClient : boost::noncopyable {
    */
   virtual Status info(const string& path,
                       vector<index::IndexInfo>* infos) = 0;
+
+  /**
+   * \brief Get the metadata for indices on directory 'path'.
+   * \param[in] path the path of a directory.
+   * \param[out] infos filled with the index metadata on the directory.
+   * \param[in] recusive sets to true to fetch index informations recursively.
+   */
+  virtual Status get_index_infos(const string& path,
+                                 vector<index::IndexInfo>* infos,
+                                 bool recursive = false) = 0;
 };
 
 }  // namespace client

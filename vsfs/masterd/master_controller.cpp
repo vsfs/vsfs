@@ -400,6 +400,7 @@ Status MasterController::locate_indices(
 
 vector<string> MasterController::locate_indices(const string& root,
                                                 bool recursive) {
+  VLOG(0) << "MasterControoler recusively locate path: " << root;
   return index_namespace_->get_indices(root, recursive);
 }
 

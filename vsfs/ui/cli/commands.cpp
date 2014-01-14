@@ -375,8 +375,8 @@ void IndexCreateCommand::print_help() const {
 Status IndexCreateCommand::run() {
   // string canonical_root = fs::absolute(index_root_).string();
   string canonical_root = root_;
-  VLOG(0) << "Creating index...";
-  VLOG(0) << "Index: " << canonical_root << ":" << name_
+  VLOG(1) << "Creating index...";
+  VLOG(1) << "Index: " << canonical_root << ":" << name_
       << " type: " << index_type_ << " "
       << " key: " << key_type_;
   VSFSRpcClient client(host_, port_);
@@ -693,6 +693,9 @@ Status print_index_info(VSFSRpcClient* client, const string& path,
     }
     struct stat stbuf;
     for (const auto& subfile : subfiles) {
+      if (subfile == ".vsfs") {
+        continue;
+      }
       string subfile_path = path + "/" + subfile;
       status = client->getattr(subfile_path, &stbuf);
       if (!status.ok()) {
@@ -711,12 +714,14 @@ Status print_index_info(VSFSRpcClient* client, const string& path,
   }
 
   vector<IndexInfo> index_infos;
-  printf("Indices on: %s\n", path.c_str());
-  status = client->info(path, &index_infos);
+  status = client->get_index_infos(path, &index_infos);
   if (!status.ok()) {
     fprintf(stderr, "Error to query the index info for %s: %s.\n",
             path.c_str(), status.message().c_str());
     return status;
+  }
+  if (!index_infos.empty()) {
+    printf("Indices on: %s\n", path.c_str());
   }
   for (const auto& info : index_infos) {
     // TODO(eddyxu): better format for list output.

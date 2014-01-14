@@ -39,15 +39,19 @@ class MVDFuseTest(FuseTestBase):
     def test_import(self):
         testdir = os.path.join(self.mount_dir, 'test')
         self.assertEqual(0, call('mkdir -p %s' % testdir, shell=True))
+        self.assertEqual(0, call('mkdir -p %s/foo' % testdir, shell=True))
         self.assertEqual(0, call(
             '{} index create -t btree -k float /test energy'.format(VSFS),
+            shell=True))
+        self.assertEqual(0, call(
+            '{} index create -t btree -k int32 /test/foo fooindex'.format(VSFS),
             shell=True))
         self.assertEqual(
             0, call('{} index list /test'.format(VSFS), shell=True))
         self.assertEqual(
             0, call('cp {}/*.mol2 {}'.format(basedir, testdir), shell=True))
         self.assertEqual(
-            0, call('{} --vsfs {} {}/*'.format(MVD_PARSER, VSFS, testdir),
+            0, call('{} --vsfs {} {}/*.mol2'.format(MVD_PARSER, VSFS, testdir),
                     shell=True))
         self.assertEqual(
             0, call('{} search "/test/?energy>-120"'.format(VSFS), shell=True))

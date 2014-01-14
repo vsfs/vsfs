@@ -842,10 +842,16 @@ Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& requests) {
 
 Status VSFSRpcClient::info(const string& path,
                            vector<index::IndexInfo>* infos) {
+  return get_index_infos(path, infos, true);
+}
+
+Status VSFSRpcClient::get_index_infos(const string& path,
+                                      vector<IndexInfo>* infos,
+                                      bool recursive) {
   CHECK_NOTNULL(infos);
   RpcIndexInfoRequest request;
   request.path = path;
-  request.__set_recursive(true);
+  request.__set_recursive(recursive);
 
   auto master_map = master_map_.get_ch_ring_as_map();
   vector<string> indices;
@@ -903,6 +909,7 @@ Status VSFSRpcClient::info(const string& path,
             << " " << rpc_info.type << " " << rpc_info.key_type;
     infos->emplace_back(root, name, rpc_info.type, rpc_info.key_type);
   }
+
 
   return Status::OK;
 }
