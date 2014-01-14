@@ -31,7 +31,8 @@ integration-test:
 	$(MAKE) -C vsfs $@
 
 SYSTEM_TESTS = \
-	       contrib/mvd/testing/mvd_tests.py
+	       contrib/mvd/testing/mvd_tests.py \
+	       vsfs/ui/cli/testing/cli_tests.py
 
 system-test:
 	for t in ${SYSTEM_TESTS}; do ./$$t; done

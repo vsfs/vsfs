@@ -215,7 +215,7 @@ TEST_F(ClientMetadataTest, TestIndexInfo) {
   create_index("/foo/bar/zoo", "b");
 
   vector<IndexInfo> infos;
-  EXPECT_TRUE(client_->info("/foo/bar", &infos).ok());
+  EXPECT_TRUE(client_->get_index_infos("/foo/bar", &infos, true).ok());
   EXPECT_EQ(4u, infos.size());
   vector<string> actual_indices;
   for (const auto& info : infos) {

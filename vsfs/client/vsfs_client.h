@@ -151,14 +151,6 @@ class VSFSClient : boost::noncopyable {
   virtual Status update(const vector<IndexUpdateRequest>& updates) = 0;
 
   /**
-   * \brief Gets the information for all indices on the path.
-   * \param[in] path The path to find indices.
-   * \param[out] infos Filled with all index infos on this path.
-   */
-  virtual Status info(const string& path,
-                      vector<index::IndexInfo>* infos) = 0;
-
-  /**
    * \brief Get the metadata for indices on directory 'path'.
    * \param[in] path the path of a directory.
    * \param[out] infos filled with the index metadata on the directory.

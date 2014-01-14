@@ -43,7 +43,9 @@ class MockVSFSClient : public VSFSClient {
                                     int, int64_t, int64_t, int64_t));
   MOCK_METHOD2(search, Status(const ComplexQuery&, vector<string>*));
   MOCK_METHOD1(update, Status(const vector<IndexUpdateRequest>&));
-  MOCK_METHOD2(info, Status(const string&, vector<index::IndexInfo>*));
+  MOCK_METHOD3(get_index_infos, Status(const string&,
+                                       vector<index::IndexInfo>*,
+                                       bool recursive));
 };
 
 }  // namespace client

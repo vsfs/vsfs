@@ -840,11 +840,6 @@ Status VSFSRpcClient::update(const vector<IndexUpdateRequest>& requests) {
   return Status::OK;
 }
 
-Status VSFSRpcClient::info(const string& path,
-                           vector<index::IndexInfo>* infos) {
-  return get_index_infos(path, infos, true);
-}
-
 Status VSFSRpcClient::get_index_infos(const string& path,
                                       vector<IndexInfo>* infos,
                                       bool recursive) {

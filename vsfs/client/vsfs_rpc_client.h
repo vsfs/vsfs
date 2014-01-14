@@ -153,9 +153,6 @@ class VSFSRpcClient : public VSFSClient {
 
   Status update(const vector<IndexUpdateRequest>& updates);
 
-  Status info(const string& path, vector<index::IndexInfo>* infos)
-      __attribute__((deprecated));
-
   Status get_index_infos(const string& path,
                          vector<index::IndexInfo>* infos,
                          bool recursive = false);
