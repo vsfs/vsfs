@@ -63,9 +63,17 @@ class IndexInfo {
 
   int index_type() const;
 
+  /**
+   * \brief Returns index type in string format.
+   */
+  string index_type_string() const;
+
   void set_key_type(int type);
 
   int key_type() const;
+
+  /// Returns key type in string format.
+  string key_type_string() const;
 
  private:
   string index_path_;

@@ -678,6 +678,58 @@ int IndexListCommand::parse_args(int argc, char* argv[]) {
   return 0;
 }
 
+namespace {
+
+Status print_index_info(VSFSRpcClient* client, const string& path,
+                        bool recursive) {
+  CHECK_NOTNULL(client);
+  Status status;
+  if (recursive) {  // depth-first.
+    vector<string> subfiles;
+    status = client->readdir(path, &subfiles);
+    if (!status.ok()) {
+      VLOG(1) << "Failed to readdir() on " << path << ": " << status.message();
+      return status;
+    }
+    struct stat stbuf;
+    for (const auto& subfile : subfiles) {
+      string subfile_path = path + "/" + subfile;
+      status = client->getattr(subfile_path, &stbuf);
+      if (!status.ok()) {
+        VLOG(1) << "Failed to getattr of " << subfile_path
+                << ": " << status.message();
+        return status;
+      }
+      if (S_ISDIR(stbuf.st_mode) && !S_ISLNK(stbuf.st_mode)) {
+        // Recusively go to next level of directory but not follow symlinks.
+        status = print_index_info(client, subfile_path, recursive);
+        if (!status.ok()) {
+          return status;
+        }
+      }
+    }
+  }
+
+  vector<IndexInfo> index_infos;
+  printf("Indices on: %s\n", path.c_str());
+  status = client->info(path, &index_infos);
+  if (!status.ok()) {
+    fprintf(stderr, "Error to query the index info for %s: %s.\n",
+            path.c_str(), status.message().c_str());
+    return status;
+  }
+  for (const auto& info : index_infos) {
+    // TODO(eddyxu): better format for list output.
+    printf("  - %s (%s, %s)\n",
+           info.index_name().c_str(),
+           info.index_type_string().c_str(),
+           info.key_type_string().c_str());
+  }
+  return Status::OK;
+}
+
+}   // namespace
+
 Status IndexListCommand::run() {
   vector<IndexInfo> index_infos;
 

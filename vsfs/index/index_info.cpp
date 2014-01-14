@@ -100,6 +100,10 @@ int IndexInfo::index_type() const {
   return index_type_;
 }
 
+string IndexInfo::index_type_string() const {
+  return index_type_to_string(index_type_);
+}
+
 void IndexInfo::set_key_type(int type) {
   CHECK_GT(type, UNKNOWN);
   CHECK_LE(type, STRING);
@@ -108,6 +112,10 @@ void IndexInfo::set_key_type(int type) {
 
 int IndexInfo::key_type() const {
   return key_type_;
+}
+
+string IndexInfo::key_type_string() const {
+  return type_int_to_string(key_type_);
 }
 
 }  // namespace index
