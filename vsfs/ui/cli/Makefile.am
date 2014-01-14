@@ -1,6 +1,8 @@
 # vim: ts=8:st=8:noexpandtab
 
 CLEANFILES = *.gcda *.gcno *.gcov *.1
+EXTRA_DIST = \
+  vsfs.1.ronn
 
 lib_LIBRARIES = libvsfs-ui-cli.a
 bin_PROGRAMS = vsfs
