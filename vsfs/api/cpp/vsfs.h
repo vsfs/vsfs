@@ -21,10 +21,15 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include "vobla/status.h"
 #include "vobla/traits.h"
 #include "vsfs/common/types.h"
+
+using std::pair;
+using std::string;
+using std::vector;
 
 namespace vsfs {
 
@@ -67,13 +72,13 @@ class Vsfs : boost::noncopyable {
    * \param port the listen port of master server.
    * \param sm the storage manager instance of master server.
    */
-  Vsfs(const std::string& host, int port, StorageManager* sm);
+  Vsfs(const string& host, int port, StorageManager* sm);
 
   /**
    * \brief Constructs a Vsfs connection with URI.
    * \param uri the URI of the primary master (e.g., 'vsfs://node1:8829').
    */
-  // explicit Vsfs(const std::string& uri);
+  // explicit Vsfs(const string& uri);
 
   /// Used for dependancy injection.
   explicit Vsfs(client::VSFSClient* mock, StorageManager* sm);
@@ -87,18 +92,18 @@ class Vsfs : boost::noncopyable {
   vobla::Status disconnect();
 
   /// Creates a new file in the VSFS namespace.
-  vobla::Status create(const std::string& path, int64_t mode, int64_t uid,
+  vobla::Status create(const string& path, int64_t mode, int64_t uid,
                        int64_t gid, File** fobj);
 
   /// Deletes a new file.
-  vobla::Status unlink(const std::string& path);
+  vobla::Status unlink(const string& path);
 
   /**
    * \brief Get stat(2) information for a file.
    * \param path the absolute path of file or directory.
    * \param stbuf the stat(2) structure to contain file informations.
    */
-  vobla::Status getattr(const std::string& path, struct stat* stbuf);
+  vobla::Status getattr(const string& path, struct stat* stbuf);
 
   /**
    * \brief Creates a new directory on path.
@@ -108,7 +113,7 @@ class Vsfs : boost::noncopyable {
    * \param gid the group id of the new created directory.
    * \return Status::OK if success.
    */
-  vobla::Status mkdir(const std::string& path, int64_t mode,
+  vobla::Status mkdir(const string& path, int64_t mode,
                       int64_t uid, int64_t gid);
 
   /**
@@ -118,15 +123,15 @@ class Vsfs : boost::noncopyable {
    *
    * TODO(eddyxu): Add recursive remove directories.
    */
-  vobla::Status rmdir(const std::string& path);
+  vobla::Status rmdir(const string& path);
 
   /**
    * \brief Reads a directory and fills `sub_files`.
    * \param root the absolute path of the directory to be iterated.
    * \param sub_files filled with names of sub-files and sub-directories.
    */
-  vobla::Status readdir(const std::string& root,  // NOLINT
-                        std::vector<std::string>* sub_files);
+  vobla::Status readdir(const string& root,  // NOLINT
+                        vector<string>* sub_files);
 
   /**
    * \brief Creates an named file index on an existing directory.
@@ -138,8 +143,8 @@ class Vsfs : boost::noncopyable {
    * \note This newly created index has the uid and gid of the caller, and
    * mode of 0777.
    */
-  vobla::Status create_index(const std::string& path,
-                             const std::string& name,
+  vobla::Status create_index(const string& path,
+                             const string& name,
                              int index_type, int key_type);
 
   /**
@@ -151,14 +156,57 @@ class Vsfs : boost::noncopyable {
    *
    * \see create_index() above.
    */
-  vobla::Status create_index(const std::string& path,
-                             const std::string& name,
-                             const std::string& type,
-                             const std::string& key);
+  vobla::Status create_index(const string& path,
+                             const string& name,
+                             const string& type,
+                             const string& key);
 
   /// Removes a file index.
-  vobla::Status destroy_index(const std::string& path,
-                              const std::string& name);
+  vobla::Status destroy_index(const string& path,
+                              const string& name);
+
+  /// Pair<file_path, key>
+  typedef pair<string, string> FileKeyPair;
+
+  /**
+   * \brief insert/update index records to index name.
+   * \param name the index name.
+   * \param file_key_pairs a vector of (file, key) pairs. The key must be
+   * string.
+   *
+   * Since only the indexd knows the type of a key, so it is sufficient to
+   * transfer all index key type as string.
+   */
+  vobla::Status update_index(const string& name,
+                             const vector<FileKeyPair>& file_key_pairs);
+
+  /**
+   * \brief A helper function to call the update_index without transforming the
+   * keys to strings.
+   *
+   * It calls the above update_index() internally.
+   */
+  template <typename Key>
+  vobla::Status update_index(const string& name,
+                             const vector<pair<string, Key>>& pairs) {
+    vector<FileKeyPair> file_str_key_pairs;
+    file_str_key_pairs.reserve(pairs.size());
+    for (const auto& p : pairs) {
+      file_str_key_pairs.emplace_back(
+          std::make_pair(p.first, std::to_string(p.second)));
+    }
+    return update_index(name, file_str_key_pairs);
+  }
+
+  /**
+   * \brief Removes records from index.
+   */
+  vobla::Status remove_index(const string& name,
+                             const vector<FileKeyPair>& file_key_pairs);
+
+  // TODO(eddyxu): use Cursor or iterator.
+  /// Search files.
+  vobla::Status search(const string& query, vector<string>* results);
 
  private:
   std::unique_ptr<client::VSFSClient> client_;

@@ -19,15 +19,18 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <string>
+#include <vector>
 #include "vobla/status.h"
 #include "vobla/string_util.h"
 #include "vsfs/api/cpp/vsfs.h"
 #include "vsfs/client/vsfs_client.h"
 #include "vsfs/client/vsfs_rpc_client.h"
+#include "vsfs/common/complex_query.h"
 #include "vsfs/common/file.h"
 #include "vsfs/common/storage_manager.h"
 
 using std::string;
+using std::vector;
 using vobla::Status;
 using vobla::stringprintf;
 
@@ -110,6 +113,42 @@ Status Vsfs::create_index(const string& path, const string& name,
 
 Status Vsfs::destroy_index(const string& path, const string& name) {
   return client_->remove_index(path, name);
+}
+
+namespace {
+
+Status update_records(VSFSClient* client, int op, const string& name,
+                      const vector<Vsfs::FileKeyPair>& pairs) {
+  CHECK_NOTNULL(client);
+  vector<VSFSClient::IndexUpdateRequest> requests;
+  for (const auto& file_and_key : pairs) {
+    requests.emplace_back(op, file_and_key.first, name, file_and_key.second);
+  }
+  return client->update(requests);
+}
+
+}  // return namespace
+
+Status Vsfs::update_index(const string& name,
+                          const vector<FileKeyPair>& pairs) {
+  return update_records(client_.get(), VSFSClient::IndexUpdateRequest::UPDATE,
+                        name, pairs);
+}
+
+Status Vsfs::remove_index(const string& name,
+                          const vector<FileKeyPair>& pairs) {
+  return update_records(client_.get(), VSFSClient::IndexUpdateRequest::REMOVE,
+                        name, pairs);
+}
+
+Status Vsfs::search(const string& query, vector<string>* results) {
+  CHECK_NOTNULL(results);
+  ComplexQuery cq;
+  auto status = cq.parse(query);
+  if (!status.ok()) {
+    return status;
+  }
+  return client_->search(cq, results);
 }
 
 }  // namespace vsfs
