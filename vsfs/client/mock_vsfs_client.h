@@ -41,6 +41,7 @@ class MockVSFSClient : public VSFSClient {
   MOCK_METHOD2(unlink, Status(const string&, ObjectId*));
   MOCK_METHOD7(create_index, Status(const string&, const string&, int,
                                     int, int64_t, int64_t, int64_t));
+  MOCK_METHOD2(remove_index, Status(const string&, const string&));
   MOCK_METHOD2(search, Status(const ComplexQuery&, vector<string>*));
   MOCK_METHOD1(update, Status(const vector<IndexUpdateRequest>&));
   MOCK_METHOD3(get_index_infos, Status(const string&,

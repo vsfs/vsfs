@@ -116,6 +116,8 @@ class VSFSClient : boost::noncopyable {
       const string& root, const string& name, int index_type, int key_type,
       int64_t mode, int64_t uid, int64_t gid) = 0;
 
+  virtual Status remove_index(const string& path, const string& name) = 0;
+
   virtual Status search(const ComplexQuery& query,
                         vector<string>* results) = 0;
 

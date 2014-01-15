@@ -128,6 +128,38 @@ class Vsfs : boost::noncopyable {
   vobla::Status readdir(const std::string& root,  // NOLINT
                         std::vector<std::string>* sub_files);
 
+  /**
+   * \brief Creates an named file index on an existing directory.
+   * \param path the directoroy path. It must be existed.
+   * \param name the name of the index.
+   * \param index_type the data structure of index.
+   * \param key_type the key type of the index.
+   *
+   * \note This newly created index has the uid and gid of the caller, and
+   * mode of 0777.
+   */
+  vobla::Status create_index(const std::string& path,
+                             const std::string& name,
+                             int index_type, int key_type);
+
+  /**
+   * \brief Creates an named file index on an existing directory.
+   * \param path the directoroy path. It must be existed.
+   * \param name the name of the index.
+   * \param type the string presenting the index type.
+   * \param key the string representing the key type of the index.
+   *
+   * \see create_index() above.
+   */
+  vobla::Status create_index(const std::string& path,
+                             const std::string& name,
+                             const std::string& type,
+                             const std::string& key);
+
+  /// Removes a file index.
+  vobla::Status destroy_index(const std::string& path,
+                              const std::string& name);
+
  private:
   std::unique_ptr<client::VSFSClient> client_;
   StorageManager* storage_manager_;

@@ -1,5 +1,7 @@
 # Makefile.am for VSFS's C++ API
 
+CLEANFILES = *.gcda *.gcno *.gcov
+
 lib_LIBRARIES = libvsfs.a
 
 libvsfs_a_SOURCES = \

@@ -16,6 +16,8 @@
 
 #include <fcntl.h>
 #include <glog/logging.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <string>
 #include "vobla/status.h"
 #include "vobla/string_util.h"
@@ -97,6 +99,17 @@ Status Vsfs::mkdir(const string& path, int64_t mode, int64_t uid, int64_t gid) {
 
 Status Vsfs::rmdir(const string& path) {
   return client_->rmdir(path);
+}
+
+Status Vsfs::create_index(const string& path, const string& name,
+                          int index_type, int key_type) {
+  int64_t mode = 0777;
+  return client_->create_index(path, name, index_type, key_type,
+                               mode, getuid(), getgid());
+}
+
+Status Vsfs::destroy_index(const string& path, const string& name) {
+  return client_->remove_index(path, name);
 }
 
 }  // namespace vsfs
