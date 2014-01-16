@@ -22,7 +22,6 @@
 #include <vector>
 #include "vobla/file.h"
 #include "vsfs/common/leveldb_store.h"
-#include "vsfs/common/mock_key_value_store.h"
 #include "vsfs/masterd/partition_manager.h"
 
 namespace fs = boost::filesystem;
@@ -40,7 +39,6 @@ class PartitionManagerTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     tmpdir_.reset(new vobla::TemporaryDirectory);
-    mock_store_.reset(new MockKeyValueStore);
     testdir_ = tmpdir_->path();
   }
 
@@ -48,7 +46,6 @@ class PartitionManagerTest : public ::testing::Test {
   }
 
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
-  unique_ptr<MockKeyValueStore> mock_store_;
   string testdir_;
 };
 
