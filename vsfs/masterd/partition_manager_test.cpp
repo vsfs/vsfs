@@ -40,7 +40,6 @@ class PartitionManagerTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     tmpdir_.reset(new vobla::TemporaryDirectory);
-    mock_store_.reset(new MockKeyValueStore);
     testdir_ = tmpdir_->path();
   }
 
@@ -48,7 +47,6 @@ class PartitionManagerTest : public ::testing::Test {
   }
 
   unique_ptr<vobla::TemporaryDirectory> tmpdir_;
-  unique_ptr<MockKeyValueStore> mock_store_;
   string testdir_;
 };
 

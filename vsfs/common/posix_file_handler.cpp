@@ -34,6 +34,10 @@ PosixFileHandler::~PosixFileHandler() {
   }
 }
 
+int PosixFileHandler::fd() const {
+  return fd_;
+}
+
 Status PosixFileHandler::close() {
   int ret = ::close(fd_);
   if (ret) {

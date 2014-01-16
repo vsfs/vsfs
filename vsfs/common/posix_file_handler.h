@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 (c) Lei Xu <eddyxu@gmail.com>
+ * Copyright 2013-2014 (c) Lei Xu <eddyxu@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class PosixFileHandler : public FileHandler {
 
   ssize_t write(const void* buf, size_t nbytes, off_t offset);
 
-  int fd() const { return fd_; }
+  int fd() const;
 
  private:
   StorageManager* storage_manager_;
