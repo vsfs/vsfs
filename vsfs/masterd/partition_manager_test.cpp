@@ -22,7 +22,6 @@
 #include <vector>
 #include "vobla/file.h"
 #include "vsfs/common/leveldb_store.h"
-#include "vsfs/common/mock_key_value_store.h"
 #include "vsfs/masterd/partition_manager.h"
 
 namespace fs = boost::filesystem;
