@@ -65,12 +65,18 @@ TEST(MTHashMap, TestIteration) {
   test_map["2"] = "2";
   test_map["3"] = "3";
   test_map["4"] = "4";
+  EXPECT_EQ(4, test_map.size());
 
   set<string> values;
   for (auto it = test_map.begin(); it != test_map.end(); ++it) {
     values.insert(it->second);
   }
   EXPECT_THAT(values, ElementsAre("1", "2", "3", "4"));
+
+  test_map.clear();
+  EXPECT_EQ(0, test_map.size());
+  EXPECT_TRUE(test_map.empty());
+  EXPECT_EQ(test_map.begin(), test_map.end());
 }
 
 }  // namespace masterd

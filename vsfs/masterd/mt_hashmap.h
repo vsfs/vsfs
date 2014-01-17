@@ -19,6 +19,7 @@
 
 #include <boost/iterator/iterator_facade.hpp>
 #include <glog/logging.h>
+#include <algorithm>
 #include <array>
 #include <initializer_list>
 #include <mutex>
@@ -36,6 +37,10 @@ namespace masterd {
  *
  * It first divides the hash map into buckets, based on the hash(key) range.
  * Each bucket has its own mutex to protect the data within this bucket.
+ *
+ * \note It only guarentees thread-safe for insert/find/erase/at/[] operations,
+ * but not for operations that involve multiple buckets. These cross-buckets
+ * operations are not the optimization target for now.
  *
  * \TODO(eddyxu): move to vsfs/common or vobla.
  */
@@ -108,7 +113,9 @@ class MTHashMap {
   }
 
   /// Move constructor.
-  MTHashMap(MTHashMap&& rhs);
+  MTHashMap(MTHashMap&& rhs) {
+    *this = std::move(rhs);
+  }
 
   /// Construct from initializer list.
   MTHashMap(std::initializer_list<value_type> values);  // NOLINT
@@ -163,7 +170,7 @@ class MTHashMap {
     return buckets_[idx].data_.at(key);
   }
 
-  mapped_type& operator[] (const key_type& key) {
+  mapped_type& operator[](const key_type& key) {
     auto idx = bucket_idx(key);
     MutexGuard guard(buckets_[idx].mutex_);
     return buckets_[idx].data_[key];
@@ -191,6 +198,15 @@ class MTHashMap {
       return end();
     }
     return MTHashMapIterator(this, idx, iter);
+  }
+
+  /**
+   * Not thread-safe and has O(bucket_size) complexity.
+   */
+  void clear() noexcept {
+    for (auto& bucket : buckets_) {
+      bucket.data_.clear();
+    }
   }
 
   /**
@@ -257,6 +273,10 @@ class MTHashMap {
                              buckets_.back().data_.end());
   }
 
+  void swap(MTHashMap& rhs) {
+    std::swap(buckets_, rhs.buckets_);
+  }
+
   void lock(const key_type& key);
 
   void unlock(const key_type& unlock);
@@ -281,6 +301,11 @@ class MTHashMap {
 
   std::array<bucket_type, Size> buckets_;
 };
+
+template <typename Key, typename T, int Size>
+void swap(MTHashMap<Key, T, Size>& lhs, MTHashMap<Key, T, Size>& rhs) {
+  lhs.swap(rhs);
+}
 
 }  // namespace masterd
 }  // namespace vsfs
