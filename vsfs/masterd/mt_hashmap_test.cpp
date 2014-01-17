@@ -34,6 +34,7 @@ struct NameSet {
 };
 
 typedef MTHashMap<string, NameSet> HashMap;
+typedef MTHashMap<string, string> StringHashMap;
 
 TEST(MTHashMap, TestConstructor) {
   HashMap test_map;
@@ -45,9 +46,9 @@ TEST(MTHashMap, TestConstructor) {
 
 TEST(MTHashMap, TestInsert) {
   HashMap test_map;
-  NameSet ns;
-  ns.names = {"1", "2", "3"};
-  auto res = test_map.insert(make_pair(string("abc"), ns));
+  NameSet name_set;
+  name_set.names = {"1", "2", "3"};
+  auto res = test_map.insert(make_pair(string("abc"), name_set));
   EXPECT_TRUE(res.second);
   EXPECT_EQ("abc", res.first->first);
   EXPECT_THAT(res.first->second.names, ElementsAre("1", "2", "3"));
@@ -56,6 +57,20 @@ TEST(MTHashMap, TestInsert) {
   EXPECT_EQ(it, res.first);
   ++it;
   EXPECT_THAT(it, test_map.end());
+}
+
+TEST(MTHashMap, TestIteration) {
+  StringHashMap test_map;
+  test_map["1"] = "1";
+  test_map["2"] = "2";
+  test_map["3"] = "3";
+  test_map["4"] = "4";
+
+  set<string> values;
+  for (auto it = test_map.begin(); it != test_map.end(); ++it) {
+    values.insert(it->second);
+  }
+  EXPECT_THAT(values, ElementsAre("1", "2", "3", "4"));
 }
 
 }  // namespace masterd

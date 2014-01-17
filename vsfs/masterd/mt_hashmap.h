@@ -28,16 +28,16 @@
 
 using std::unordered_map;
 
-// TODO(eddyxu): move to common or vobla
-
 namespace vsfs {
 namespace masterd {
 
 /**
  * \brief A fine-grained access-control thread-safe hash map.
  *
- * It first divides the hash map into bucket, based on hash(key) range.
+ * It first divides the hash map into buckets, based on the hash(key) range.
  * Each bucket has its own mutex to protect the data within this bucket.
+ *
+ * \TODO(eddyxu): move to vsfs/common or vobla.
  */
 template <typename Key, typename T, int Size = 1024>
 class MTHashMap {
@@ -152,29 +152,36 @@ class MTHashMap {
    * function throws an out_of_range exception.
    */
   mapped_type& at(const key_type& key) {
-    auto bucket = bucket_idx(key);
-    MutexGuard guard(buckets_[bucket].mutex_);
-    return buckets_[bucket].data_.at(key);
+    auto idx = bucket_idx(key);
+    MutexGuard guard(buckets_[idx].mutex_);
+    return buckets_[idx].data_.at(key);
   }
 
   const mapped_type& at(const key_type& key) const {
-    auto bucket = bucket_idx(key);
-    MutexGuard guard(buckets_[bucket].mutex_);
-    return buckets_[bucket].data_.at(key);
+    auto idx = bucket_idx(key);
+    MutexGuard guard(buckets_[idx].mutex_);
+    return buckets_[idx].data_.at(key);
   }
 
-  mapped_type& operator[] (const key_type& k);
-
-  mapped_type& operator[] (key_type&& k);
+  mapped_type& operator[] (const key_type& key) {
+    auto idx = bucket_idx(key);
+    MutexGuard guard(buckets_[idx].mutex_);
+    return buckets_[idx].data_[key];
+  }
 
   std::pair<iterator, bool> insert(const value_type& val) {
-    auto bucket = bucket_idx(val.first);
-    MutexGuard guard(buckets_[bucket].mutex_);
-    auto res = buckets_[bucket].data_.insert(val);
-    return std::make_pair(MTHashMapIterator(this, bucket, res.first),
-                          res.second);
+    auto idx = bucket_idx(val.first);
+    MutexGuard guard(buckets_[idx].mutex_);
+    auto res = buckets_[idx].data_.insert(val);
+    return std::make_pair(MTHashMapIterator(this, idx, res.first), res.second);
   }
 
+  /**
+   * \brief Returns true of this hash map is emtpy, that is, all buckets are
+   * emtpy.
+   *
+   * It has O(bucket_size) complexity.
+   */
   bool empty() const {
     for (const auto& bucket : buckets_) {
       if (!bucket.data_.empty()) {
@@ -184,7 +191,11 @@ class MTHashMap {
     return true;
   }
 
-  /// Returns the number of elements in all buckets.
+  /**
+   * \brief Returns the number of elements in all buckets.
+   *
+   * It has O(bucket_size) complexity.
+   */
   size_type size() const noexcept {
     size_type total_size = 0;
     for (const auto& bucket : buckets_) {
