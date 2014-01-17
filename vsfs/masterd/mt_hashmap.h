@@ -176,6 +176,23 @@ class MTHashMap {
     return std::make_pair(MTHashMapIterator(this, idx, res.first), res.second);
   }
 
+  /// Erase an element by its key.
+  size_type erase(const key_type& key) {
+    auto idx = bucket_idx(key);
+    MutexGuard guard(buckets_[idx].mutex_);
+    return buckets_[idx].data_.erase(key);
+  }
+
+  iterator find(const key_type& key) {
+    auto idx = bucket_idx(key);
+    MutexGuard guard(buckets_[idx].mutex_);
+    auto iter = buckets_[idx].data_.find(key);
+    if (iter == buckets_[idx].data_.end()) {
+      return end();
+    }
+    return MTHashMapIterator(this, idx, iter);
+  }
+
   /**
    * \brief Returns true of this hash map is emtpy, that is, all buckets are
    * emtpy.
