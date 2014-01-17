@@ -103,7 +103,7 @@ class MTHashMap {
 
  public:
   typedef MTHashMapIterator iterator;
-  typedef const MTHashMapIterator const_iterator;
+  // typedef const MTHashMapIterator const_iterator;
 
   MTHashMap() = default;
 
@@ -149,7 +149,14 @@ class MTHashMap {
 
   // MTHashMap& operator=(initializer_list<value_type> values);
 
-  bool operator==(const MTHashMap& rhs);
+  bool operator==(const MTHashMap& rhs) const {
+    for (int i = 0; i < buckets_.size(); i++) {
+      if (buckets_[i].data_ != rhs.buckets_[i].data_) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   /**
    * \brief Returns a reference to the mapped value of the element with key k
@@ -252,6 +259,7 @@ class MTHashMap {
   }
 
   /// Not thread-safe
+  /*
   const_iterator begin() const noexcept {
     for (int i = 0; i < buckets_.size(); ++i) {
       if (!buckets_[i].data_.empty()) {
@@ -260,6 +268,7 @@ class MTHashMap {
     }
     return end();
   }
+  */
 
   /// Not thread-safe
   iterator end() noexcept {
@@ -268,10 +277,12 @@ class MTHashMap {
   }
 
   /// Not thread-safe
+  /*
   const_iterator end() const noexcept {
     return MTHashMapIterator(this, buckets_.size(),
                              buckets_.back().data_.end());
   }
+  */
 
   void swap(MTHashMap& rhs) {
     std::swap(buckets_, rhs.buckets_);

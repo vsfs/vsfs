@@ -59,6 +59,17 @@ TEST(MTHashMap, TestInsert) {
   EXPECT_THAT(it, test_map.end());
 }
 
+TEST(MTHashMap, TestAssignAndEqual) {
+  StringHashMap test_map;
+  test_map["1"] = "1";
+  test_map["2"] = "2";
+  test_map["3"] = "3";
+  StringHashMap new_map = test_map;
+  EXPECT_EQ(3, new_map.size());
+  EXPECT_TRUE(test_map == new_map);
+  EXPECT_EQ(test_map, new_map);
+}
+
 TEST(MTHashMap, TestIteration) {
   StringHashMap test_map;
   test_map["1"] = "1";
