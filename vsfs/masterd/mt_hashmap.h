@@ -17,6 +17,8 @@
 #ifndef VSFS_MASTERD_MT_HASHMAP_H_
 #define VSFS_MASTERD_MT_HASHMAP_H_
 
+#include <boost/iterator/iterator_facade.hpp>
+#include <glog/logging.h>
 #include <array>
 #include <initializer_list>
 #include <mutex>
@@ -24,9 +26,6 @@
 #include <utility>
 #include "vsfs/common/thread.h"
 
-using std::array;
-using std::mutex;
-using std::pair;
 using std::unordered_map;
 
 // TODO(eddyxu): move to common or vobla
@@ -34,6 +33,12 @@ using std::unordered_map;
 namespace vsfs {
 namespace masterd {
 
+/**
+ * \brief A fine-grained access-control thread-safe hash map.
+ *
+ * It first divides the hash map into bucket, based on hash(key) range.
+ * Each bucket has its own mutex to protect the data within this bucket.
+ */
 template <typename Key, typename T, int Size = 1024>
 class MTHashMap {
  public:
@@ -44,10 +49,63 @@ class MTHashMap {
   typedef typename hashmap_type::size_type size_type;
   typedef typename hashmap_type::hasher hasher;
 
+ private:
+  class MTHashMapIterator: public boost::iterator_facade<
+    MTHashMapIterator, value_type, boost::forward_traversal_tag> {
+    typedef typename hashmap_type::iterator hash_iterator_type;
+
+   public:
+    MTHashMapIterator(MTHashMap* mthm, int bucket_idx, hash_iterator_type it)
+        : map_(CHECK_NOTNULL(mthm)), bucket_idx_(bucket_idx), iter_(it) {
+    }
+
+    // ++it
+    void increment() {
+      if (bucket_idx_ >= map_->buckets_.size()) {
+        return;
+      }
+      iter_++;
+      if (iter_ == map_->buckets_[bucket_idx_].data_.end()) {
+        bucket_idx_++;
+        while (bucket_idx_ < map_->buckets_.size()) {
+          if (!map_->buckets_[bucket_idx_].data_.empty()) {
+            iter_ = map_->buckets_[bucket_idx_].data_.begin();
+            return;
+          }
+          bucket_idx_++;
+        }
+        iter_ = map_->buckets_.back().data_.end();
+      }
+    }
+
+    value_type& dereference() const {
+      return *iter_;
+    }
+
+    /// it != end()?
+    bool equal(MTHashMapIterator const& rhs) const {
+      return bucket_idx_ == rhs.bucket_idx_
+          && iter_ == rhs.iter_;
+    }
+
+   private:
+    MTHashMap* map_;
+
+    int bucket_idx_;
+
+    typename hashmap_type::iterator iter_;
+  };
+
+ public:
+  typedef MTHashMapIterator iterator;
+  typedef const MTHashMapIterator const_iterator;
+
   MTHashMap() = default;
 
   /// Copy constructor.
-  MTHashMap(const MTHashMap& rhs);
+  MTHashMap(const MTHashMap& rhs) {
+    *this = rhs;
+  }
 
   /// Move constructor.
   MTHashMap(MTHashMap&& rhs);
@@ -59,6 +117,34 @@ class MTHashMap {
   ~MTHashMap() = default;
 
   /**
+   * \brief Copy assignment.
+   * \note This function is not thread-safe.
+   */
+  MTHashMap& operator=(const MTHashMap& rhs) {
+    for (int i = 0; i < buckets_.size(); i++) {
+      // Only copy data fields, leave mutex alone.
+      buckets_[i].data_ = rhs.buckets_[i].data_;
+    }
+    return *this;
+  }
+
+  /**
+   * \brief Move assignment.
+   * \note This function is not thread-safe.
+   */
+  MTHashMap& operator=(MTHashMap&& rhs) {
+    for (int i = 0; i < buckets_.size(); i++) {
+      // Only copy data fields, leave mutex alone.
+      buckets_[i].data_ = std::move(rhs.buckets_[i].data_);
+    }
+    return *this;
+  }
+
+  // MTHashMap& operator=(initializer_list<value_type> values);
+
+  bool operator==(const MTHashMap& rhs);
+
+  /**
    * \brief Returns a reference to the mapped value of the element with key k
    * in the MTHashMap.
    *
@@ -66,16 +152,28 @@ class MTHashMap {
    * function throws an out_of_range exception.
    */
   mapped_type& at(const key_type& key) {
-    auto bucket = bucket_id(key);
+    auto bucket = bucket_idx(key);
     MutexGuard guard(buckets_[bucket].mutex_);
     return buckets_[bucket].data_.at(key);
   }
 
-  const mapped_type& at(const key_type& k) const;
+  const mapped_type& at(const key_type& key) const {
+    auto bucket = bucket_idx(key);
+    MutexGuard guard(buckets_[bucket].mutex_);
+    return buckets_[bucket].data_.at(key);
+  }
 
   mapped_type& operator[] (const key_type& k);
 
   mapped_type& operator[] (key_type&& k);
+
+  std::pair<iterator, bool> insert(const value_type& val) {
+    auto bucket = bucket_idx(val.first);
+    MutexGuard guard(buckets_[bucket].mutex_);
+    auto res = buckets_[bucket].data_.insert(val);
+    return std::make_pair(MTHashMapIterator(this, bucket, res.first),
+                          res.second);
+  }
 
   bool empty() const {
     for (const auto& bucket : buckets_) {
@@ -99,6 +197,38 @@ class MTHashMap {
     return buckets_.size();
   }
 
+  /// Not thread-safe
+  iterator begin() noexcept {
+    for (int i = 0; i < buckets_.size(); ++i) {
+      if (!buckets_[i].data_.empty()) {
+        return MTHashMapIterator(this, i, buckets_[i].data_.begin());
+      }
+    }
+    return end();
+  }
+
+  /// Not thread-safe
+  const_iterator begin() const noexcept {
+    for (int i = 0; i < buckets_.size(); ++i) {
+      if (!buckets_[i].data_.empty()) {
+        return MTHashMapIterator(this, i, buckets_[i].data_.begin());
+      }
+    }
+    return end();
+  }
+
+  /// Not thread-safe
+  iterator end() noexcept {
+    return MTHashMapIterator(this, buckets_.size(),
+                             buckets_.back().data_.end());
+  }
+
+  /// Not thread-safe
+  const_iterator end() const noexcept {
+    return MTHashMapIterator(this, buckets_.size(),
+                             buckets_.back().data_.end());
+  }
+
   void lock(const key_type& key);
 
   void unlock(const key_type& unlock);
@@ -109,7 +239,7 @@ class MTHashMap {
    */
   struct MTBucket {
     // The mutex to protect one bucket.
-    mutex mutex_;
+    std::mutex mutex_;
 
     // Finer-grained hash map.
     hashmap_type data_;
@@ -117,11 +247,11 @@ class MTHashMap {
 
   typedef MTBucket bucket_type;
 
-  int bucket_id(const key_type& key) const {
+  int bucket_idx(const key_type& key) const {
     return buckets_[0].data_.hash_function()(key) % buckets_.size();
   }
 
-  array<bucket_type, Size> buckets_;
+  std::array<bucket_type, Size> buckets_;
 };
 
 }  // namespace masterd

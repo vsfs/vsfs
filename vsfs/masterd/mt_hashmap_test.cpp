@@ -15,12 +15,16 @@
  */
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 #include <set>
 #include <string>
+#include <utility>
 #include "vsfs/masterd/mt_hashmap.h"
 
-using std::string;
+using ::testing::ElementsAre;
+using std::make_pair;
 using std::set;
+using std::string;
 
 namespace vsfs {
 namespace masterd {
@@ -28,6 +32,7 @@ namespace masterd {
 struct NameSet {
   set<string> names;
 };
+
 typedef MTHashMap<string, NameSet> HashMap;
 
 TEST(MTHashMap, TestConstructor) {
@@ -36,6 +41,21 @@ TEST(MTHashMap, TestConstructor) {
   EXPECT_EQ(0, test_map.size());
   EXPECT_EQ(1024, test_map.bucket_size());
   EXPECT_THROW(test_map.at("123"), std::out_of_range);
+}
+
+TEST(MTHashMap, TestInsert) {
+  HashMap test_map;
+  NameSet ns;
+  ns.names = {"1", "2", "3"};
+  auto res = test_map.insert(make_pair(string("abc"), ns));
+  EXPECT_TRUE(res.second);
+  EXPECT_EQ("abc", res.first->first);
+  EXPECT_THAT(res.first->second.names, ElementsAre("1", "2", "3"));
+
+  auto it = test_map.begin();
+  EXPECT_EQ(it, res.first);
+  ++it;
+  EXPECT_THAT(it, test_map.end());
 }
 
 }  // namespace masterd
