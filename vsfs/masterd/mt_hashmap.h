@@ -101,6 +101,7 @@ class MTHashMap {
     typename hashmap_type::iterator iter_;
   };
 
+
  public:
   typedef MTHashMapIterator iterator;
   // typedef const MTHashMapIterator const_iterator;
@@ -288,9 +289,11 @@ class MTHashMap {
     std::swap(buckets_, rhs.buckets_);
   }
 
-  void lock(const key_type& key);
-
-  void unlock(const key_type& unlock);
+  /// Access the mutex for a given bucket.
+  std::mutex& mutex(const key_type& key) {
+    auto idx = bucket_idx(key);
+    return buckets_[idx].mutex_;
+  }
 
  private:
   /**
