@@ -346,6 +346,18 @@ int vsfs_mkdir(const char* path, mode_t mode) {
   return status.error();
 }
 
+int vsfs_mknod(const char* path, mode_t mode, dev_t dev) {
+  ObjectId oid;
+  (void) dev;
+  // handle case for S_IFCHR, S_IFBLK which needs dev
+  Status status = vsfs->client()->create(path, mode, getuid(), getgid(), &oid);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to mknod: " << status.message();
+    return status.error();
+  }
+  return 0;
+}
+
 int vsfs_rmdir(const char* path) {
   auto status = VsfsFuse::instance()->client()->rmdir(path);
   if (!status.ok()) {
