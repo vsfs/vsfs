@@ -145,6 +145,7 @@ int vsfs_fgetattr(const char*, struct stat*, struct fuse_file_info*);
 int vsfs_ioctl(const char*, int cmd, void* arg, struct fuse_file_info*,
                unsigned int flags, void* data);
 int vsfs_mkdir(const char* path, mode_t mode);
+int vsfs_mknod(const char* path, mode_t mode, dev_t dev);
 int vsfs_open(const char* path, struct fuse_file_info* fi);
 int vsfs_read(const char* path, char* buf, size_t size, off_t offset,
               struct fuse_file_info* fi);

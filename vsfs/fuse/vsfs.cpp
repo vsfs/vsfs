@@ -124,6 +124,7 @@ int main(int argc, char *argv[]) {
   opers.ioctl = vsfs_ioctl;
   opers.init = vsfs_init;
   opers.mkdir = vsfs_mkdir;
+  opers.mknod = vsfs_mknod;
   opers.open = vsfs_open;
   opers.read = vsfs_read;
   opers.fsync = vsfs_fsync;
