@@ -42,24 +42,41 @@ namespace masterd {
  * but not for operations that involve multiple buckets. These cross-buckets
  * operations are not the optimization target for now.
  *
- * \TODO(eddyxu): move to vsfs/common or vobla.
+ * \todo (eddyxu): move to vsfs/common or vobla.
  */
 template <typename Key, typename T, int Size = 1024>
 class MTHashMap {
  public:
+  /// The underlying hash map container type.
   typedef unordered_map<Key, T> hashmap_type;
+  /// The type of key
   typedef typename hashmap_type::key_type key_type;
+  /// The type of value
   typedef typename hashmap_type::mapped_type mapped_type;
+  /// The type of pair<Key, Value>
   typedef typename hashmap_type::value_type value_type;
   typedef typename hashmap_type::size_type size_type;
+  /// The hash function used by the underlying hash map container.
   typedef typename hashmap_type::hasher hasher;
 
  private:
-  class MTHashMapIterator: public boost::iterator_facade<
+  class MTHashMapIterator : public boost::iterator_facade<
     MTHashMapIterator, value_type, boost::forward_traversal_tag> {
     typedef typename hashmap_type::iterator hash_iterator_type;
 
    public:
+    /**
+     * \brief Constructs a MTHashMapIterator.
+     * \param mthm a pointer to its MTHashMap. It does not own this pointer.
+     * \param bucket_idx the index of the bucket where this iterator is on.
+     * \param it the iterator of the MTHashMap::hashmap_type.
+     *
+     * The end() iterator has the following condition:
+     * \code{.cpp}
+     *   bucket_idx_ == map_->bucket_size() - 1 &&
+     *   iter_ == map_->bucket_.back().end()
+     * \endcode
+     */
     MTHashMapIterator(MTHashMap* mthm, int bucket_idx, hash_iterator_type it)
         : map_(CHECK_NOTNULL(mthm)), bucket_idx_(bucket_idx), iter_(it) {
     }
@@ -94,8 +111,10 @@ class MTHashMap {
     }
 
    private:
+    /// The pointer to its MTHashMap object.
     MTHashMap* map_;
 
+    /// The index of bucket this iterator is on.
     int bucket_idx_;
 
     typename hashmap_type::iterator iter_;
@@ -104,7 +123,6 @@ class MTHashMap {
 
  public:
   typedef MTHashMapIterator iterator;
-  // typedef const MTHashMapIterator const_iterator;
 
   MTHashMap() = default;
 
@@ -172,12 +190,27 @@ class MTHashMap {
     return buckets_[idx].data_.at(key);
   }
 
+  /**
+   * \brief Returns a const reference to the mapped value of the element with
+   * key k in the MTHashMap.
+   */
   const mapped_type& at(const key_type& key) const {
     auto idx = bucket_idx(key);
     MutexGuard guard(buckets_[idx].mutex_);
     return buckets_[idx].data_.at(key);
   }
 
+
+  /**
+   * \brief Access element.
+   *
+   * If 'key' matches the key of an element in the container, the function
+   * returns a reference to its mapped value.
+   *
+   * If key does not match the key of any element in the container, the
+   * function inserts a new element with that key and returns a reference to
+   * its mapped value.
+   */
   mapped_type& operator[](const key_type& key) {
     auto idx = bucket_idx(key);
     MutexGuard guard(buckets_[idx].mutex_);
