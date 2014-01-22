@@ -338,14 +338,9 @@ Status VSFSRpcClient::rmdir(const string& path) {
     VLOG(1) << "The VSFS RPC client has not initialized yet.";
     return Status(-1, "The client has not initialized yet.");
   }
-  auto status = remove_subfile(path);
-  if (!status.ok()) {
-    LOG(ERROR) << "Failed to remove " << path << " from namespace";
-    return status;
-  }
   auto hash = PathUtil::path_to_hash(path);
   NodeInfo node;
-  status = master_map_.get(hash, &node);
+  auto status = master_map_.get(hash, &node);
   if (!status.ok()) {
     return status;
   }
@@ -362,6 +357,11 @@ Status VSFSRpcClient::rmdir(const string& path) {
     LOG(ERROR) << "Failed to run mkdir RPC to master node: "
         << node.address.host << ":" << node.address.port
         << " because: " << status.message();
+    return status;
+  }
+  status = remove_subfile(path);
+  if (!status.ok()) {
+    LOG(ERROR) << "Failed to remove " << path << " from namespace";
     return status;
   }
   return Status::OK;
