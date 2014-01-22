@@ -142,6 +142,16 @@ class FusePosixStorageTest(FuseTestBase):
             os.remove('%s/%d.txt' % (self.mount_dir, i))
             self.assertFalse(os.path.exists('%s/%d.txt' % (self.base_dir, i)))
 
+    def test_rmdir(self):
+        self.assertEqual(0, os.system('mkdir -p %s/a/b' % self.mount_dir))
+        try:
+            os.rmdir('%s/a' % self.mount_dir)
+        except OSError, e:
+            self.assertEqual(os.errno.ENOTEMPTY, e.errno)
+        self.assertEqual(0, os.system('rmdir %s/a/b' % self.mount_dir))
+        self.assertFalse(os.path.exists('%s/a/b' % self.mount_dir))
+        self.assertEqual(0, os.system('rmdir %s/a' % self.mount_dir))
+        self.assertFalse(os.path.exists('%s/a' % self.mount_dir))
 
     def test_filebench_varmail(self):
         self.run_filebench(self.mount_dir, 'varmail', 10)
